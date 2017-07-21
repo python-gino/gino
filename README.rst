@@ -31,7 +31,7 @@ the middle between ORM and non-ORM, offering an extremely simple option.
 
 GINO depends on asyncpg_, which means it works only for PostgreSQL_ and
 asyncio_, which means Python 3 is required - actually 3.6 required for now.
-Based on SQLAlchemy_, gates to its ecosystem is open - feel free to use
+Based on SQLAlchemy_, gate to its ecosystem is open - feel free to use e.g.
 Alembic_ to manage your schema changes. And we specially designed a few candies
 for the Sanic_ server.
 
