@@ -12,7 +12,8 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'asyncpg~=0.12',
+    'SQLAlchemy~=1.1',
 ]
 
 setup_requirements = [
@@ -28,7 +29,8 @@ test_requirements = [
 setup(
     name='gino',
     version='0.1.0',
-    description="GINO Is Not ORM - a Python ORM on asyncpg and SQLAlchemy core.",
+    description="GINO Is Not ORM - "
+                "a Python ORM on asyncpg and SQLAlchemy core.",
     long_description=readme + '\n\n' + history,
     author="Fantix King",
     author_email='fantix.king@gmail.com',
@@ -44,13 +46,8 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements,
