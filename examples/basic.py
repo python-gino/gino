@@ -23,7 +23,7 @@ async def main():
     print(await User.create(conn, nickname='fantix'))
     print(await User.get(conn, 1))
     async with conn.transaction():
-        query, params = db.compile(User.query)
+        query, params = db.compile(User.query.where(User.id > 3))
         async for u in User.map(conn.cursor(query, *params)):
             print(u)
 
