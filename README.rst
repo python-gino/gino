@@ -18,7 +18,8 @@ GINO
      :alt: Updates
 
 
-GINO Is Not ORM - a Python ORM on asyncpg_ and SQLAlchemy_ core.
+GINO - GINO Is Not ORM - is an extremely simple Python ORM, using SQLAlchemy_
+core to define table models, and asyncpg_ to interact with database.
 
 
 * Free software: BSD license
