@@ -48,7 +48,10 @@ There're a few usage examples in the examples directory.
 Credits
 ---------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+Credit goes to all contributors listed in the AUTHORS file. This project is
+inspired by asyncpgsa_, peewee-async_ and asyncorm_. asyncpg_ and SQLAlchemy_
+as the dependencies did most of the heavy lifting. This package was created
+with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
@@ -58,3 +61,6 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 .. _Alembic: https://bitbucket.org/zzzeek/alembic
 .. _Sanic: https://github.com/channelcat/sanic
+.. _asyncpgsa: https://github.com/CanopyTax/asyncpgsa
+.. _peewee-async: https://github.com/05bit/peewee-async
+.. _asyncorm: https://github.com/monobot/asyncorm
