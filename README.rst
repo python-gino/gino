@@ -29,6 +29,10 @@ or bad - as well as a lot of ORM libraries in Python. It is crucial to pick a
 most suitable one for your project, and for your team. GINO tries to stay in
 the middle between ORM and non-ORM, offering an extremely simple option.
 
+GINO tries to define database tables with plain old Python objects - they *are*
+normal Python objects, a rollback doesn't magically change their values. Any
+database operations are explicit.
+
 GINO depends on asyncpg_, which means it works only for PostgreSQL_ and
 asyncio_, which means Python 3 is required - actually 3.6 required for now.
 Based on SQLAlchemy_, gate to its ecosystem is open - feel free to use e.g.
