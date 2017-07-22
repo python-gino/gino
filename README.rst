@@ -9,8 +9,8 @@ GINO
 .. image:: https://img.shields.io/travis/fantix/gino.svg
         :target: https://travis-ci.org/fantix/gino
 
-.. image:: https://readthedocs.org/projects/gino/badge/?version=latest
-        :target: https://gino.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/ginorm/badge/?version=latest
+        :target: https://ginorm.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/fantix/gino/shield.svg
