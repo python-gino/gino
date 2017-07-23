@@ -116,8 +116,8 @@ And GINO offers some sugars:
 
 .. code-block:: python
 
-   u1 = await User.get(conn, 9)
-   u2 = await User.create(conn, nickname=u1.nickname))
+   u1 = await User.get(9, bind=conn)
+   u2 = await User.create(bind=conn, nickname=u1.nickname))
 
    async with conn.transaction():
        query, params = db.compile(User.query.where(User.id > 2))

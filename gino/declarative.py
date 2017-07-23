@@ -64,27 +64,31 @@ class Model(metaclass=ModelType):
         return select([getattr(cls, x) for x in args])
 
     @classmethod
-    async def create(cls, conn, **values):
+    async def create(cls, bind=None, **values):
+        if bind is None:
+            bind = cls.__metadata__.bind
         # noinspection PyUnresolvedReferences
         clause = cls.__table__.insert().values(**values).returning(
             cls.id)
         query, params = cls.__metadata__.compile(clause)
-        values['id'] = await conn.fetchval(query, *params)
+        values['id'] = await bind.fetchval(query, *params)
         return cls(**values)
 
     @classmethod
-    async def get(cls, conn, id_):
+    async def get(cls, id_, bind=None):
+        if bind is None:
+            bind = cls.__metadata__.bind
         # noinspection PyUnresolvedReferences
         clause = cls.query.where(cls.id == id_)
         query, params = cls.__metadata__.compile(clause)
-        row = await conn.fetchrow(query, *params)
+        row = await bind.fetchrow(query, *params)
         if row is None:
             return None
         return cls(**row)
 
     @classmethod
-    async def get_or_404(cls, conn, id_):
-        rv = await cls.get(conn, id_)
+    async def get_or_404(cls, id_, bind=None):
+        rv = await cls.get(id_, bind=bind)
         if rv is None:
             # noinspection PyPackageRequirements
             from sanic.exceptions import NotFound
@@ -102,9 +106,9 @@ class Model(metaclass=ModelType):
 
 
 class Gino(MetaData):
-    def __init__(self, dialect=None, **kwargs):
-        kwargs['bind'] = None
-        super().__init__(**kwargs)
+    def __init__(self, bind=None, dialect=None, **kwargs):
+        self._bind = None
+        super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect()
         model_type = type('ModelType', (ModelType,), {'metadata': self})
         self.Model = model_type('Model', (Model,), {'__metadata__': self})
@@ -129,3 +133,12 @@ class Gino(MetaData):
         context = dialect.execution_ctx_cls._init_compiled(
             dialect, compiled_sql, distilled_params)
         return context.statement, context.parameters[0]
+
+    @property
+    def bind(self):
+        return self._bind
+
+    # noinspection PyMethodOverriding
+    @bind.setter
+    def bind(self, val):
+        self._bind = val

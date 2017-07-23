@@ -17,15 +17,12 @@ class User(db.Model):
 
 async def main():
     conn = await asyncpg.connect('postgresql://localhost/gino')
+    db.bind = conn
 
     # You will need to create the database and table manually
 
-    print(await User.create(bind=conn, nickname='fantix'))
-    print(await User.get(1, bind=conn))
-    async with conn.transaction():
-        query, params = db.compile(User.query.where(User.id > 3))
-        async for u in User.map(conn.cursor(query, *params)):
-            print(u)
+    print(await User.create(nickname='fantix'))
+    print(await User.get(1))
 
 
 if __name__ == '__main__':
