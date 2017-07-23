@@ -30,80 +30,84 @@ class Query:
         return select([owner.__table__])
 
 
+class ModelType(type):
+    metadata = None
+
+    # noinspection PyInitNewSignature
+    def __new__(mcs, name, bases, namespace, **new_kwargs):
+        table_name = namespace.get('__tablename__')
+        if table_name:
+            columns = []
+            updates = {}
+            for k, v in namespace.items():
+                if isinstance(v, Column):
+                    v.name = k
+                    columns.append(v)
+                    updates[k] = ColumnAttribute(v)
+            updates['__table__'] = Table(
+                table_name, mcs.metadata, *columns)
+            namespace.update(updates)
+        return type.__new__(mcs, name, bases, namespace)
+
+
+class Model(metaclass=ModelType):
+    __metadata__ = None
+    __values__ = {}
+    __table__ = None
+    query = Query()
+
+    def __init__(self, **values):
+        self.update(**values)
+
+    @classmethod
+    def select(cls, *args):
+        return select([getattr(cls, x) for x in args])
+
+    @classmethod
+    async def create(cls, conn, **values):
+        # noinspection PyUnresolvedReferences
+        clause = cls.__table__.insert().values(**values).returning(
+            cls.id)
+        query, params = cls.__metadata__.compile(clause)
+        values['id'] = await conn.fetchval(query, *params)
+        return cls(**values)
+
+    @classmethod
+    async def get(cls, conn, id_):
+        # noinspection PyUnresolvedReferences
+        clause = cls.query.where(cls.id == id_)
+        query, params = cls.__metadata__.compile(clause)
+        row = await conn.fetchrow(query, *params)
+        if row is None:
+            return None
+        return cls(**row)
+
+    @classmethod
+    async def get_or_404(cls, conn, id_):
+        rv = await cls.get(conn, id_)
+        if rv is None:
+            # noinspection PyPackageRequirements
+            from sanic.exceptions import NotFound
+            raise NotFound('{} is not found'.format(cls.__name__))
+        return rv
+
+    @classmethod
+    async def map(cls, iterable):
+        async for row in iterable:
+            yield cls(**row)
+
+    def update(self, **values):
+        for attr, value in values.items():
+            setattr(self, attr, value)
+
+
 class Gino(MetaData):
     def __init__(self, dialect=None, **kwargs):
         kwargs['bind'] = None
         super().__init__(**kwargs)
         self.dialect = dialect or AsyncpgDialect()
-        metadata = self
-
-        class ModelType(type):
-            # noinspection PyInitNewSignature
-            def __new__(mcs, name, bases, namespace, **new_kwargs):
-                table_name = namespace.get('__tablename__')
-                if table_name and metadata:
-                    columns = []
-                    updates = {}
-                    for k, v in namespace.items():
-                        if isinstance(v, Column):
-                            v.name = k
-                            columns.append(v)
-                            updates[k] = ColumnAttribute(v)
-                    updates['__table__'] = Table(
-                        table_name, metadata, *columns)
-                    namespace.update(updates)
-                return type.__new__(mcs, name, bases, namespace)
-
-        class Model(metaclass=ModelType):
-            __values__ = {}
-            __table__ = None
-            query = Query()
-
-            def __init__(self, **values):
-                self.update(**values)
-
-            @classmethod
-            def select(cls, *args):
-                return select([getattr(cls, x) for x in args])
-
-            @classmethod
-            async def create(cls, conn, **values):
-                # noinspection PyUnresolvedReferences
-                clause = cls.__table__.insert().values(**values).returning(
-                    cls.id)
-                query, params = metadata.compile(clause)
-                values['id'] = await conn.fetchval(query, *params)
-                return cls(**values)
-
-            @classmethod
-            async def get(cls, conn, id_):
-                # noinspection PyUnresolvedReferences
-                clause = cls.query.where(cls.id == id_)
-                query, params = metadata.compile(clause)
-                row = await conn.fetchrow(query, *params)
-                if row is None:
-                    return None
-                return cls(**row)
-
-            @classmethod
-            async def get_or_404(cls, conn, id_):
-                rv = await cls.get(conn, id_)
-                if rv is None:
-                    # noinspection PyPackageRequirements
-                    from sanic.exceptions import NotFound
-                    raise NotFound('{} is not found'.format(cls.__name__))
-                return rv
-
-            @classmethod
-            async def map(cls, iterable):
-                async for row in iterable:
-                    yield cls(**row)
-
-            def update(self, **values):
-                for attr, value in values.items():
-                    setattr(self, attr, value)
-
-        self.Model = Model
+        model_type = type('ModelType', (ModelType,), {'metadata': self})
+        self.Model = model_type('Model', (Model,), {'__metadata__': self})
 
     def compile(self, elem, *multiparams, **params):
         # partially copied from:
