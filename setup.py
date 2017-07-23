@@ -23,7 +23,8 @@ setup_requirements = [
 
 test_requirements = [
     'pytest',
-    # TODO: put package test requirements here
+    'pytest-asyncio',
+    'pytest-capturelog>=0.7',
 ]
 
 setup(

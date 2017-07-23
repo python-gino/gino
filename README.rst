@@ -134,6 +134,16 @@ Features
 There're a few usage examples in the examples directory.
 
 
+Contribute
+----------
+
+To run tests:
+
+.. code-block:: shell
+
+   python setup.py test
+
+
 Credits
 ---------
 
