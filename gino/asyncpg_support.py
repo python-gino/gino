@@ -40,7 +40,7 @@ class AsyncpgSupportMixin:
         if not issubclass(connection_class, GinoConnection):
             raise TypeError(
                 'connection_class is expected to be a subclass of '
-                'asyncpg.Connection, got {!r}'.format(connection_class))
+                'gino.GinoConnection, got {!r}'.format(connection_class))
 
         connection_class = type(connection_class.__name__, (connection_class,),
                                 {'metadata': self})
