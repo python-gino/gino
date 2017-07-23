@@ -2,7 +2,7 @@ from sqlalchemy import MetaData, Column, Table, select
 from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
-from .asyncpg_delegate import AsyncpgSupportMixin
+from .asyncpg_delegate import AsyncpgMixin
 
 
 class ColumnAttribute:
@@ -118,7 +118,7 @@ class Model(metaclass=ModelType):
             setattr(self, attr, value)
 
 
-class Gino(MetaData, AsyncpgSupportMixin):
+class Gino(MetaData, AsyncpgMixin):
     def __init__(self, bind=None, dialect=None, **kwargs):
         self._bind = None
         super().__init__(bind=bind, **kwargs)

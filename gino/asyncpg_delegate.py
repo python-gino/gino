@@ -26,7 +26,7 @@ class GinoConnection(Connection):
         return rv
 
 
-class AsyncpgSupportMixin:
+class AsyncpgMixin:
     def create_pool(self, dsn=None, *,
                     min_size=10,
                     max_size=10,
