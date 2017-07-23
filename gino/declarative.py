@@ -2,6 +2,7 @@ from sqlalchemy import MetaData, Column, Table, select
 from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
+from .asyncpg_support import AsyncpgSupportMixin
 
 
 class ColumnAttribute:
@@ -27,7 +28,9 @@ class ColumnAttribute:
 
 class Query:
     def __get__(self, instance, owner):
-        return select([owner.__table__])
+        q = select([owner.__table__])
+        q.__model__ = owner
+        return q
 
 
 class ModelType(type):
@@ -35,6 +38,7 @@ class ModelType(type):
 
     # noinspection PyInitNewSignature
     def __new__(mcs, name, bases, namespace, **new_kwargs):
+        table = None
         table_name = namespace.get('__tablename__')
         if table_name:
             columns = []
@@ -44,10 +48,13 @@ class ModelType(type):
                     v.name = k
                     columns.append(v)
                     updates[k] = ColumnAttribute(v)
-            updates['__table__'] = Table(
+            table = updates['__table__'] = Table(
                 table_name, mcs.metadata, *columns)
             namespace.update(updates)
-        return type.__new__(mcs, name, bases, namespace)
+        rv = type.__new__(mcs, name, bases, namespace)
+        if table is not None:
+            table.__model__ = rv
+        return rv
 
 
 class Model(metaclass=ModelType):
@@ -61,7 +68,9 @@ class Model(metaclass=ModelType):
 
     @classmethod
     def select(cls, *args):
-        return select([getattr(cls, x) for x in args])
+        q = select([getattr(cls, x) for x in args])
+        q.__model__ = cls
+        return q
 
     @classmethod
     async def create(cls, bind=None, **values):
@@ -98,14 +107,18 @@ class Model(metaclass=ModelType):
     @classmethod
     async def map(cls, iterable):
         async for row in iterable:
-            yield cls(**row)
+            yield cls.from_row(row)
+
+    @classmethod
+    def from_row(cls, row):
+        return cls(**row)
 
     def update(self, **values):
         for attr, value in values.items():
             setattr(self, attr, value)
 
 
-class Gino(MetaData):
+class Gino(MetaData, AsyncpgSupportMixin):
     def __init__(self, bind=None, dialect=None, **kwargs):
         self._bind = None
         super().__init__(bind=bind, **kwargs)
@@ -133,6 +146,22 @@ class Gino(MetaData):
         context = dialect.execution_ctx_cls._init_compiled(
             dialect, compiled_sql, distilled_params)
         return context.statement, context.parameters[0]
+
+    @classmethod
+    def guess_model(cls, query):
+        model = getattr(query, '__model__', None)
+        if model is not None:
+            return model
+        tables = query.froms
+        if len(tables) != 1:
+            return
+        model = getattr(tables[0], '__model__', None)
+        if not model:
+            return
+        for c in query.columns:
+            if not hasattr(model, c.name):
+                return
+        return model
 
     @property
     def bind(self):
