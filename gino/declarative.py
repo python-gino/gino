@@ -59,11 +59,11 @@ class ModelType(type):
 
 class Model(metaclass=ModelType):
     __metadata__ = None
-    __values__ = {}
     __table__ = None
     query = Query()
 
     def __init__(self, **values):
+        self.__values__ = {}
         self.update(**values)
 
     @classmethod
