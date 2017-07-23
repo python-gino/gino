@@ -2,7 +2,7 @@ from sqlalchemy import MetaData, Column, Table, select
 from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
-from .asyncpg_support import AsyncpgSupportMixin
+from .asyncpg_delegate import AsyncpgSupportMixin
 
 
 class ColumnAttribute:

@@ -7,4 +7,4 @@ __email__ = 'fantix.king@gmail.com'
 __version__ = '0.1.0'
 
 from .declarative import Gino
-from .asyncpg_support import GinoConnection
+from .asyncpg_delegate import GinoConnection
