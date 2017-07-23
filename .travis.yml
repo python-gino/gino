@@ -3,11 +3,7 @@
 
 language: python
 python:
-  - 3.5
-  - 3.4
-  - 3.3
-  - 2.7
-  - 2.6
+  - 3.6
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install -U tox-travis
@@ -26,4 +22,4 @@ deploy:
   on:
     tags: true
     repo: fantix/gino
-    python: 2.7
+    python: 3.6
