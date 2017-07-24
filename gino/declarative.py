@@ -118,6 +118,15 @@ class Model(metaclass=ModelType):
             setattr(self, attr, value)
 
 
+class NoopConnection:
+    def __init__(self, dialect):
+        self.dialect = dialect
+        self._execution_options = {}
+
+    def cursor(self):
+        pass
+
+
 class Gino(MetaData, AsyncpgMixin):
     def __init__(self, bind=None, dialect=None, **kwargs):
         self._bind = None
@@ -142,9 +151,10 @@ class Gino(MetaData, AsyncpgMixin):
             dialect=dialect, column_keys=keys,
             inline=len(distilled_params) > 1,
         )
+        conn = NoopConnection(self.dialect)
         # noinspection PyProtectedMember
         context = dialect.execution_ctx_cls._init_compiled(
-            dialect, compiled_sql, distilled_params)
+            dialect, conn, conn, compiled_sql, distilled_params)
         return context.statement, context.parameters[0]
 
     @classmethod
