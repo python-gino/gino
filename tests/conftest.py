@@ -21,7 +21,7 @@ def engine():
 async def pool(engine):
     async with db.create_pool(**DB_ARGS) as rv:
         yield rv
-        await rv.execute('DELETE FROM users')
+        await rv.execute('DELETE FROM gino_users')
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
@@ -29,4 +29,4 @@ async def pool(engine):
 async def asyncpg_pool(engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         yield rv
-        await rv.execute('DELETE FROM users')
+        await rv.execute('DELETE FROM gino_users')

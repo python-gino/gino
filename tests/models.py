@@ -8,13 +8,13 @@ DB_ARGS = dict(
     port=os.getenv('DB_PORT', 5432),
     user=os.getenv('DB_USER', 'postgres'),
     password=os.getenv('DB_PASS', ''),
-    database=os.getenv('DB_NAME', 'gino'),
+    database=os.getenv('DB_NAME', 'postgres'),
 )
 db = Gino()
 
 
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'gino_users'
 
     id = Column(BigInteger(), primary_key=True)
     nickname = Column(Unicode(), default='noname')

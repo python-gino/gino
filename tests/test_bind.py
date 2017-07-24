@@ -31,4 +31,4 @@ async def test_unbind():
             await test_create(None)
     finally:
         async with db.create_pool(**DB_ARGS) as pool:
-            await pool.execute('DELETE FROM users')
+            await pool.execute('DELETE FROM gino_users')
