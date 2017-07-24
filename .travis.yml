@@ -2,6 +2,10 @@
 # This file will be regenerated if you run travis_pypi_setup.py
 
 language: python
+addons:
+  postgresql: "9.6"
+services:
+  - postgresql
 python:
   - 3.6
 

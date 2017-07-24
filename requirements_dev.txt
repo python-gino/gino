@@ -11,4 +11,4 @@ PyYAML==3.11
 pytest==2.9.2
 pytest-runner==2.11.1
 pytest-asyncio==0.6.0
-pytest-capturelog==0.7
+psycopg2==2.7.1

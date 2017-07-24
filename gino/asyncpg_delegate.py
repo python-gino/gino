@@ -1,5 +1,28 @@
-from asyncpg import create_pool
+from asyncpg.pool import Pool
 from asyncpg.connection import Connection
+
+
+class GinoPool(Pool):
+    def __init__(self, metadata, *connect_args, min_size, max_size,
+                 max_queries, max_inactive_connection_lifetime, setup, init,
+                 loop, connection_class, **connect_kwargs):
+        self.metadata = metadata
+        super().__init__(
+            *connect_args, min_size=min_size, max_size=max_size,
+            max_queries=max_queries,
+            max_inactive_connection_lifetime=max_inactive_connection_lifetime,
+            setup=setup, init=init, loop=loop,
+            connection_class=connection_class, **connect_kwargs)
+
+    async def _async__init__(self):
+        rv = await super()._async__init__()
+        self.metadata.bind = self
+        return rv
+
+    async def close(self):
+        self.metadata.bind = None
+        self.metadata = None
+        return await super().close()
 
 
 class GinoConnection(Connection):
@@ -45,8 +68,8 @@ class AsyncpgMixin:
         connection_class = type(connection_class.__name__, (connection_class,),
                                 {'metadata': self})
         # noinspection PyAttributeOutsideInit
-        pool = self.bind = create_pool(
-            dsn,
+        pool = GinoPool(
+            self, dsn,
             connection_class=connection_class,
             min_size=min_size, max_size=max_size,
             max_queries=max_queries, loop=loop, setup=setup, init=init,
