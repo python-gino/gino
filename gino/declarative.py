@@ -116,7 +116,7 @@ class Model:
         return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
-    async def get(cls, ident, bind=None):
+    async def get(cls, ident, bind=None, timeout=None):
         if hasattr(ident, '__iter__'):
             ident_ = list(ident)
         else:
@@ -130,11 +130,11 @@ class Model:
         clause = cls.query
         for i, c in enumerate(columns):
             clause = clause.where(c == ident_[i])
-        return await cls.__metadata__.first(clause, bind=bind)
+        return await cls.__metadata__.first(clause, bind=bind, timeout=timeout)
 
     @classmethod
-    async def get_or_404(cls, id_, bind=None):
-        rv = await cls.get(id_, bind=bind)
+    async def get_or_404(cls, id_, bind=None, timeout=None):
+        rv = await cls.get(id_, bind=bind, timeout=timeout)
         if rv is None:
             # noinspection PyPackageRequirements
             from sanic.exceptions import NotFound
