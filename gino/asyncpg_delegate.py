@@ -1,3 +1,5 @@
+import asyncio
+
 from asyncpg.pool import Pool
 from asyncpg.connection import Connection
 
@@ -24,62 +26,89 @@ class GinoPool(Pool):
         self.metadata = None
         return await super().close()
 
+    async def all(self, clause, *multiparams, **params):
+        return await self.metadata.all(clause, *multiparams, **params,
+                                       bind=self)
+
+    async def first(self, clause, *multiparams, **params):
+        return await self.metadata.first(clause, *multiparams, **params,
+                                         bind=self)
+
+    async def scalar(self, clause, *multiparams, **params):
+        return await self.metadata.scalar(clause, *multiparams, **params,
+                                          bind=self)
+
 
 class GinoConnection(Connection):
     metadata = None
 
-    async def _execute(self, query, args, limit, timeout, return_status=False,
-                       guess=True, **kwargs):
-        if isinstance(query, str):
-            return await super()._execute(query, args, limit, timeout,
-                                          return_status)
+    async def all(self, clause, *multiparams, **params):
+        return await self.metadata.all(clause, *multiparams, **params,
+                                       bind=self)
 
-        model = self.metadata.guess_model(query) if guess else None
-        query, params = self.metadata.compile(query, *args, **kwargs)
-        rv = await super()._execute(query, params, limit, timeout,
-                                    return_status)
-        if model is not None:
-            if return_status:
-                rv, status, completed = rv
-            rv = list(map(model.from_row, rv))
-            if return_status:
-                # noinspection PyUnboundLocalVariable
-                rv = rv, status, completed
-        return rv
+    async def first(self, clause, *multiparams, **params):
+        return await self.metadata.first(clause, *multiparams, **params,
+                                         bind=self)
 
-    async def fetchval(self, query, *args, column=0, timeout=None):
-        self._check_open()
-        data = await self._execute(query, args, 1, timeout, guess=False)
-        if not data:
-            return None
-        return data[0][column]
+    async def scalar(self, clause, *multiparams, **params):
+        return await self.metadata.scalar(clause, *multiparams, **params,
+                                          bind=self)
 
-    async def execute(self, query, *args, timeout: float=None,
-                      **kwargs) -> str:
-        if isinstance(query, str):
-            return await super().execute(query, *args, timeout=timeout)
+    def iterate(self, clause, *multiparams, **params):
+        return self.metadata.iterate(clause, *multiparams, **params,
+                                     connection=self)
 
-        self._check_open()
-        query, params = self.metadata.compile(query, *args, **kwargs)
 
-        if not params:
-            return await self._protocol.query(query, timeout)
+class GinoAcquireContext:
+    def __init__(self, bind, timeout):
+        self._bind = bind
+        self._timeout = timeout
+        self._ctx = None
 
-        _, status, _ = await super()._execute(query, args, 0, timeout, True)
-        return status.decode()
+    async def __aenter__(self):
+        if hasattr(self._bind, 'acquire'):
+            self._ctx = self._bind.acquire(timeout=self._timeout)
+            self._bind = None
+            return await self._ctx.__aenter__()
+        else:
+            return self._bind
 
-    def cursor(self, query, *args, prefetch=None, timeout=None, **kwargs):
-        if isinstance(query, str):
-            return super().cursor(query, *args,
-                                  prefetch=prefetch, timeout=timeout)
+    async def __aexit__(self, *exc):
+        self._bind = None
+        if self._ctx is not None:
+            await self._ctx.__aexit__(*exc)
 
-        self._check_open()
-        model = self.metadata.guess_model(query)
-        query, params = self.metadata.compile(query, *args, **kwargs)
-        rv = super().cursor(query, *params, prefetch=prefetch, timeout=timeout)
-        if model is not None:
-            rv = model.map(rv)
-        return rv
+    def __await__(self):
+        if hasattr(self._bind, 'acquire'):
+            return self._bind.acquire(timeout=self._timeout).__await__()
+        else:
+            rv = asyncio.Future()
+            rv.set_result(self._bind)
+            return rv
+
+
+class GinoTransaction:
+    def __init__(self, gino, isolation, readonly, deferrable):
+        self._gino = gino
+        self._isolation = isolation
+        self._readonly = readonly
+        self._deferrable = deferrable
+        self._conn = None
+        self._ctx = None
+
+    async def __aenter__(self):
+        self._conn = await self._gino.acquire()
+        self._ctx = self._conn.transaction(isolation=self._isolation,
+                                           readonly=self._readonly,
+                                           deferrable=self._deferrable)
+        return self._conn, await self._ctx.__aenter__()
+
+    async def __aexit__(self, extype, ex, tb):
+        try:
+            await self._ctx.__aexit__(extype, ex, tb)
+        finally:
+            conn, self._conn = self._conn, None
+            await self._gino.release(conn)
 
 
 class AsyncpgMixin:
@@ -109,3 +138,63 @@ class AsyncpgMixin:
             max_inactive_connection_lifetime=max_inactive_connection_lifetime,
             **connect_kwargs)
         return pool
+
+    # noinspection PyUnresolvedReferences
+    async def all(self, clause, *multiparams, bind=None, **params):
+        if bind is None:
+            bind = self.bind
+        query, args = self.compile(clause, *multiparams, **params)
+        rv = await bind.fetch(query, *args)
+
+        model = self.guess_model(clause)
+        if model is not None:
+            rv = list(map(model.from_row, rv))
+
+        return rv
+
+    # noinspection PyUnresolvedReferences
+    async def first(self, clause, *multiparams, bind=None, **params):
+        if bind is None:
+            bind = self.bind
+        query, args = self.compile(clause, *multiparams, **params)
+        rv = await bind.fetchrow(query, *args)
+
+        model = self.guess_model(clause)
+        if model is not None:
+            rv = model.from_row(rv)
+
+        return rv
+
+    # noinspection PyUnresolvedReferences
+    async def scalar(self, clause, *multiparams, bind=None, **params):
+        if bind is None:
+            bind = self.bind
+        query, args = self.compile(clause, *multiparams, **params)
+        return await bind.fetchval(query, *args)
+
+    # noinspection PyUnresolvedReferences
+    def iterate(self, clause, *multiparams, connection=None, **params):
+        if connection is None:
+            connection = self.bind
+        assert isinstance(connection, Connection)
+        query, args = self.compile(clause, *multiparams, **params)
+        rv = connection.cursor(query, *args)
+
+        model = self.guess_model(clause)
+        if model is not None:
+            rv = model.map(rv)
+
+        return rv
+
+    def acquire(self, *, timeout=None):
+        # noinspection PyUnresolvedReferences
+        return GinoAcquireContext(self.bind, timeout)
+
+    async def release(self, connection):
+        # noinspection PyUnresolvedReferences
+        return await self.bind.release(connection)
+
+    def transaction(self, *, isolation='read_committed', readonly=False,
+                    deferrable=False):
+        # noinspection PyUnresolvedReferences
+        return GinoTransaction(self, isolation, readonly, deferrable)

@@ -74,26 +74,16 @@ class Model(metaclass=ModelType):
 
     @classmethod
     async def create(cls, bind=None, **values):
-        if bind is None:
-            bind = cls.__metadata__.bind
         # noinspection PyUnresolvedReferences
-        clause = cls.__table__.insert().values(**values).returning(
-            cls.id)
-        query, params = cls.__metadata__.compile(clause)
-        values['id'] = await bind.fetchval(query, *params)
+        clause = cls.__table__.insert().values(**values).returning(cls.id)
+        values['id'] = await cls.__metadata__.scalar(clause, bind=bind)
         return cls(**values)
 
     @classmethod
     async def get(cls, id_, bind=None):
-        if bind is None:
-            bind = cls.__metadata__.bind
         # noinspection PyUnresolvedReferences
         clause = cls.query.where(cls.id == id_)
-        query, params = cls.__metadata__.compile(clause)
-        row = await bind.fetchrow(query, *params)
-        if row is None:
-            return None
-        return cls(**row)
+        return await cls.__metadata__.first(clause, bind=bind)
 
     @classmethod
     async def get_or_404(cls, id_, bind=None):
