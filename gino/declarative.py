@@ -33,6 +33,28 @@ class Query:
         return q
 
 
+class Update:
+    def __get__(self, instance, owner):
+        if instance is None:
+            return owner.__table__.update()
+        else:
+            # noinspection PyProtectedMember
+            return instance._update
+
+
+class Delete:
+    def __get__(self, instance, owner):
+        if instance is None:
+            return owner.__table__.delete()
+        else:
+            # noinspection PyProtectedMember
+            return instance._delete
+
+
+class NoSuchRowError(Exception):
+    pass
+
+
 class ModelType(type):
     metadata = None
 
@@ -61,10 +83,11 @@ class Model(metaclass=ModelType):
     __metadata__ = None
     __table__ = None
     query = Query()
+    update = Update()
+    delete = Delete()
 
     def __init__(self, **values):
-        self.__values__ = {}
-        self.update(**values)
+        self.__values__ = values
 
     @classmethod
     def select(cls, *args):
@@ -103,9 +126,33 @@ class Model(metaclass=ModelType):
     def from_row(cls, row):
         return cls(**row)
 
-    def update(self, **values):
-        for attr, value in values.items():
+    async def _update(self, bind=None, **values):
+        cls = type(self)
+        if bind is None:
+            bind = self.__metadata__.bind
+        # noinspection PyUnresolvedReferences
+        clause = cls.update.where(
+            cls.id == self.id,
+        ).values(
+            **values,
+        ).returning(
+            *[getattr(cls, key) for key in values],
+        )
+        query, params = self.__metadata__.compile(clause)
+        row = await bind.fetchrow(query, *params)
+        if not row:
+            raise NoSuchRowError()
+        for attr, value in row.items():
             setattr(self, attr, value)
+
+    async def _delete(self, bind=None):
+        cls = type(self)
+        if bind is None:
+            bind = self.__metadata__.bind
+        # noinspection PyUnresolvedReferences
+        clause = cls.delete.where(cls.id == self.id)
+        query, params = self.__metadata__.compile(clause)
+        return await bind.execute(query, *params)
 
 
 class NoopConnection:
