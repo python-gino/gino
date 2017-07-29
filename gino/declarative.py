@@ -124,6 +124,8 @@ class Model(metaclass=ModelType):
 
     @classmethod
     def from_row(cls, row):
+        if row is None:
+            return None
         return cls(**row)
 
     async def _update(self, bind=None, **values):
