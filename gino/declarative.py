@@ -30,6 +30,8 @@ class Query:
     def __get__(self, instance, owner):
         q = select([owner.__table__])
         q.__model__ = owner
+        if instance is not None:
+            q = q.where(owner.id == instance.id)
         return q
 
 
