@@ -1,5 +1,6 @@
-from sqlalchemy import MetaData, Column, Table, select
+from sqlalchemy import MetaData, Column, Table, select, text
 from sqlalchemy import cutils
+from sqlalchemy.sql import ClauseElement
 
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
@@ -99,10 +100,9 @@ class Model(metaclass=ModelType):
 
     @classmethod
     async def create(cls, bind=None, **values):
-        # noinspection PyUnresolvedReferences
-        clause = cls.__table__.insert().values(**values).returning(cls.id)
-        values['id'] = await cls.__metadata__.scalar(clause, bind=bind)
-        return cls(**values)
+        q = cls.__table__.insert().values(**values).returning(text('*'))
+        q.__model__ = cls
+        return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
     async def get(cls, id_, bind=None):
@@ -128,7 +128,23 @@ class Model(metaclass=ModelType):
     def from_row(cls, row):
         if row is None:
             return None
-        return cls(**row)
+        return cls().update_with_row(row)
+
+    @classmethod
+    def cached_result_processor(cls, col):
+        if isinstance(col, str):
+            col = getattr(cls, col)
+        # noinspection PyProtectedMember
+        return col.type._cached_result_processor(cls.__metadata__.dialect,
+                                                 None)
+
+    def update_with_row(self, row):
+        for key, value in row.items():
+            processor = self.cached_result_processor(key)
+            if processor:
+                value = processor(value)
+            setattr(self, key, value)
+        return self
 
     async def _update(self, bind=None, **values):
         cls = type(self)
@@ -146,8 +162,7 @@ class Model(metaclass=ModelType):
         row = await bind.fetchrow(query, *params)
         if not row:
             raise NoSuchRowError()
-        for attr, value in row.items():
-            setattr(self, attr, value)
+        self.update_with_row(row)
 
     async def _delete(self, bind=None):
         cls = type(self)
