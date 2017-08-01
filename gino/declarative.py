@@ -163,6 +163,7 @@ class Model(metaclass=ModelType):
         if not row:
             raise NoSuchRowError()
         self.update_with_row(row)
+        return self
 
     async def _delete(self, bind=None):
         cls = type(self)
