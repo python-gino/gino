@@ -32,9 +32,10 @@ the middle between ORM and non-ORM, offering an extremely simple option.
 
 GINO tries to define database tables with plain old Python objects - they *are*
 normal Python objects, a rollback doesn't magically change their values. Any
-database operations are explicit. There are no dirty models, no sessions, no
-magic. You have concrete control to the database, through a convenient object
-interface. That's it.
+database operations are explicit. It is crystal clear what is done underneath
+each GINO API. There are no dirty models, no sessions, no magic. You have
+concrete control to the database, through a convenient object interface. That's
+it.
 
 GINO depends on asyncpg_, which means it works only for PostgreSQL_ and
 asyncio_, which means Python 3 is required - actually 3.6 required for now.
@@ -42,8 +43,8 @@ Based on SQLAlchemy_, gate to its ecosystem is open - feel free to use e.g.
 Alembic_ to manage your schema changes. And we specially designed a few candies
 for the Sanic_ server.
 
-Usage
------
+Basic Usage
+-----------
 
 A piece of code is worth a thousand words:
 
@@ -65,10 +66,10 @@ A piece of code is worth a thousand words:
 
 This is quite similar to SQLAlchemy ORM, but it is actually SQLAlchemy core:
 
-* `db = Gino()` is actually a `sqlalchemy.MetaData` object
-* `class User` actually defines a `sqlalchemy.Table` at `User.__table__`
+* ``db = Gino()`` is actually a ``sqlalchemy.MetaData`` object
+* ``class User`` actually defines a ``sqlalchemy.Table`` at ``User.__table__``
 
-Other than that, `User` is just a normal Python object:
+Other than that, ``User`` is just a normal Python object:
 
 
 .. code-block:: python
@@ -79,7 +80,7 @@ Other than that, `User` is just a normal Python object:
    u.nickname = 'fantix'
 
 
-Think as if `User` is defined normally (keep in imagination, not an example):
+Think as if ``User`` is defined normally (keep in imagination, not an example):
 
 
 .. code-block:: python
@@ -100,42 +101,76 @@ to do SQLAlchemy core programming:
    query = select([User.nickname]).where(User.id == 9)
 
 
-The `Gino` object offers a SQLAlchemy dialect for asyncpg, allowing to execute
-the query in asyncpg:
+The ``Gino`` object offers a SQLAlchemy dialect for asyncpg, allowing to
+execute the query in asyncpg:
 
 
 .. code-block:: python
 
    import asyncpg
    conn = await asyncpg.connect('postgresql://localhost/gino')
+
    query, params = db.compile(query)
    rv = await conn.fetchval(query, *params)
 
 
-And GINO offers some sugars:
+ORM Sugars
+----------
+
+Though it is possible to use GINO as a SQLAlchemy core async wrapper by using
+only ``db.Model`` and ``db.compile``, it would make life much easier if GINO
+sugars for ORM are considered. First of all, it is preferred to bind an
+``asyncpg.Pool`` to the ``Gino`` object, by creating a pool through a delegated
+API, following the same example above:
 
 .. code-block:: python
 
-   u1 = await User.get(9, bind=conn)
-   u2 = await User.create(bind=conn, nickname=u1.nickname))
+   async with db.create_pool('postgresql://localhost/gino') as pool:
 
-   async with conn.transaction():
-       query, params = db.compile(User.query.where(User.id > 2))
-       async for u in User.map(conn.cursor(query, *params)):
+
+Because the models are defined with the same ``db`` object, they are
+automatically bound to the database pool, allowing such CRUD operations:
+
+.. code-block:: python
+
+   u1 = await User.get(9)
+   u2 = await User.create(nickname=u1.nickname))
+   await u2.update(nickname='daisy')
+   await u1.delete()
+
+
+A note here: GINO has no ``u2.save()``. Therefore ``u2.nickname = 'daisy'``
+does not execute any SQL but only modify memory value - use ``u2.update`` to
+both run an ``UPDATE`` SQL and modify memory value. Correspondingly,
+``u1.delete()`` only deletes the row in database, but leaving the object in
+memory untouched.
+
+The ``Gino`` object ``db`` also offers a few more objective APIs for queries,
+corresponding to asyncpg APIs:
+
+.. code-block:: python
+
+   # returns all user objects with "d" in their nicknames
+   users = await db.all(User.query.where(User.nickname.contains('d')))
+
+   # find one user object, None if not found
+   user = await db.first(User.query.where(User.nickname == 'daisy'))
+
+
+Or progressively load objects from a large query, in a transaction as required:
+
+.. code-block:: python
+
+   async with db.transaction() as (conn, tx):
+       async for u in db.iterate(User.query, connection=conn):
            print(u.id, u.nickname)
-
-
-Features
---------
-
-* Declare SQLAlchemy_ core tables with plain model objects, no ORM magic
-* Easily construct queries and execute them through asyncpg_
-
-There're a few usage examples in the examples directory.
 
 
 Contribute
 ----------
+
+There are a few tasks in GitHub issues marked as ``help wanted``. Please feel
+free to take any of them and pull requests are greatly welcome.
 
 To run tests:
 
