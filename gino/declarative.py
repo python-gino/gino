@@ -1,6 +1,5 @@
 from sqlalchemy import MetaData, Column, Table, select, text
 from sqlalchemy import cutils
-from sqlalchemy.sql import ClauseElement
 
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
