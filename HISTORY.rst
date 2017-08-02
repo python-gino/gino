@@ -2,6 +2,23 @@
 History
 =======
 
+0.2.2 (2017-08-02)
+------------------
+
+* Support SQLAlchemy result processor
+* Added rich support on JSON/JSONB
+* Bug fixes
+
+0.2.1 (2017-07-28)
+------------------
+
+* Added `update` and `delete` API
+
+0.2.0 (2017-07-28)
+------------------
+
+* Changed API, no longer reuses asyncpg API
+
 0.1.1 (2017-07-25)
 ------------------
 
