@@ -31,7 +31,8 @@ class Query:
         q = select([owner.__table__])
         q.__model__ = owner
         if instance is not None:
-            q = q.where(owner.id == instance.id)
+            # noinspection PyProtectedMember
+            q = owner._append_where_primary_key(q, instance)
         return q
 
 
@@ -148,6 +149,12 @@ class Model(metaclass=ModelType):
         return col.type._cached_result_processor(cls.__metadata__.dialect,
                                                  None)
 
+    @classmethod
+    def _append_where_primary_key(cls, q, instance):
+        for c in cls.__table__.primary_key.columns:
+            q = q.where(c == getattr(instance, c.name))
+        return q
+
     def update_with_row(self, row):
         for key, value in row.items():
             processor = self.cached_result_processor(key)
@@ -160,9 +167,9 @@ class Model(metaclass=ModelType):
         cls = type(self)
         if bind is None:
             bind = self.__metadata__.bind
-        # noinspection PyUnresolvedReferences
-        clause = cls.update.where(
-            cls.id == self.id,
+        # noinspection PyTypeChecker
+        clause = cls._append_where_primary_key(
+            cls.update, self
         ).values(
             **values,
         ).returning(
@@ -179,8 +186,8 @@ class Model(metaclass=ModelType):
         cls = type(self)
         if bind is None:
             bind = self.__metadata__.bind
-        # noinspection PyUnresolvedReferences
-        clause = cls.delete.where(cls.id == self.id)
+        # noinspection PyTypeChecker
+        clause = cls._append_where_primary_key(cls.delete, self)
         query, params = self.__metadata__.compile(clause)
         return await bind.execute(query, *params)
 
