@@ -30,4 +30,4 @@ class Friendship(db.Model):
     friend_id = Column(BigInteger(), primary_key=True)
 
     def __repr__(self):
-        return 'Friends<{}, {}>'.format(self.id, self.friend_id)
+        return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)

@@ -1,3 +1,6 @@
+import random
+import string
+
 import asyncpg
 import pytest
 import sqlalchemy
@@ -30,3 +33,8 @@ async def asyncpg_pool(engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         yield rv
         await rv.execute('DELETE FROM gino_users')
+
+
+@pytest.fixture
+def random_name(length=8) -> str:
+    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
