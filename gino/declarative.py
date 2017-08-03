@@ -104,9 +104,20 @@ class Model(metaclass=ModelType):
         return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
-    async def get(cls, id_, bind=None):
-        # noinspection PyUnresolvedReferences
-        clause = cls.query.where(cls.id == id_)
+    async def get(cls, ident, bind=None):
+        if hasattr(ident, '__iter__'):
+            ident_ = list(ident)
+        else:
+            ident_ = [ident]
+        columns = cls.__table__.primary_key.columns
+        if len(ident_) != len(columns):
+            raise ValueError(
+                'Incorrect number of values as primary key: '
+                'expected {}, got {}.'.format(
+                    len(columns), len(ident_)))
+        clause = cls.query
+        for i, c in enumerate(columns):
+            clause = clause.where(c == ident_[i])
         return await cls.__metadata__.first(clause, bind=bind)
 
     @classmethod

@@ -21,3 +21,13 @@ class User(db.Model):
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
+
+
+class Friendship(db.Model):
+    __tablename__ = 'gino_friendship'
+
+    my_id = Column(BigInteger(), primary_key=True)
+    friend_id = Column(BigInteger(), primary_key=True)
+
+    def __repr__(self):
+        return 'Friends<{}, {}>'.format(self.id, self.friend_id)
