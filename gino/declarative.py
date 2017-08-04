@@ -31,7 +31,8 @@ class Query:
         q = select([owner.__table__])
         q.__model__ = owner
         if instance is not None:
-            q = q.where(owner.id == instance.id)
+            # noinspection PyProtectedMember
+            q = owner._append_where_primary_key(q, instance)
         return q
 
 
@@ -104,9 +105,20 @@ class Model(metaclass=ModelType):
         return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
-    async def get(cls, id_, bind=None):
-        # noinspection PyUnresolvedReferences
-        clause = cls.query.where(cls.id == id_)
+    async def get(cls, ident, bind=None):
+        if hasattr(ident, '__iter__'):
+            ident_ = list(ident)
+        else:
+            ident_ = [ident]
+        columns = cls.__table__.primary_key.columns
+        if len(ident_) != len(columns):
+            raise ValueError(
+                'Incorrect number of values as primary key: '
+                'expected {}, got {}.'.format(
+                    len(columns), len(ident_)))
+        clause = cls.query
+        for i, c in enumerate(columns):
+            clause = clause.where(c == ident_[i])
         return await cls.__metadata__.first(clause, bind=bind)
 
     @classmethod
@@ -137,6 +149,12 @@ class Model(metaclass=ModelType):
         return col.type._cached_result_processor(cls.__metadata__.dialect,
                                                  None)
 
+    @classmethod
+    def _append_where_primary_key(cls, q, instance):
+        for c in cls.__table__.primary_key.columns:
+            q = q.where(c == getattr(instance, c.name))
+        return q
+
     def update_with_row(self, row):
         for key, value in row.items():
             processor = self.cached_result_processor(key)
@@ -149,9 +167,9 @@ class Model(metaclass=ModelType):
         cls = type(self)
         if bind is None:
             bind = self.__metadata__.bind
-        # noinspection PyUnresolvedReferences
-        clause = cls.update.where(
-            cls.id == self.id,
+        # noinspection PyTypeChecker
+        clause = cls._append_where_primary_key(
+            cls.update, self
         ).values(
             **values,
         ).returning(
@@ -168,8 +186,8 @@ class Model(metaclass=ModelType):
         cls = type(self)
         if bind is None:
             bind = self.__metadata__.bind
-        # noinspection PyUnresolvedReferences
-        clause = cls.delete.where(cls.id == self.id)
+        # noinspection PyTypeChecker
+        clause = cls._append_where_primary_key(cls.delete, self)
         query, params = self.__metadata__.compile(clause)
         return await bind.execute(query, *params)
 
