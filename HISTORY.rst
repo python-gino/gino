@@ -2,6 +2,11 @@
 History
 =======
 
+0.2.3 (2017-08-04)
+------------------
+
+* Support any primary key (Contributed by Tony Wang in #11)
+
 0.2.2 (2017-08-02)
 ------------------
 
