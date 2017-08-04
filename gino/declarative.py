@@ -73,8 +73,20 @@ class ModelType(type):
                     v.name = k
                     columns.append(v)
                     updates[k] = ColumnAttribute(v)
+
+            # handle __table_args__
+            table_args = namespace.get('__table_args__')
+            args, table_kw = (), {}
+            if isinstance(table_args, dict):
+                table_kw = table_args
+            elif isinstance(table_args, tuple) and table_args:
+                if isinstance(table_args[-1], dict):
+                    args, table_kw = table_args[0:-1], table_args[-1]
+                else:
+                    args = table_args
+
             table = updates['__table__'] = Table(
-                table_name, mcs.metadata, *columns)
+                table_name, mcs.metadata, *columns, *args, **table_kw)
             namespace.update(updates)
         rv = type.__new__(mcs, name, bases, namespace)
         if table is not None:
