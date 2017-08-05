@@ -30,9 +30,9 @@ or bad - as well as a lot of ORM libraries in Python. It is crucial to pick a
 most suitable one for your project, and for your team. GINO tries to stay in
 the middle between ORM and non-ORM, offering an extremely simple option.
 
-GINO tries to define database tables with plain old Python objects - they *are*
+GINO operates database rows with "plain old Python objects" - they *are* just
 normal Python objects, a rollback doesn't magically change their values. Any
-database operations are explicit. It is crystal clear what is done underneath
+database operations are explicit - it is crystal clear what is done underneath
 each GINO API. There are no dirty models, no sessions, no magic. You have
 concrete control to the database, through a convenient object interface. That's
 it.
@@ -43,16 +43,18 @@ Based on SQLAlchemy_, gate to its ecosystem is open - feel free to use e.g.
 Alembic_ to manage your schema changes. And we specially designed a few candies
 for the Sanic_ server.
 
-Basic Usage
------------
+
+Example
+-------
 
 A piece of code is worth a thousand words:
 
 
 .. code-block:: python
 
-   from gino import Gino
-   from sqlalchemy import Column, BigInteger, Unicode
+   import asyncio
+   from gino import Gino, enable_task_local
+   from sqlalchemy import Column, Integer, Unicode, cast
 
    db = Gino()
 
@@ -60,110 +62,272 @@ A piece of code is worth a thousand words:
    class User(db.Model):
        __tablename__ = 'users'
 
-       id = Column(BigInteger(), primary_key=True)
+       id = Column(Integer(), primary_key=True)
        nickname = Column(Unicode(), default='noname')
 
 
-This is quite similar to SQLAlchemy ORM, but it is actually SQLAlchemy core:
+   async def main():
+       await db.create_pool('postgresql://localhost/gino')
 
-* ``db = Gino()`` is actually a ``sqlalchemy.MetaData`` object
-* ``class User`` actually defines a ``sqlalchemy.Table`` at ``User.__table__``
+       # Create object, `id` is assigned by database
+       u1 = await User.create(nickname='fantix')
+       print(u1.id, u1.nickname)  # 1 fantix
 
-Other than that, ``User`` is just a normal Python object:
+       # Retrieve the same row, as a different object
+       u2 = await User.get(u1.id)
+       print(u2.nickname)  # fantix
 
+       # Update affects only database row and the operating object
+       await u2.update(nickname='daisy')
+       print(u2.nickname)  # daisy
+       print(u1.nickname)  # fantix
+
+       # Returns all user objects with "d" in their nicknames
+       users = await User.query.where(User.nickname.contains('d')).gino.all()
+
+       # Find one user object, None if not found
+       user = await User.query.where(User.nickname == 'daisy').gino.first()
+
+       # Execute complex statement
+       await User.update.values(
+           nickname='No.' + cast(User.id, Unicode),
+       ).where(
+           User.id > 10,
+       ).gino.execute()
+
+       # Iterate over the results of a large query in a transaction as required
+       async with db.transaction():
+           async for u in User.query.order_by(User.id).gino.iterate():
+               print(u.id, u.nickname)
+
+
+   loop = asyncio.get_event_loop()
+   enable_task_local(loop)
+   loop.run_until_complete(main())
+
+The code explains a lot, but not everything. Let's go through again briefly.
+
+
+Declare Models
+--------------
+
+Each model maps to a database table. To define a model, you'll need a ``Gino``
+object first, usually as a global variable named ``db``. It is actually an
+extended instance of ``sqlalchemy.MetaData``, which can be used in Alembic_ for
+example. By inheriting from ``db.Model``, you can define database tables in a
+declarative way as shown above:
 
 .. code-block:: python
 
-   u = User()
-   u.id = 7
-   u.id += 2
-   u.nickname = 'fantix'
+   db = Gino()
 
+   class User(db.Model):
+       __tablename__ = 'users'
 
-Think as if ``User`` is defined normally (keep in imagination, not an example):
+       id = Column(Integer(), primary_key=True)
+       nickname = Column(Unicode(), default='noname')
 
-
-.. code-block:: python
-
-   class User:
-       def __init__(self):
-           self.id = None
-           self.nickname = None
-
-
-However on class level, you have access to SQLAlchemy columns, which allows you
-to do SQLAlchemy core programming:
-
+Note that ``__tablename__`` is required, GINO suggests singular for model
+names, and plural for table names. After declaration, access to SQLAlchemy
+columns is available on class level, allowing vanilla SQLAlchemy programming
+like this:
 
 .. code-block:: python
 
-   from sqlalchemy import select
-   query = select([User.nickname]).where(User.id == 9)
+   import sqlalchemy as sa
+
+   sa.select([User.nickname]).where(User.id > 10)
+
+But on object level, model objects are just normal objects in memory. The only
+connection to database happens when you explicitly calls a GINO API,
+``user.update`` for example. Otherwise, any changes made to the object stay in
+memory only. That said, different objects are isolated from each other, even if
+they all map to the same database row.
+
+Speaking of mapping, GINO automatically detects the primary keys and use them
+to identify the correct row in database. This is no magic, it is only a
+``WHERE`` clause automatically added to the ``UPDATE`` statement when calling
+the ``user.update`` method, or during ``User.get`` retrieval.
+
+.. code-block:: python
+
+   u = User.get(1)                    # SELECT * FROM users WHERE id = 1
+   await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 1
+   u.id = 2                           # No SQL here!!
+   await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 2
+
+Under the hood, model values are stored in a dict named ``__values__``. And the
+columns you defined are wrapped with attribute objects, which deliver the
+``__values__`` to you on object level, or column objects on class level.
 
 
-The ``Gino`` object offers a SQLAlchemy dialect for asyncpg, allowing to
-execute the query in asyncpg:
+Bind Database
+-------------
 
+Though optional, GINO can bind to an asyncpg database connection or pool to
+make life easier. The most obvious way is to create a database pool with GINO.
+
+.. code-block:: python
+
+   pool = await db.create_pool('postgresql://localhost/gino')
+
+Once created, the pool is automatically bound to the ``db`` object, therefore
+to all the models too. To unplug the database, just close the pool. This API is
+identical to the one from asyncpg, so can it be used as a context manager too:
+
+.. code-block:: python
+
+   async with db.create_pool('postgresql://localhost/gino') as pool:
+       # play with pool
+
+Otherwise, you will need to manually do the binding:
+
+.. code-block:: python
+
+   import asyncpg
+
+   pool = await asyncpg.create_pool('postgresql://localhost/gino')
+   db = Gino(pool)
+
+   # or
+   db = Gino()
+   db.bind = pool
+
+It is theoretically possible to bind to a connection object, but this scenario
+is not normally well tested. And as stated in the beginning, it is possible to
+use GINO without binding to a database. In such case, you should manually pass
+asyncpg pool or connection object to GINO APIs as the ``bind`` keyword argument:
 
 .. code-block:: python
 
    import asyncpg
    conn = await asyncpg.connect('postgresql://localhost/gino')
-
-   query, params = db.compile(query)
-   rv = await conn.fetchval(query, *params)
+   user = await User.get(3, bind=conn)
 
 
-ORM Sugars
-----------
-
-Though it is possible to use GINO as a SQLAlchemy core async wrapper by using
-only ``db.Model`` and ``db.compile``, it would make life much easier if GINO
-sugars for ORM are considered. First of all, it is preferred to bind an
-``asyncpg.Pool`` to the ``Gino`` object, by creating a pool through a delegated
-API, following the same example above:
+At last, GINO can be used to only define models and translate SQLAlchemy
+queries into SQL with its builtin asyncpg dialect:
 
 .. code-block:: python
 
-   async with db.create_pool('postgresql://localhost/gino') as pool:
+   query, params = db.compile(User.query.where(User.id == 3))
+   row = await conn.fetchval(query, *params)
 
 
-Because the models are defined with the same ``db`` object, they are
-automatically bound to the database pool, allowing such CRUD operations:
+Execute Queries
+---------------
 
-.. code-block:: python
-
-   u1 = await User.get(9)
-   u2 = await User.create(nickname=u1.nickname))
-   await u2.update(nickname='daisy')
-   await u1.delete()
-
-
-A note here: GINO has no ``u2.save()``. Therefore ``u2.nickname = 'daisy'``
-does not execute any SQL but only modify memory value - use ``u2.update`` to
-both run an ``UPDATE`` SQL and modify memory value. Correspondingly,
-``u1.delete()`` only deletes the row in database, but leaving the object in
-memory untouched.
-
-The ``Gino`` object ``db`` also offers a few more objective APIs for queries,
-corresponding to asyncpg APIs:
+There are several levels of API available for use in GINO. On model objects:
 
 .. code-block:: python
 
-   # returns all user objects with "d" in their nicknames
-   users = await db.all(User.query.where(User.nickname.contains('d')))
+   await user.update(nickname='fantix')
+   await user.delete()
 
-   # find one user object, None if not found
-   user = await db.first(User.query.where(User.nickname == 'daisy'))
+On model class level, to operate objects:
+
+.. code-block:: python
+
+   user = await User.create(nickname='fantix')
+   user = await User.get(9)
+
+On model class level, to generate queries:
+
+.. code-block:: python
+
+   query = User.query.where(User.id > 10)
+   query = User.select('id', 'nickname')
+   query = User.update.values(nickname='fantix').where(User.id = 6)
+   query = User.delete.where(User.id = 7)
+
+On query level, GINO adds an extension ``gino`` to run query in place:
+
+.. code-block:: python
+
+   users = await query.gino.all()
+   user = await query.gino.first()
+   user_id = await query.gino.scalar()
+
+These API are simply delegates to the concrete ones on the ``Gino`` object:
+
+.. code-block:: python
+
+   users = await gino.all(query)
+   user = await gino.first(query)
+   user_id = await gino.scalar(query)
+
+If the database pool is created by ``db.create_pool``, then such API are also
+available on pool object and connection objects:
+
+.. code-block:: python
+
+   async with db.create_pool('...') as pool:
+       users = await pool.all(query)
+       user = await pool.first(query)
+       user_id = await pool.scalar(query)
+
+       async with pool.acquire() as conn:
+           users = await conn.all(query)
+           user = await conn.first(query)
+           user_id = await conn.scalar(query)
 
 
-Or progressively load objects from a large query, in a transaction as required:
+Transaction and Context
+-----------------------
+
+In normal cases when ``db`` is bound to a pool, you can start a transaction
+through ``db`` directly:
 
 .. code-block:: python
 
    async with db.transaction() as (conn, tx):
-       async for u in db.iterate(User.query, connection=conn):
-           print(u.id, u.nickname)
+       # play within a transaction
+
+As you can see from the unpacked arguments, ``db.transaction()`` acquired a
+connection and started a transaction in one go. It is identical to do it
+separately:
+
+.. code-block:: python
+
+   async with db.acquire() as conn:
+       async with conn.transaction() as tx:
+           # play within a transaction
+
+Please note, there is no ``db.release`` to return the connection to the pool,
+thus cannot ``conn = await db.acquire()``, using ``async with`` is the only
+way. The reason is about context.
+
+Because GINO offers query APIs on not only connections but also model classes
+and objects and even query objects, it would be too much trouble passing
+connection object around when dealing with transactions. Therefore GINO offers
+an optional feature to automatically manage connection objects, by enabling a
+builtin task local hack before any tasks are created:
+
+.. code-block:: python
+
+   from gino import enable_task_local
+   enable_task_local()
+
+This switch creates a local storage for each coroutine, where ``db.acquire()``
+shall store the connection object. Hence executions within the acquire context
+will be able to make use of the same connection right in the local storage.
+Furthermore, nested ``db.acquire()`` will simply return the same connection.
+This allows ``db.transaction()`` to be nested in the same way that asyncpg
+``conn.transaction()`` does it - to use database save points.
+
+.. code-block:: python
+
+   async with db.transaction() as (conn1, tx):
+       async with db.transaction() as (conn2, tx):
+           assert conn1 == conn2
+
+If nested transaction or reused connection is not expected, you can explicitly
+use ``db.acquire(reuse=False)`` or ``db.transaction(reuse=False)`` to borrow
+new connections from the pool. Non-reused connections are stacked, they will be
+returned to the pool in the reversed order as they were borrowed. Local storage
+covers between different tasks that are awaited in a chain, it is theoretically
+safe in most cases. However it is still some sort of a hack, but it would be
+like this before Python officially supports task local storage one day.
 
 
 Contribute
