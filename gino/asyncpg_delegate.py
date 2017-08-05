@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 
 from asyncpg.pool import Pool
 from asyncpg.connection import Connection
@@ -69,32 +70,37 @@ class GinoAcquireContext:
         self._timeout = timeout
         self._ctx = None
         self._reuse = reuse
+        self._pop = False
 
     async def __aenter__(self):
         if self._used:
             raise RuntimeError('GinoAcquireContext is entered twice')
+        self._used = True
 
-        local = None
-        if self._reuse:
-            local = get_local()
-            if local:
-                bind = local.get('connection')
-                if bind is not None:
-                    self._reuse = False
-                    return bind
+        local = get_local()
+        if self._reuse and local:
+            stack = local.get('connection_stack')
+            if stack:
+                return stack[-1]
 
         if isinstance(self._bind, Pool):
             self._ctx = self._bind.acquire(timeout=self._timeout)
             conn = await self._ctx.__aenter__()
             if local is not None:
-                local['connection'] = conn
+                local.setdefault('connection_stack', deque()).append(conn)
+                self._pop = True
             return conn
         else:
             return self._bind
 
     async def __aexit__(self, *exc):
-        if self._reuse:
-            (get_local() or {}).pop('connection', None)
+        if self._pop:
+            ctx = get_local() or {}
+            stack = ctx.get('connection_stack')
+            if stack:
+                stack.pop()
+                if not stack:
+                    ctx.pop('connection_stack')
         if self._ctx is not None:
             await self._ctx.__aexit__(*exc)
 
@@ -156,7 +162,9 @@ class AsyncpgMixin:
         if bind is None:
             local = get_local()
             if local:
-                bind = local.get('connection')
+                stack = local.get('connection_stack')
+                if stack:
+                    bind = stack[-1]
             if bind is None:
                 # noinspection PyUnresolvedReferences
                 bind = self.bind
