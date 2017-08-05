@@ -181,8 +181,6 @@ class Model(metaclass=ModelType):
 
     async def _update(self, bind=None, **values):
         cls = type(self)
-        if bind is None:
-            bind = self.__metadata__.bind
         # noinspection PyTypeChecker
         clause = cls._append_where_primary_key(
             cls.update, self
