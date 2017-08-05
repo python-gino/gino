@@ -39,7 +39,9 @@ class Query:
 class Update:
     def __get__(self, instance, owner):
         if instance is None:
-            return owner.__table__.update()
+            q = owner.__table__.update()
+            q.__model__ = owner
+            return q
         else:
             # noinspection PyProtectedMember
             return instance._update
@@ -48,7 +50,9 @@ class Update:
 class Delete:
     def __get__(self, instance, owner):
         if instance is None:
-            return owner.__table__.delete()
+            q = owner.__table__.delete()
+            q.__model__ = owner
+            return q
         else:
             # noinspection PyProtectedMember
             return instance._delete
@@ -187,21 +191,17 @@ class Model(metaclass=ModelType):
         ).returning(
             *[getattr(cls, key) for key in values],
         )
-        query, params = self.__metadata__.compile(clause)
-        row = await bind.fetchrow(query, *params)
-        if not row:
+        new = await self.__metadata__.first(clause, bind=bind)
+        if not new:
             raise NoSuchRowError()
-        self.update_with_row(row)
+        self.__values__.update(new.__values__)
         return self
 
     async def _delete(self, bind=None):
         cls = type(self)
-        if bind is None:
-            bind = self.__metadata__.bind
         # noinspection PyTypeChecker
         clause = cls._append_where_primary_key(cls.delete, self)
-        query, params = self.__metadata__.compile(clause)
-        return await bind.execute(query, *params)
+        return await self.__metadata__.status(clause, bind=bind)
 
 
 class NoopConnection:

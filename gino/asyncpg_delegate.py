@@ -1,7 +1,9 @@
-import asyncio
+import sys
 
 from asyncpg.pool import Pool
 from asyncpg.connection import Connection
+
+from .local import get_local
 
 
 class GinoPool(Pool):
@@ -60,55 +62,65 @@ class GinoConnection(Connection):
 
 
 class GinoAcquireContext:
-    def __init__(self, bind, timeout):
+    def __init__(self, bind, timeout, reuse):
+        self._used = False
         self._bind = bind
         self._timeout = timeout
         self._ctx = None
+        self._reuse = reuse
 
     async def __aenter__(self):
-        if hasattr(self._bind, 'acquire'):
+        if self._used:
+            raise RuntimeError('GinoAcquireContext is entered twice')
+
+        local = None
+        if self._reuse:
+            local = get_local()
+            if local:
+                bind = local.get('connection')
+                if bind is not None:
+                    self._reuse = False
+                    return bind
+
+        if isinstance(self._bind, Pool):
             self._ctx = self._bind.acquire(timeout=self._timeout)
-            self._bind = None
-            return await self._ctx.__aenter__()
+            conn = await self._ctx.__aenter__()
+            if local is not None:
+                local['connection'] = conn
+            return conn
         else:
             return self._bind
 
     async def __aexit__(self, *exc):
-        self._bind = None
+        if self._reuse:
+            (get_local() or {}).pop('connection', None)
         if self._ctx is not None:
             await self._ctx.__aexit__(*exc)
 
-    def __await__(self):
-        if hasattr(self._bind, 'acquire'):
-            return self._bind.acquire(timeout=self._timeout).__await__()
-        else:
-            rv = asyncio.Future()
-            rv.set_result(self._bind)
-            return rv
-
 
 class GinoTransaction:
-    def __init__(self, gino, isolation, readonly, deferrable):
-        self._gino = gino
+    def __init__(self, conn_ctx, isolation, readonly, deferrable):
+        self._conn_ctx = conn_ctx
         self._isolation = isolation
         self._readonly = readonly
         self._deferrable = deferrable
-        self._conn = None
         self._ctx = None
 
     async def __aenter__(self):
-        self._conn = await self._gino.acquire()
-        self._ctx = self._conn.transaction(isolation=self._isolation,
-                                           readonly=self._readonly,
-                                           deferrable=self._deferrable)
-        return self._conn, await self._ctx.__aenter__()
+        conn = await self._conn_ctx.__aenter__()
+        self._ctx = conn.transaction(isolation=self._isolation,
+                                     readonly=self._readonly,
+                                     deferrable=self._deferrable)
+        return conn, await self._ctx.__aenter__()
 
     async def __aexit__(self, extype, ex, tb):
+        # noinspection PyBroadException
         try:
             await self._ctx.__aexit__(extype, ex, tb)
-        finally:
-            conn, self._conn = self._conn, None
-            await self._gino.release(conn)
+        except:
+            await self._conn_ctx.__aexit__(*sys.exc_info())
+        else:
+            await self._conn_ctx.__aexit__(extype, ex, tb)
 
 
 class AsyncpgMixin:
@@ -139,62 +151,73 @@ class AsyncpgMixin:
             **connect_kwargs)
         return pool
 
-    # noinspection PyUnresolvedReferences
-    async def all(self, clause, *multiparams, bind=None, **params):
+    def get_bind(self, bind=None):
         if bind is None:
-            bind = self.bind
+            local = get_local()
+            if local:
+                bind = local.get('connection')
+            if bind is None:
+                # noinspection PyUnresolvedReferences
+                bind = self.bind
+        return bind
+
+    async def all(self, clause, *multiparams, bind=None, **params):
+        bind = self.get_bind(bind)
+        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetch(query, *args)
 
+        # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
         if model is not None:
             rv = list(map(model.from_row, rv))
 
         return rv
 
-    # noinspection PyUnresolvedReferences
     async def first(self, clause, *multiparams, bind=None, **params):
-        if bind is None:
-            bind = self.bind
+        bind = self.get_bind(bind)
+        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetchrow(query, *args)
 
+        # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
         if model is not None:
             rv = model.from_row(rv)
 
         return rv
 
-    # noinspection PyUnresolvedReferences
     async def scalar(self, clause, *multiparams, bind=None, **params):
-        if bind is None:
-            bind = self.bind
+        bind = self.get_bind(bind)
+        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.fetchval(query, *args)
 
-    # noinspection PyUnresolvedReferences
+    async def status(self, clause, *multiparams, bind=None, **params):
+        bind = self.get_bind(bind)
+        # noinspection PyUnresolvedReferences
+        query, args = self.compile(clause, *multiparams, **params)
+        return await bind.execute(query, *args)
+
     def iterate(self, clause, *multiparams, connection=None, **params):
-        if connection is None:
-            connection = self.bind
+        connection = self.get_bind(connection)
         assert isinstance(connection, Connection)
+        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = connection.cursor(query, *args)
 
+        # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
         if model is not None:
             rv = model.map(rv)
 
         return rv
 
-    def acquire(self, *, timeout=None):
+    def acquire(self, *, timeout=None, reuse=True):
         # noinspection PyUnresolvedReferences
-        return GinoAcquireContext(self.bind, timeout)
-
-    async def release(self, connection):
-        # noinspection PyUnresolvedReferences
-        return await self.bind.release(connection)
+        return GinoAcquireContext(self.bind, timeout, reuse)
 
     def transaction(self, *, isolation='read_committed', readonly=False,
-                    deferrable=False):
-        # noinspection PyUnresolvedReferences
-        return GinoTransaction(self, isolation, readonly, deferrable)
+                    deferrable=False, timeout=None, reuse=True):
+        return GinoTransaction(self.acquire(timeout=timeout, reuse=reuse),
+                               isolation, readonly, deferrable)
