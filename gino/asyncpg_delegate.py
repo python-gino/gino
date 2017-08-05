@@ -2,6 +2,7 @@ import sys
 
 from asyncpg.pool import Pool
 from asyncpg.connection import Connection
+from sqlalchemy.sql.base import Executable
 
 from .local import get_local
 
@@ -221,3 +222,27 @@ class AsyncpgMixin:
                     deferrable=False, timeout=None, reuse=True):
         return GinoTransaction(self.acquire(timeout=timeout, reuse=reuse),
                                isolation, readonly, deferrable)
+
+
+class GinoExecutor:
+    def __init__(self, query):
+        self.query = query
+        self.gino = query.__model__.__metadata__
+
+    def all(self, *args, **kwargs):
+        return self.gino.all(self.query, *args, **kwargs)
+
+    def first(self, *args, **kwargs):
+        return self.gino.first(self.query, *args, **kwargs)
+
+    def scalar(self, *args, **kwargs):
+        return self.gino.scalar(self.query, *args, **kwargs)
+
+    def execute(self, *args, **kwargs):
+        return self.gino.status(self.query, *args, **kwargs)
+
+    def iterate(self, *args, **kwargs):
+        return self.gino.iterate(self.query, *args, **kwargs)
+
+
+Executable.gino = property(GinoExecutor)
