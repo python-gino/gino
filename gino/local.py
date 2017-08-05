@@ -14,7 +14,7 @@ def task_factory(loop, coro):
     loop.set_task_factory(task_factory)
 
     if getattr(task, '_source_traceback', None):
-        del getattr(task, '_source_traceback')[-1]
+        del getattr(task, '_source_traceback')[-2:]
 
     task.task_local = get_local() or {}
 
