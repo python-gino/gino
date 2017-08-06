@@ -31,7 +31,7 @@ class ColumnAttribute:
 class Query:
     def __get__(self, instance, owner):
         q = select([owner.__table__])
-        q.__model__ = owner
+        q.__model__ = weakref.ref(owner)
         if instance is not None:
             # noinspection PyProtectedMember
             q = owner._append_where_primary_key(q, instance)
@@ -42,7 +42,7 @@ class Update:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.update()
-            q.__model__ = owner
+            q.__model__ = weakref.ref(owner)
             return q
         else:
             # noinspection PyProtectedMember
@@ -53,7 +53,7 @@ class Delete:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.delete()
-            q.__model__ = owner
+            q.__model__ = weakref.ref(owner)
             return q
         else:
             # noinspection PyProtectedMember
@@ -106,13 +106,13 @@ class Model:
     @classmethod
     def select(cls, *args):
         q = select([getattr(cls, x) for x in args])
-        q.__model__ = cls
+        q.__model__ = weakref.ref(cls)
         return q
 
     @classmethod
     async def create(cls, bind=None, **values):
         q = cls.__table__.insert().values(**values).returning(text('*'))
-        q.__model__ = cls
+        q.__model__ = weakref.ref(cls)
         return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
@@ -237,13 +237,14 @@ class Gino(MetaData, AsyncpgMixin):
 
     @classmethod
     def guess_model(cls, query):
-        model = getattr(query, '__model__', None)
+        # query.__model__ is weak references, which need dereference
+        model = getattr(query, '__odel__', lambda: None)()
         if model is not None:
             return model
         tables = query.froms
         if len(tables) != 1:
             return
-        model = getattr(tables[0], '__model__', None)
+        model = getattr(tables[0], '__model__', lambda: None)()
         if not model:
             return
         for c in query.columns:
