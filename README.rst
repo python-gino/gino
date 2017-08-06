@@ -142,23 +142,23 @@ But on object level, model objects are just normal objects in memory. The only
 connection to database happens when you explicitly calls a GINO API,
 ``user.update`` for example. Otherwise, any changes made to the object stay in
 memory only. That said, different objects are isolated from each other, even if
-they all map to the same database row.
+they all map to the same database row - modifying one doesn't affect another.
 
-Speaking of mapping, GINO automatically detects the primary keys and use them
+Speaking of mapping, GINO automatically detects the primary keys and uses them
 to identify the correct row in database. This is no magic, it is only a
 ``WHERE`` clause automatically added to the ``UPDATE`` statement when calling
 the ``user.update`` method, or during ``User.get`` retrieval.
 
 .. code-block:: python
 
-   u = User.get(1)                    # SELECT * FROM users WHERE id = 1
+   u = await User.get(1)              # SELECT * FROM users WHERE id = 1
    await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 1
    u.id = 2                           # No SQL here!!
    await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 2
 
 Under the hood, model values are stored in a dict named ``__values__``. And the
-columns you defined are wrapped with attribute objects, which deliver the
-``__values__`` to you on object level, or column objects on class level.
+columns you defined are wrapped with special attribute objects, which deliver
+the ``__values__`` to you on object level, or as column objects on class level.
 
 
 Bind Database
@@ -248,7 +248,8 @@ On query level, GINO adds an extension ``gino`` to run query in place:
    user = await query.gino.first()
    user_id = await query.gino.scalar()
 
-These API are simply delegates to the concrete ones on the ``Gino`` object:
+These query APIs are simply delegates to the concrete ones on the ``Gino``
+object:
 
 .. code-block:: python
 
@@ -256,8 +257,8 @@ These API are simply delegates to the concrete ones on the ``Gino`` object:
    user = await gino.first(query)
    user_id = await gino.scalar(query)
 
-If the database pool is created by ``db.create_pool``, then such API are also
-available on pool object and connection objects:
+If the database pool is created by ``db.create_pool``, then such APIs are also
+available on the pool object and connection objects:
 
 .. code-block:: python
 
@@ -294,8 +295,8 @@ separately:
            # play within a transaction
 
 Please note, there is no ``db.release`` to return the connection to the pool,
-thus cannot ``conn = await db.acquire()``, using ``async with`` is the only
-way. The reason is about context.
+thus you cannot do ``conn = await db.acquire()``. Using ``async with`` is the
+only way, and the reason is about context.
 
 Because GINO offers query APIs on not only connections but also model classes
 and objects and even query objects, it would be too much trouble passing
@@ -317,17 +318,18 @@ This allows ``db.transaction()`` to be nested in the same way that asyncpg
 
 .. code-block:: python
 
-   async with db.transaction() as (conn1, tx):
-       async with db.transaction() as (conn2, tx):
+   async with db.transaction() as (conn1, tx1):      # BEGIN
+       async with db.transaction() as (conn2, tx2):  # SAVEPOINT ...
            assert conn1 == conn2
 
-If nested transaction or reused connection is not expected, you can explicitly
-use ``db.acquire(reuse=False)`` or ``db.transaction(reuse=False)`` to borrow
-new connections from the pool. Non-reused connections are stacked, they will be
-returned to the pool in the reversed order as they were borrowed. Local storage
-covers between different tasks that are awaited in a chain, it is theoretically
-safe in most cases. However it is still some sort of a hack, but it would be
-like this before Python officially supports task local storage one day.
+If nested transactions or reused connections are not expected, you can
+explicitly use ``db.acquire(reuse=False)`` or ``db.transaction(reuse=False)``
+to borrow new connections from the pool. Non-reused connections are stacked,
+they will be returned to the pool in the reversed order as they were borrowed.
+Local storage covers between different tasks that are awaited in a chain, it is
+theoretically safe in most cases. However it is still some sort of a hack, but
+it would be like this before Python officially supports task local storage one
+day.
 
 
 Contribute
