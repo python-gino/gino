@@ -9,3 +9,4 @@ __version__ = '0.2.3'
 from .declarative import Gino
 from .asyncpg_delegate import GinoConnection
 from .local import get_local, enable_task_local, disable_task_local
+from .exceptions import *
