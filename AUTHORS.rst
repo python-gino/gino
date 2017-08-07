@@ -11,3 +11,5 @@ Contributors
 ------------
 
 * Tony Wang <wwwjfy@gmail.com>
+* Neal Wang <qdzzyb2015@gamil.com>
+
