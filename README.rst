@@ -88,12 +88,12 @@ A piece of code is worth a thousand words:
        # Find one user object, None if not found
        user = await User.query.where(User.nickname == 'daisy').gino.first()
 
-       # Execute complex statement
-       await User.update.values(
+       # Execute complex statement and return command status
+       status = await User.update.values(
            nickname='No.' + cast(User.id, Unicode),
        ).where(
            User.id > 10,
-       ).gino.execute()
+       ).gino.status()
 
        # Iterate over the results of a large query in a transaction as required
        async with db.transaction():

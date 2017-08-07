@@ -30,35 +30,43 @@ class GinoPool(Pool):
         self.metadata = None
         return await super().close()
 
-    async def all(self, clause, timeout=None, *multiparams, **params):
+    async def all(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.all(clause, *multiparams, **params,
                                        timeout=timeout, bind=self)
 
-    async def first(self, clause, timeout=None, *multiparams, **params):
+    async def first(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.first(clause, *multiparams, **params,
                                          timeout=timeout, bind=self)
 
-    async def scalar(self, clause, timeout=None, *multiparams, **params):
+    async def scalar(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
+                                          timeout=timeout, bind=self)
+
+    async def status(self, clause, *multiparams, timeout=None, **params):
+        return await self.metadata.status(clause, *multiparams, **params,
                                           timeout=timeout, bind=self)
 
 
 class GinoConnection(Connection):
     metadata = None
 
-    async def all(self, clause, timeout=None, *multiparams, **params):
+    async def all(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.all(clause, *multiparams, **params,
                                        timeout=timeout, bind=self)
 
-    async def first(self, clause, timeout=None, *multiparams, **params):
+    async def first(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.first(clause, *multiparams, **params,
                                          timeout=timeout, bind=self)
 
-    async def scalar(self, clause, timeout=None, *multiparams, **params):
+    async def scalar(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
                                           timeout=timeout, bind=self)
 
-    def iterate(self, clause, timeout=None, *multiparams, **params):
+    async def status(self, clause, *multiparams, timeout=None, **params):
+        return await self.metadata.status(clause, *multiparams, **params,
+                                          timeout=timeout, bind=self)
+
+    def iterate(self, clause, *multiparams, timeout=None, **params):
         return self.metadata.iterate(clause, *multiparams, **params,
                                      timeout=timeout, connection=self)
 
@@ -206,11 +214,12 @@ class AsyncpgMixin:
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.fetchval(query, *args, timeout=timeout)
 
-    async def status(self, clause, *multiparams, bind=None, **params):
+    async def status(self, clause, *multiparams, bind=None,
+                     timeout=None, **params):
         bind = self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        return await bind.execute(query, *args)
+        return await bind.execute(query, *args, timeout=timeout)
 
     def iterate(self, clause, *multiparams, connection=None,
                 timeout=None, **params):
@@ -251,7 +260,10 @@ class GinoExecutor:
     def scalar(self, *args, **kwargs):
         return self.gino.scalar(self.query, *args, **kwargs)
 
-    def execute(self, *args, **kwargs):
+    def status(self, *args, **kwargs):
+        """
+        You can parse the return value like this: https://git.io/v7oze
+        """
         return self.gino.status(self.query, *args, **kwargs)
 
     def iterate(self, *args, **kwargs):
