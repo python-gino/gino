@@ -238,7 +238,7 @@ class Gino(MetaData, AsyncpgMixin):
     @classmethod
     def guess_model(cls, query):
         # query.__model__ is weak references, which need dereference
-        model = getattr(query, '__odel__', lambda: None)()
+        model = getattr(query, '__model__', lambda: None)()
         if model is not None:
             return model
         tables = query.froms
