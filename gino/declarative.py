@@ -1,3 +1,5 @@
+import weakref
+
 from sqlalchemy import MetaData, Column, Table, select, text
 from sqlalchemy import cutils
 
@@ -29,7 +31,7 @@ class ColumnAttribute:
 class Query:
     def __get__(self, instance, owner):
         q = select([owner.__table__])
-        q.__model__ = owner
+        q.__model__ = weakref.ref(owner)
         if instance is not None:
             # noinspection PyProtectedMember
             q = owner._append_where_primary_key(q, instance)
@@ -40,7 +42,7 @@ class Update:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.update()
-            q.__model__ = owner
+            q.__model__ = weakref.ref(owner)
             return q
         else:
             # noinspection PyProtectedMember
@@ -51,7 +53,7 @@ class Delete:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.delete()
-            q.__model__ = owner
+            q.__model__ = weakref.ref(owner)
             return q
         else:
             # noinspection PyProtectedMember
@@ -62,24 +64,29 @@ class NoSuchRowError(Exception):
     pass
 
 
-class ModelType(type):
-    metadata = None
+class Model:
+    __metadata__ = None
+    __table__ = None
+    query = Query()
+    update = Update()
+    delete = Delete()
 
-    # noinspection PyInitNewSignature
-    def __new__(mcs, name, bases, namespace, **new_kwargs):
-        table = None
-        table_name = namespace.get('__tablename__')
+    def __init__(self, **values):
+        self.__values__ = values
+
+    def __init_subclass__(cls, **kwargs):
+        table_name = getattr(cls, '__tablename__', None)
         if table_name:
             columns = []
             updates = {}
-            for k, v in namespace.items():
+            for k, v in cls.__dict__.items():
                 if isinstance(v, Column):
                     v.name = k
                     columns.append(v)
                     updates[k] = ColumnAttribute(v)
 
             # handle __table_args__
-            table_args = namespace.get('__table_args__')
+            table_args = getattr(cls, '__table_args__', None)
             args, table_kw = (), {}
             if isinstance(table_args, dict):
                 table_kw = table_args
@@ -90,34 +97,22 @@ class ModelType(type):
                     args = table_args
 
             table = updates['__table__'] = Table(
-                table_name, mcs.metadata, *columns, *args, **table_kw)
-            namespace.update(updates)
-        rv = type.__new__(mcs, name, bases, namespace)
-        if table is not None:
-            table.__model__ = rv
-        return rv
-
-
-class Model(metaclass=ModelType):
-    __metadata__ = None
-    __table__ = None
-    query = Query()
-    update = Update()
-    delete = Delete()
-
-    def __init__(self, **values):
-        self.__values__ = values
+                table_name, cls.__metadata__, *columns, *args, **table_kw)
+            for k, v in updates.items():
+                setattr(cls, k, v)
+            table.__model__ = weakref.ref(cls)
+        super().__init_subclass__()
 
     @classmethod
     def select(cls, *args):
         q = select([getattr(cls, x) for x in args])
-        q.__model__ = cls
+        q.__model__ = weakref.ref(cls)
         return q
 
     @classmethod
     async def create(cls, bind=None, **values):
         q = cls.__table__.insert().values(**values).returning(text('*'))
-        q.__model__ = cls
+        q.__model__ = weakref.ref(cls)
         return await cls.__metadata__.first(q, bind=bind)
 
     @classmethod
@@ -216,13 +211,12 @@ class Gino(MetaData, AsyncpgMixin):
         self._bind = None
         super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect()
-        model_type = type('ModelType', (ModelType,), {'metadata': self})
-        self.Model = model_type('Model', (Model,), {'__metadata__': self})
+        self.Model = type('Model', (Model,), {'__metadata__': self})
 
     def compile(self, elem, *multiparams, **params):
         # partially copied from:
         # sqlalchemy.engine.base.Connection:_execute_clauseelement
-        # noinspection PyProtectedMember
+        # noinspection PyProtectedMember,PyUnresolvedReferences
         distilled_params = cutils._distill_params(multiparams, params)
         if distilled_params:
             # note this is usually dict but we support RowProxy
@@ -243,13 +237,14 @@ class Gino(MetaData, AsyncpgMixin):
 
     @classmethod
     def guess_model(cls, query):
-        model = getattr(query, '__model__', None)
+        # query.__model__ is weak references, which need dereference
+        model = getattr(query, '__model__', lambda: None)()
         if model is not None:
             return model
         tables = query.froms
         if len(tables) != 1:
             return
-        model = getattr(tables[0], '__model__', None)
+        model = getattr(tables[0], '__model__', lambda: None)()
         if not model:
             return
         for c in query.columns:
