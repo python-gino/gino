@@ -110,13 +110,13 @@ class Model:
         return q
 
     @classmethod
-    async def create(cls, bind=None, **values):
+    async def create(cls, bind=None, timeout=None, **values):
         q = cls.__table__.insert().values(**values).returning(text('*'))
         q.__model__ = weakref.ref(cls)
-        return await cls.__metadata__.first(q, bind=bind)
+        return await cls.__metadata__.first(q, bind=bind, timeout=timeout)
 
     @classmethod
-    async def get(cls, ident, bind=None):
+    async def get(cls, ident, bind=None, timeout=None):
         if hasattr(ident, '__iter__'):
             ident_ = list(ident)
         else:
@@ -130,11 +130,11 @@ class Model:
         clause = cls.query
         for i, c in enumerate(columns):
             clause = clause.where(c == ident_[i])
-        return await cls.__metadata__.first(clause, bind=bind)
+        return await cls.__metadata__.first(clause, bind=bind, timeout=timeout)
 
     @classmethod
-    async def get_or_404(cls, id_, bind=None):
-        rv = await cls.get(id_, bind=bind)
+    async def get_or_404(cls, id_, bind=None, timeout=None):
+        rv = await cls.get(id_, bind=bind, timeout=timeout)
         if rv is None:
             # noinspection PyPackageRequirements
             from sanic.exceptions import NotFound
@@ -174,7 +174,7 @@ class Model:
             setattr(self, key, value)
         return self
 
-    async def _update(self, bind=None, **values):
+    async def _update(self, bind=None, timeout=None, **values):
         cls = type(self)
         # noinspection PyTypeChecker
         clause = cls._append_where_primary_key(
@@ -184,7 +184,7 @@ class Model:
         ).returning(
             *[getattr(cls, key) for key in values],
         )
-        new = await self.__metadata__.first(clause, bind=bind)
+        new = await self.__metadata__.first(clause, bind=bind, timeout=timeout)
         if not new:
             raise NoSuchRowError()
         self.__values__.update(new.__values__)

@@ -30,37 +30,37 @@ class GinoPool(Pool):
         self.metadata = None
         return await super().close()
 
-    async def all(self, clause, *multiparams, **params):
+    async def all(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.all(clause, *multiparams, **params,
-                                       bind=self)
+                                       timeout=timeout, bind=self)
 
-    async def first(self, clause, *multiparams, **params):
+    async def first(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.first(clause, *multiparams, **params,
-                                         bind=self)
+                                         timeout=timeout, bind=self)
 
-    async def scalar(self, clause, *multiparams, **params):
+    async def scalar(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
-                                          bind=self)
+                                          timeout=timeout, bind=self)
 
 
 class GinoConnection(Connection):
     metadata = None
 
-    async def all(self, clause, *multiparams, **params):
+    async def all(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.all(clause, *multiparams, **params,
-                                       bind=self)
+                                       timeout=timeout, bind=self)
 
-    async def first(self, clause, *multiparams, **params):
+    async def first(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.first(clause, *multiparams, **params,
-                                         bind=self)
+                                         timeout=timeout, bind=self)
 
-    async def scalar(self, clause, *multiparams, **params):
+    async def scalar(self, clause, timeout=None, *multiparams, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
-                                          bind=self)
+                                          timeout=timeout, bind=self)
 
-    def iterate(self, clause, *multiparams, **params):
+    def iterate(self, clause, timeout=None, *multiparams, **params):
         return self.metadata.iterate(clause, *multiparams, **params,
-                                     connection=self)
+                                     timeout=timeout, connection=self)
 
 
 class GinoAcquireContext:
@@ -170,11 +170,12 @@ class AsyncpgMixin:
                 bind = self.bind
         return bind
 
-    async def all(self, clause, *multiparams, bind=None, **params):
+    async def all(self, clause, *multiparams,
+                  bind=None, timeout=None, **params):
         bind = self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        rv = await bind.fetch(query, *args)
+        rv = await bind.fetch(query, *args, timeout=timeout)
 
         # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
@@ -183,11 +184,13 @@ class AsyncpgMixin:
 
         return rv
 
-    async def first(self, clause, *multiparams, bind=None, **params):
+    # noinspection PyUnresolvedReferences
+    async def first(self, clause, *multiparams, bind=None,
+                    timeout=None, **params):
         bind = self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        rv = await bind.fetchrow(query, *args)
+        rv = await bind.fetchrow(query, *args, timeout=timeout)
 
         # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
@@ -196,11 +199,12 @@ class AsyncpgMixin:
 
         return rv
 
-    async def scalar(self, clause, *multiparams, bind=None, **params):
+    # noinspection PyUnresolvedReferences
+    async def scalar(self, clause, *multiparams, bind=None,
+                     timeout=None, **params):
         bind = self.get_bind(bind)
-        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        return await bind.fetchval(query, *args)
+        return await bind.fetchval(query, *args, timeout=timeout)
 
     async def status(self, clause, *multiparams, bind=None, **params):
         bind = self.get_bind(bind)
@@ -208,12 +212,13 @@ class AsyncpgMixin:
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.execute(query, *args)
 
-    def iterate(self, clause, *multiparams, connection=None, **params):
+    def iterate(self, clause, *multiparams, connection=None,
+                timeout=None, **params):
         connection = self.get_bind(connection)
         assert isinstance(connection, Connection)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        rv = connection.cursor(query, *args)
+        rv = connection.cursor(query, *args, timeout=timeout)
 
         # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
