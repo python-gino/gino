@@ -136,12 +136,9 @@ class Model:
     async def get_or_404(cls, id_, bind=None, timeout=None):
         try:
             from sanic.exceptions import NotFound
-        except ModuleNotFoundError:
-            from .exceptions import SanicNotInstallError
-            raise SanicNotInstallError(
-                '''Sanic has not been installed yet. Please run "pip install 
-                sanic" to solve this error.'''
-            )
+        except ModuleNotFoundError as e:
+            from .exceptions import NotInstalledError
+            raise NotInstalledError('Sanic has not been installed yet.')
 
         rv = await cls.get(id_, bind=bind, timeout=timeout)
         if rv is None:

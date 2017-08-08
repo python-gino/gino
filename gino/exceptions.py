@@ -2,5 +2,5 @@ class GinoException(Exception):
     pass
 
 
-class SanicNotInstallError(GinoException):
+class NotInstalledError(GinoException):
     pass
