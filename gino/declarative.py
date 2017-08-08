@@ -5,6 +5,7 @@ from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
+from .exceptions import NotInstalledError
 
 
 class ColumnAttribute:
@@ -136,8 +137,7 @@ class Model:
     async def get_or_404(cls, id_, bind=None, timeout=None):
         try:
             from sanic.exceptions import NotFound
-        except ModuleNotFoundError as e:
-            from .exceptions import NotInstalledError
+        except ModuleNotFoundError:
             raise NotInstalledError('Sanic has not been installed yet.')
 
         rv = await cls.get(id_, bind=bind, timeout=timeout)
