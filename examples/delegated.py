@@ -1,5 +1,4 @@
 from gino import Gino
-from sqlalchemy import select, Column, BigInteger, Unicode
 
 db = Gino()
 
@@ -7,8 +6,8 @@ db = Gino()
 class User(db.Model):
     __tablename__ = 'users'
 
-    id = Column(BigInteger(), primary_key=True)
-    nickname = Column(Unicode(), default='noname')
+    id = db.Column(db.BigInteger(), primary_key=True)
+    nickname = db.Column(db.Unicode(), default='noname')
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
@@ -20,7 +19,7 @@ async def main():
 
         for u in await pool.all(User.query.where(User.id > 3)):
             print(u)
-        for u in await pool.all(select([User.id])):
+        for u in await pool.all(db.select([User.id])):
             print(u)
         u = await pool.first(User.query.where(User.id > 1))
         print(u)

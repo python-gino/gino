@@ -1,5 +1,6 @@
 import weakref
 
+import sqlalchemy
 from sqlalchemy import MetaData, Column, Table, select, text
 from sqlalchemy import cutils
 
@@ -217,6 +218,11 @@ class Gino(MetaData, AsyncpgMixin):
         super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect()
         self.Model = type('Model', (Model,), {'__metadata__': self})
+
+        for module in sqlalchemy, sqlalchemy.dialects.postgresql:
+            for key in module.__all__:
+                if not hasattr(self, key):
+                    setattr(self, key, getattr(module, key))
 
     def compile(self, elem, *multiparams, **params):
         # partially copied from:

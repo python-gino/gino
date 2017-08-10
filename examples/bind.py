@@ -1,6 +1,5 @@
 import asyncpg
 from gino import Gino
-from sqlalchemy import Column, BigInteger, Unicode
 
 db = Gino()
 
@@ -8,8 +7,8 @@ db = Gino()
 class User(db.Model):
     __tablename__ = 'users'
 
-    id = Column(BigInteger(), primary_key=True)
-    nickname = Column(Unicode(), default='noname')
+    id = db.Column(db.BigInteger(), primary_key=True)
+    nickname = db.Column(db.Unicode(), default='noname')
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)

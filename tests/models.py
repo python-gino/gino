@@ -1,7 +1,6 @@
 import os
 
 from gino import Gino
-from sqlalchemy import Column, BigInteger, Unicode
 
 DB_ARGS = dict(
     host=os.getenv('DB_HOST', 'localhost'),
@@ -16,8 +15,8 @@ db = Gino()
 class User(db.Model):
     __tablename__ = 'gino_users'
 
-    id = Column(BigInteger(), primary_key=True)
-    nickname = Column(Unicode(), default='noname')
+    id = db.Column(db.BigInteger(), primary_key=True)
+    nickname = db.Column(db.Unicode(), default='noname')
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
@@ -26,8 +25,8 @@ class User(db.Model):
 class Friendship(db.Model):
     __tablename__ = 'gino_friendship'
 
-    my_id = Column(BigInteger(), primary_key=True)
-    friend_id = Column(BigInteger(), primary_key=True)
+    my_id = db.Column(db.BigInteger(), primary_key=True)
+    friend_id = db.Column(db.BigInteger(), primary_key=True)
 
     def __repr__(self):
         return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)
