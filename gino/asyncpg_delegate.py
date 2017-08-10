@@ -89,7 +89,10 @@ class GinoAcquireContext:
         if self._reuse and local:
             stack = local.get('connection_stack')
             if stack:
-                return stack[-1]
+                rv = stack[-1]
+                if hasattr(rv, 'get_bind'):
+                    rv = rv.get_bind()
+                return rv
 
         if isinstance(self._bind, Pool):
             self._ctx = self._bind.acquire(timeout=self._timeout)
@@ -120,15 +123,17 @@ class GinoTransaction:
         self._readonly = readonly
         self._deferrable = deferrable
         self._ctx = None
+        self._conn = None
 
     async def __aenter__(self):
-        conn = await self._conn_ctx.__aenter__()
+        conn = self._conn = await self._conn_ctx.__aenter__()
         self._ctx = conn.transaction(isolation=self._isolation,
                                      readonly=self._readonly,
                                      deferrable=self._deferrable)
         return conn, await self._ctx.__aenter__()
 
     async def __aexit__(self, extype, ex, tb):
+        self._conn = None
         # noinspection PyBroadException
         try:
             await self._ctx.__aexit__(extype, ex, tb)
@@ -136,6 +141,10 @@ class GinoTransaction:
             await self._conn_ctx.__aexit__(*sys.exc_info())
         else:
             await self._conn_ctx.__aexit__(extype, ex, tb)
+
+    @property
+    def connection(self):
+        return self._conn
 
 
 class AsyncpgMixin:
@@ -166,13 +175,15 @@ class AsyncpgMixin:
             **connect_kwargs)
         return pool
 
-    def get_bind(self, bind=None):
+    async def get_bind(self, bind=None):
         if bind is None:
             local = get_local()
             if local:
                 stack = local.get('connection_stack')
                 if stack:
                     bind = stack[-1]
+                    if hasattr(bind, 'get_bind'):
+                        bind = await bind.get_bind()
             if bind is None:
                 # noinspection PyUnresolvedReferences
                 bind = self.bind
@@ -180,7 +191,7 @@ class AsyncpgMixin:
 
     async def all(self, clause, *multiparams,
                   bind=None, timeout=None, **params):
-        bind = self.get_bind(bind)
+        bind = await self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetch(query, *args, timeout=timeout)
@@ -195,7 +206,7 @@ class AsyncpgMixin:
     # noinspection PyUnresolvedReferences
     async def first(self, clause, *multiparams, bind=None,
                     timeout=None, **params):
-        bind = self.get_bind(bind)
+        bind = await self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetchrow(query, *args, timeout=timeout)
@@ -236,7 +247,7 @@ class AsyncpgMixin:
 
         return rv
 
-    def acquire(self, *, timeout=None, reuse=True):
+    def acquire(self, *, timeout=None, reuse=True, lazy = False):
         # noinspection PyUnresolvedReferences
         return GinoAcquireContext(self.bind, timeout, reuse)
 
