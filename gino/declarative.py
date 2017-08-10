@@ -5,6 +5,7 @@ from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
+from .sanic_support import SanicMixin
 from .exceptions import NotInstalledError
 
 
@@ -211,7 +212,7 @@ class NoopConnection:
         pass
 
 
-class Gino(MetaData, AsyncpgMixin):
+class Gino(MetaData, AsyncpgMixin, SanicMixin):
     def __init__(self, bind=None, dialect=None, **kwargs):
         self._bind = None
         super().__init__(bind=bind, **kwargs)
