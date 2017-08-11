@@ -26,19 +26,26 @@ class _Wrapper:
 
 # noinspection PyPep8Naming
 class json_property:
-    def __init__(self, default_factory):
-        self.name = default_factory.__name__
+    def __init__(self, default_factory=None, default=None):
+        self.name = None
         self.default_factory = default_factory
+        self.default = default
         self.expression = _Wrapper(self)
         self.after_get = _Wrapper(self)
         self.before_set = _Wrapper(self)
+
+    def __set_name__(self, owner, name):
+        self.name = name
 
     def __get__(self, instance, owner):
         if instance is None:
             return self.expression.call(owner, owner.profile[self.name])
         val = instance.profile.get(self.name, _None)
         if val is _None:
-            val = self.default_factory(instance)
+            if self.default_factory is None:
+                val = self.default
+            else:
+                val = self.default_factory(instance)
         return self.after_get.call(instance, val)
 
     def __set__(self, instance, value):
