@@ -6,7 +6,7 @@ from sqlalchemy import cutils
 
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
-from .exceptions import NotInstalledError
+from .exceptions import NotInstalledError, NoSuchRowError
 
 
 class ColumnAttribute:
@@ -60,10 +60,6 @@ class Delete:
         else:
             # noinspection PyProtectedMember
             return instance._delete
-
-
-class NoSuchRowError(Exception):
-    pass
 
 
 class Model:
