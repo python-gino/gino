@@ -268,17 +268,9 @@ class AsyncpgMixin:
                       timeout=None, **params):
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        if connection is None:
-            rv = LazyCursorFactory(self, query, args, timeout)
-        else:
-            rv = connection.cursor(query, *args, timeout=timeout)
-
         # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
-        if model is not None:
-            rv = model.map(rv)
-
-        return rv
+        return GinoCursorFactory(self, query, args, connection, model, timeout)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
         # noinspection PyUnresolvedReferences
@@ -290,12 +282,34 @@ class AsyncpgMixin:
                                isolation, readonly, deferrable)
 
 
-class LazyCursorFactory:
-    def __init__(self, metadata, query, args, timeout):
+class GinoCursorFactory:
+    def __init__(self, metadata, query, args, connection, model, timeout):
         self._metadata = metadata
         self._query = query
         self._args = args
+        self._connection = connection
+        self._model = model
         self._timeout = timeout
+
+    async def get_cursor_factory(self):
+        connection = await self._metadata.get_bind(self._connection)
+        return connection.cursor(self._query, *self._args,
+                                 timeout=self._timeout)
+
+    @property
+    def model(self):
+        return self._model
+
+    def __aiter__(self):
+        return GinoCursorIterator(self)
+
+    def __await__(self):
+        return GinoCursor(self).async_init().__await__()
+
+
+class GinoCursorIterator:
+    def __init__(self, factory):
+        self._factory = factory
         self._iterator = None
 
     def __aiter__(self):
@@ -303,11 +317,38 @@ class LazyCursorFactory:
 
     async def __anext__(self):
         if self._iterator is None:
-            connection = await self._metadata.get_bind()
-            cursor = connection.cursor(self._query, *self._args,
-                                       timeout=self._timeout)
-            self._iterator = cursor.__aiter__()
-        return await self._iterator.__anext__()
+            factory = await self._factory.get_cursor_factory()
+            self._iterator = factory.__aiter__()
+        rv = await self._iterator.__anext__()
+        if self._factory.model is not None:
+            rv = self._factory.model.from_row(rv)
+        return rv
+
+
+class GinoCursor:
+    def __init__(self, factory):
+        self._factory = factory
+        self._cursor = None
+
+    async def async_init(self):
+        factory = await self._factory.get_cursor_factory()
+        self._cursor = await factory
+        return self
+
+    async def many(self, n, *, timeout=None):
+        rv = await self._cursor.fetch(n, timeout=timeout)
+        if self._factory.model is not None:
+            rv = list(map(self._factory.model.from_row, rv))
+        return rv
+
+    async def next(self, *, timeout=None):
+        rv = await self._cursor.fetchrow(timeout=timeout)
+        if self._factory.model is not None:
+            rv = self._factory.model.from_row(rv)
+        return rv
+
+    def __getattr__(self, item):
+        return getattr(self._cursor, item)
 
 
 class GinoExecutor:
