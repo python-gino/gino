@@ -252,7 +252,7 @@ class Gino(MetaData, AsyncpgMixin):
         model = getattr(query, '__model__', lambda: None)()
         if model is not None:
             return model
-        tables = query.froms
+        tables = getattr(query, 'froms', [])
         if len(tables) != 1:
             return
         model = getattr(tables[0], '__model__', lambda: None)()
