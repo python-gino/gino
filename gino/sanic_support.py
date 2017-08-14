@@ -2,38 +2,46 @@ from .local import enable_task_local, disable_task_local
 
 
 class SanicMixin:
-    """
-    Enable lazy connection for request by default.
-    You can use 'app.config[DB_USE_CONNECTION_FOR_REQUEST] = False' to change
-    the default value.
-    Database connections will be auto closed when on_response().
-    simple usages:
-        # simple get user
-        await User.get(11)
-        # close database connection by manual when needed.
-        await request['connection'].close()
+    """Support Sanic web server.
+
+    By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could
+    use database configuration in Sanic `config` to initialize the bound pool.
+
+    A lazy connection context is enabled by default for every request. You can
+    change this default behavior by setting `DB_USE_CONNECTION_FOR_REQUEST`
+    config value to `False`. By default, a database connection is borrowed on
+    the first query, shared in the same execution context, and returned to the
+    pool on response. If you need to release the connection early in the middle
+    to do some long-running tasks, you can simply do this:
+
+        await request['connection'].release()
+
+    Here `request['connection']` is a :class:`LazyConnection` object, see its
+    doc string for more information.
     """
     def init_app(self, app):
+        task_local_enabled = [False]
+
         if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
             @app.middleware('request')
             async def on_request(request):
                 # noinspection PyUnresolvedReferences
-                request['conn_ctx'] = ctx = self.acquire(lazy=True)
+                request['connection_ctx'] = ctx = self.acquire(lazy=True)
                 request['connection'] = await ctx.__aenter__()
 
             @app.middleware('response')
-            async def on_response(request, response):
-                ctx = request.pop('conn_ctx', None)
+            async def on_response(request, _):
+                ctx = request.pop('connection_ctx', None)
                 request.pop('connection', None)
                 if ctx is not None:
                     await ctx.__aexit__(None, None, None)
 
         @app.listener('before_server_start')
         async def before_server_start(_, loop):
-            # await User.get(8)
-            # await request['connection'].close()
+            if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
+                enable_task_local(loop)
+                task_local_enabled[0] = True
 
-            enable_task_local(loop)
             # noinspection PyUnresolvedReferences
             await self.create_pool(
                 host=app.config.setdefault('DB_HOST', 'localhost'),
@@ -50,4 +58,6 @@ class SanicMixin:
         async def after_server_stop(_, loop):
             # noinspection PyUnresolvedReferences
             await self.bind.close()
-            disable_task_local(loop)
+            if task_local_enabled[0]:
+                disable_task_local(loop)
+                task_local_enabled[0] = False

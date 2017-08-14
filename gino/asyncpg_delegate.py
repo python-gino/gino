@@ -73,10 +73,11 @@ class GinoConnection(Connection):
 
 class LazyConnection:
     """
-    Use LazyConnection to create a lazy connection which is not return a
-    connection immediately.User should explicit call get() to get a real
-    connection when needed.And close() will be called when we don't need
-    the connection anymore.
+    Use :class:`LazyConnection` to create a lazy connection which does not 
+    immediately return a connection on creation. User should explicitly call
+    :meth:`get` to get a real connection when needed. And :meth:`release`
+    should be called when the real connection is no longer needed. Both methods
+    can be called multiple times.
     """
     def __init__(self, pool, timeout):
         self._pool = pool
@@ -92,7 +93,7 @@ class LazyConnection:
             connection = self._conn
         return connection
 
-    async def close(self, args):
+    async def release(self, args):
         if self._ctx is not None:
             ctx, self._ctx = self._ctx, None
             self._conn = None
@@ -146,7 +147,7 @@ class GinoAcquireContext:
         finally:
             conn, self._lazy_conn = self._lazy_conn, None
             if conn is not None:
-                await conn.close(exc)
+                await conn.release(exc)
 
 
 class GinoTransaction:
@@ -265,7 +266,7 @@ class AsyncpgMixin:
         return await bind.execute(query, *args, timeout=timeout)
 
     def iterate(self, clause, *multiparams, connection=None,
-                      timeout=None, **params):
+                timeout=None, **params):
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         # noinspection PyUnresolvedReferences
