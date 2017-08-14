@@ -71,14 +71,43 @@ class GinoConnection(Connection):
                                      timeout=timeout, connection=self)
 
 
+class LazyConnection:
+    """
+    Use LazyConnection to create a lazy connection which is not return a
+    connection immediately.User should explicit call get() to get a real
+    connection when needed.And close() will be called when we don't need
+    the connection anymore.
+    """
+    def __init__(self, pool, timeout):
+        self._pool = pool
+        self._ctx = None
+        self._conn = None
+        self._timeout = timeout
+
+    async def get(self):
+        if self._conn is None:
+            self._ctx = self._pool.acquire(timeout=self._timeout)
+            self._conn = connection = await self._ctx.__aenter__()
+        else:
+            connection = self._conn
+        return connection
+
+    async def close(self, args):
+        if self._ctx is not None:
+            ctx, self._ctx = self._ctx, None
+            self._conn = None
+            await ctx.__aexit__(*args)
+
+
 class GinoAcquireContext:
-    def __init__(self, bind, timeout, reuse):
+    def __init__(self, bind, timeout, reuse, lazy):
         self._used = False
         self._bind = bind
         self._timeout = timeout
-        self._ctx = None
         self._reuse = reuse
         self._pop = False
+        self._lazy = lazy
+        self._lazy_conn = None
 
     async def __aenter__(self):
         if self._used:
@@ -89,31 +118,35 @@ class GinoAcquireContext:
         if self._reuse and local:
             stack = local.get('connection_stack')
             if stack:
-                rv = stack[-1]
-                if hasattr(rv, 'get_bind'):
-                    rv = rv.get_bind()
-                return rv
+                conn = stack[-1]
+                if not self._lazy:
+                    conn = await conn.get()
+                return conn
 
         if isinstance(self._bind, Pool):
-            self._ctx = self._bind.acquire(timeout=self._timeout)
-            conn = await self._ctx.__aenter__()
+            self._lazy_conn = conn = LazyConnection(self._bind, self._timeout)
             if local is not None:
                 local.setdefault('connection_stack', deque()).append(conn)
                 self._pop = True
+            if not self._lazy:
+                conn = await conn.get()
             return conn
         else:
             return self._bind
 
     async def __aexit__(self, *exc):
-        if self._pop:
-            ctx = get_local() or {}
-            stack = ctx.get('connection_stack')
-            if stack:
-                stack.pop()
-                if not stack:
-                    ctx.pop('connection_stack')
-        if self._ctx is not None:
-            await self._ctx.__aexit__(*exc)
+        try:
+            if self._pop:
+                ctx = get_local() or {}
+                stack = ctx.get('connection_stack')
+                if stack:
+                    stack.pop()
+                    if not stack:
+                        ctx.pop('connection_stack')
+        finally:
+            conn, self._lazy_conn = self._lazy_conn, None
+            if conn is not None:
+                await conn.close(exc)
 
 
 class GinoTransaction:
@@ -139,6 +172,7 @@ class GinoTransaction:
             await self._ctx.__aexit__(extype, ex, tb)
         except:
             await self._conn_ctx.__aexit__(*sys.exc_info())
+            raise
         else:
             await self._conn_ctx.__aexit__(extype, ex, tb)
 
@@ -181,9 +215,7 @@ class AsyncpgMixin:
             if local:
                 stack = local.get('connection_stack')
                 if stack:
-                    bind = stack[-1]
-                    if hasattr(bind, 'get_bind'):
-                        bind = await bind.get_bind()
+                    bind = await stack[-1].get()
             if bind is None:
                 # noinspection PyUnresolvedReferences
                 bind = self.bind
@@ -221,24 +253,25 @@ class AsyncpgMixin:
     # noinspection PyUnresolvedReferences
     async def scalar(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
-        bind = self.get_bind(bind)
+        bind = await self.get_bind(bind)
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.fetchval(query, *args, timeout=timeout)
 
     async def status(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
-        bind = self.get_bind(bind)
+        bind = await self.get_bind(bind)
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.execute(query, *args, timeout=timeout)
 
     def iterate(self, clause, *multiparams, connection=None,
-                timeout=None, **params):
-        connection = self.get_bind(connection)
-        assert isinstance(connection, Connection)
+                      timeout=None, **params):
         # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        rv = connection.cursor(query, *args, timeout=timeout)
+        if connection is None:
+            rv = LazyCursorFactory(self, query, args, timeout)
+        else:
+            rv = connection.cursor(query, *args, timeout=timeout)
 
         # noinspection PyUnresolvedReferences
         model = self.guess_model(clause)
@@ -247,14 +280,34 @@ class AsyncpgMixin:
 
         return rv
 
-    def acquire(self, *, timeout=None, reuse=True, lazy = False):
+    def acquire(self, *, timeout=None, reuse=True, lazy=False):
         # noinspection PyUnresolvedReferences
-        return GinoAcquireContext(self.bind, timeout, reuse)
+        return GinoAcquireContext(self.bind, timeout, reuse, lazy)
 
     def transaction(self, *, isolation='read_committed', readonly=False,
                     deferrable=False, timeout=None, reuse=True):
         return GinoTransaction(self.acquire(timeout=timeout, reuse=reuse),
                                isolation, readonly, deferrable)
+
+
+class LazyCursorFactory:
+    def __init__(self, metadata, query, args, timeout):
+        self._metadata = metadata
+        self._query = query
+        self._args = args
+        self._timeout = timeout
+        self._iterator = None
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self._iterator is None:
+            connection = await self._metadata.get_bind()
+            cursor = connection.cursor(self._query, *self._args,
+                                       timeout=self._timeout)
+            self._iterator = cursor.__aiter__()
+        return await self._iterator.__anext__()
 
 
 class GinoExecutor:
