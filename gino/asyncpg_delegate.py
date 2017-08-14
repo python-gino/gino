@@ -157,17 +157,15 @@ class GinoTransaction:
         self._readonly = readonly
         self._deferrable = deferrable
         self._ctx = None
-        self._conn = None
 
     async def __aenter__(self):
-        conn = self._conn = await self._conn_ctx.__aenter__()
+        conn = await self._conn_ctx.__aenter__()
         self._ctx = conn.transaction(isolation=self._isolation,
                                      readonly=self._readonly,
                                      deferrable=self._deferrable)
         return conn, await self._ctx.__aenter__()
 
     async def __aexit__(self, extype, ex, tb):
-        self._conn = None
         # noinspection PyBroadException
         try:
             await self._ctx.__aexit__(extype, ex, tb)
@@ -176,10 +174,6 @@ class GinoTransaction:
             raise
         else:
             await self._conn_ctx.__aexit__(extype, ex, tb)
-
-    @property
-    def connection(self):
-        return self._conn
 
 
 class AsyncpgMixin:
