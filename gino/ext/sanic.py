@@ -1,7 +1,8 @@
-from .local import enable_task_local, disable_task_local
+from ..declarative import Gino as _Gino
+from ..local import enable_task_local, disable_task_local
 
 
-class SanicMixin:
+class Gino(_Gino):
     """Support Sanic web server.
 
     By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could
