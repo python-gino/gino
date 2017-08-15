@@ -337,7 +337,8 @@ day.
 Sanic Support
 -------------
 
-To integrate with Sanic_, a few configurations needs to be set in ``app.config`` (with default value though):
+To integrate with Sanic_, a few configurations needs to be set in
+``app.config`` (with default value though):
 
 - DB_HOST: if not set, ``localhost``
 - DB_PORT: if not set, ``5432``
@@ -347,10 +348,11 @@ To integrate with Sanic_, a few configurations needs to be set in ``app.config``
 - DB_POOL_MIN_SIZE: if not set, 5
 - DB_POOL_MAX_SIZE: if not set, 10
 
+An example:
+
 .. code-block:: python
 
    from sanic import Sanic
-   from sanic.response import json
    from gino.ext.sanic import Gino
 
    app = Sanic()
@@ -359,6 +361,48 @@ To integrate with Sanic_, a few configurations needs to be set in ``app.config``
 
    db = Gino()
    db.init_app(app)
+
+
+After ``db.init_app``, a connection pool with configured settings shall be
+created and bound to ``db`` when Sanic server is started, and closed on stop.
+Furthermore, a lazy connection context is created on each request, and released
+on response. That is to say, within Sanic request handlers, you can directly
+access db by e.g. ``User.get(1)``, everything else is settled: database pool is
+created on server start, connection is lazily borrowed from pool on the first
+database access and shared within the rest of the same request handler, and
+automatically returned to the pool on response.
+
+Please be noted that, in the async world, ``await`` may block unpredictably for
+a long time. When this world is crossing RDBMS pools and transactions, it is
+a very dangerous bite for performance, even causing disasters sometimes.
+Therefore we recommend, during the time enjoying fast development, do pay
+special attention to the scope of transactions and borrowed connections, make
+sure that transactions are closed as soon as possible, and connections are not
+taken for unnecessarily long time. As for the Sanic support, if you want to
+release the concrete connection in the request context before response is
+reached, just do it like this:
+
+.. code-block:: python
+
+   await request['connection'].release()
+
+
+Or if you prefer not to use the contextual lazy connection in certain handlers,
+prefer explicitly manage the connection lifetime, you can always borrow a new
+connection by setting ``reuse=False``:
+
+.. code-block:: python
+
+   async with db.acquire(reuse=False):
+       # new connection context is created
+
+
+Or if you prefer not to use the builtin request-scoped lazy connection at all,
+you can simply turn it off:
+
+.. code-block:: python
+
+   app.config.DB_USE_CONNECTION_FOR_REQUEST = False
 
 
 JSON Property
