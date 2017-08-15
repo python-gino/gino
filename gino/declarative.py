@@ -35,8 +35,7 @@ class Query:
         q = select([owner.__table__])
         q.__model__ = weakref.ref(owner)
         if instance is not None:
-            # noinspection PyProtectedMember
-            q = owner._append_where_primary_key(q, instance)
+            q = instance.append_where_primary_key(q)
         return q
 
 
@@ -162,10 +161,9 @@ class Model:
         return col.type._cached_result_processor(cls.__metadata__.dialect,
                                                  None)
 
-    @classmethod
-    def _append_where_primary_key(cls, q, instance):
-        for c in cls.__table__.primary_key.columns:
-            q = q.where(c == getattr(instance, c.name))
+    def append_where_primary_key(self, q):
+        for c in self.__table__.primary_key.columns:
+            q = q.where(c == getattr(self, c.name))
         return q
 
     def update_with_row(self, row):
@@ -178,9 +176,8 @@ class Model:
 
     async def _update(self, bind=None, timeout=None, **values):
         cls = type(self)
-        # noinspection PyTypeChecker
-        clause = cls._append_where_primary_key(
-            cls.update, self
+        clause = self.append_where_primary_key(
+            cls.update,
         ).values(
             **values,
         ).returning(
@@ -194,8 +191,7 @@ class Model:
 
     async def _delete(self, bind=None):
         cls = type(self)
-        # noinspection PyTypeChecker
-        clause = cls._append_where_primary_key(cls.delete, self)
+        clause = self.append_where_primary_key(cls.delete)
         return await self.__metadata__.status(clause, bind=bind)
 
 
