@@ -332,6 +332,33 @@ it would be like this before Python officially supports task local storage one
 day.
 
 
+Sanic Support
+-------------
+
+To integrate with Sanic_, a few configurations needs to be set in ``app.config`` (with default value though):
+
+- DB_HOST: if not set, ``localhost``
+- DB_PORT: if not set, ``5432``
+- DB_USER: if not set, ``postgres``
+- DB_PASSWORD: if not set, empty string
+- DB_DATABASE: if not set, ``postgres``
+- DB_POOL_MIN_SIZE: if not set, 5
+- DB_POOL_MAX_SIZE: if not set, 10
+
+.. code-block:: python
+
+   from sanic import Sanic
+   from sanic.response import json
+   from gino.ext.sanic import Gino
+
+   app = Sanic()
+   app.config.DB_HOST = 'localhost'
+   app.config.DB_USER = 'postgres'
+
+   db = Gino()
+   db.init_app(app)
+
+
 Contribute
 ----------
 
@@ -346,7 +373,7 @@ To run tests:
 
 
 Credits
----------
+-------
 
 Credit goes to all contributors listed in the AUTHORS file. This project is
 inspired by asyncpgsa_, peewee-async_ and asyncorm_. asyncpg_ and SQLAlchemy_
