@@ -349,7 +349,7 @@ class GinoCursor:
 class GinoExecutor:
     def __init__(self, query):
         self.query = query
-        self.gino = query.__model__.__metadata__
+        self.gino = query.__model__().__metadata__
 
     def all(self, *args, **kwargs):
         return self.gino.all(self.query, *args, **kwargs)
