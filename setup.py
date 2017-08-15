@@ -36,7 +36,7 @@ setup(
     author="Fantix King",
     author_email='fantix.king@gmail.com',
     url='https://github.com/fantix/gino',
-    packages=find_packages(include=['gino']),
+    packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
     license="BSD license",
