@@ -39,7 +39,7 @@ async def test_connection_as_bind(asyncpg_pool):
 
 async def test_update(asyncpg_pool, random_name):
     u1 = await test_create(asyncpg_pool)
-    await u1.update(nickname=random_name, bind=asyncpg_pool)
+    await u1.update(nickname=random_name).apply(bind=asyncpg_pool)
     u2 = await User.get(u1.id, bind=asyncpg_pool)
     assert u2.nickname == random_name
 
@@ -50,7 +50,7 @@ async def test_update_multiple_primary_key(asyncpg_pool):
     u3 = await test_create(asyncpg_pool)
     await Friendship.create(bind=asyncpg_pool, my_id=u1.id, friend_id=u2.id)
     f = await Friendship.get((u1.id, u2.id), bind=asyncpg_pool)
-    await f.update(my_id=u2.id, friend_id=u3.id, bind=asyncpg_pool)
+    await f.update(my_id=u2.id, friend_id=u3.id).apply(bind=asyncpg_pool)
     f2 = await Friendship.get((u2.id, u3.id), bind=asyncpg_pool)
     assert f2
 

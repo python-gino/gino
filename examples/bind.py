@@ -24,7 +24,7 @@ async def main():
     print(u)
     u = await User.get(u.id)
     print(u)
-    await u.update(nickname='daisy')
+    await u.update(nickname='daisy').apply()
     print(u)
     print(await u.delete())
 

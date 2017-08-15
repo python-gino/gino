@@ -1,9 +1,12 @@
+import itertools
 import weakref
 
 import sqlalchemy
+import sqlalchemy.dialects.postgresql as sa_pg
 from sqlalchemy import MetaData, Column, Table, select, text
 from sqlalchemy import cutils
 
+from . import json_support
 from .dialect import AsyncpgDialect
 from .asyncpg_delegate import AsyncpgMixin
 from .exceptions import NotInstalledError, NoSuchRowError
@@ -50,6 +53,69 @@ class Update:
             return instance._update
 
 
+class UpdateRequest:
+    def __init__(self, instance):
+        self._instance = instance
+        self._values = {}
+        self._props = {}
+        self._literal = True
+        self._clause = self._instance.append_where_primary_key(
+            type(self._instance).update)
+
+    def set(self, key, value):
+        self._values[key] = value
+
+    def set_prop(self, prop, value):
+        if isinstance(value, sqlalchemy.sql.ClauseElement):
+            self._literal = False
+        self._props[prop] = value
+
+    async def apply(self, bind=None, timeout=None):
+        cls = type(self._instance)
+        values = self._values.copy()
+
+        # handle JSON columns
+        json_updates = {}
+        for prop, value in self._props.items():
+            value = prop.save(self._instance, value)
+            updates = json_updates.setdefault(prop.column_name, {})
+            if self._literal:
+                updates[prop.name] = value
+            else:
+                if isinstance(value, int):
+                    value = sqlalchemy.cast(value, sqlalchemy.BigInteger)
+                elif not isinstance(value, sqlalchemy.sql.ClauseElement):
+                    value = sqlalchemy.cast(value, sqlalchemy.Unicode)
+                updates[sqlalchemy.cast(prop.name, sqlalchemy.Unicode)] = value
+        for column_name, updates in json_updates.items():
+            column = getattr(cls, column_name)
+            if self._literal:
+                values[column_name] = column.concat(updates)
+            else:
+                if isinstance(column.type, sa_pg.JSONB):
+                    func = sqlalchemy.func.jsonb_build_object
+                else:
+                    func = sqlalchemy.func.json_build_object
+                values[column_name] = column.concat(
+                    func(*itertools.chain(*updates.items())))
+
+        # noinspection PyProtectedMember
+        clause = self._clause.values(
+            **values,
+        ).returning(
+            *[getattr(cls, key) for key in values],
+        )
+        query, args = cls.__metadata__.compile(clause)
+        bind = await cls.__metadata__.get_bind(bind)
+        row = await bind.fetchrow(query, *args, timeout=timeout)
+        if not row:
+            raise NoSuchRowError()
+        self._instance.update_with_row(row)
+        for prop in self._props:
+            prop.reload(self._instance)
+        return self
+
+
 class Delete:
     def __get__(self, instance, owner):
         if instance is None:
@@ -69,7 +135,10 @@ class Model:
     delete = Delete()
 
     def __init__(self, **values):
-        self.__values__ = values
+        self.__values__ = {}
+        self.__profile__ = None
+        # noinspection PyCallingNonCallable
+        self.update(**values)
 
     def __init_subclass__(cls, **kwargs):
         table_name = getattr(cls, '__tablename__', None)
@@ -108,9 +177,32 @@ class Model:
 
     @classmethod
     async def create(cls, bind=None, timeout=None, **values):
-        q = cls.__table__.insert().values(**values).returning(text('*'))
-        q.__model__ = weakref.ref(cls)
-        return await cls.__metadata__.first(q, bind=bind, timeout=timeout)
+        rv = cls(**values)
+
+        # handle JSON properties
+        props = []
+        for key, value in values.items():
+            prop = cls.__dict__.get(key)
+            if isinstance(prop, json_support.JSONProperty):
+                prop.save(rv)
+                props.append(prop)
+        for key, prop in cls.__dict__.items():
+            if key in values:
+                continue
+            if isinstance(prop, json_support.JSONProperty):
+                if prop.default is None or prop.after_get.method is not None:
+                    continue
+                setattr(rv, key, getattr(rv, key))
+                prop.save(rv)
+                props.append(prop)
+
+        q = cls.__table__.insert().values(**rv.__values__).returning(text('*'))
+        bind = await cls.__metadata__.get_bind(bind)
+        query, args = cls.__metadata__.compile(q)
+        row = await bind.fetchrow(query, *args, timeout=timeout)
+        rv.update_with_row(row)
+        rv.__profile__ = None
+        return rv
 
     @classmethod
     async def get(cls, ident, bind=None, timeout=None):
@@ -174,20 +266,24 @@ class Model:
             setattr(self, key, value)
         return self
 
-    async def _update(self, bind=None, timeout=None, **values):
+    def _update(self, **values):
         cls = type(self)
-        clause = self.append_where_primary_key(
-            cls.update,
-        ).values(
-            **values,
-        ).returning(
-            *[getattr(cls, key) for key in values],
-        )
-        new = await self.__metadata__.first(clause, bind=bind, timeout=timeout)
-        if not new:
-            raise NoSuchRowError()
-        self.__values__.update(new.__values__)
-        return self
+        rv = UpdateRequest(self)
+        for key, value in values.items():
+            prop = cls.__dict__.get(key)
+            if isinstance(prop, json_support.JSONProperty):
+                value_from = '__profile__'
+                method = rv.set_prop
+                k = prop
+            else:
+                value_from = '__values__'
+                method = rv.set
+                k = key
+            if not isinstance(value, sqlalchemy.sql.ClauseElement):
+                setattr(self, key, value)
+                value = getattr(self, value_from)[key]
+            method(k, value)
+        return rv
 
     async def _delete(self, bind=None):
         cls = type(self)
@@ -211,10 +307,10 @@ class Gino(MetaData, AsyncpgMixin):
         self.dialect = dialect or AsyncpgDialect()
         self.Model = type('Model', (Model,), {'__metadata__': self})
 
-        for module in sqlalchemy, sqlalchemy.dialects.postgresql:
-            for key in module.__all__:
+        for mod in sqlalchemy, sa_pg, json_support:
+            for key in mod.__all__:
                 if not hasattr(self, key):
-                    setattr(self, key, getattr(module, key))
+                    setattr(self, key, getattr(mod, key))
 
     def compile(self, elem, *multiparams, **params):
         # partially copied from:

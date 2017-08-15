@@ -54,7 +54,6 @@ A piece of code is worth a thousand words:
 
    import asyncio
    from gino import Gino, enable_task_local
-   from sqlalchemy import Column, Integer, Unicode, cast
 
    db = Gino()
 
@@ -62,8 +61,8 @@ A piece of code is worth a thousand words:
    class User(db.Model):
        __tablename__ = 'users'
 
-       id = Column(Integer(), primary_key=True)
-       nickname = Column(Unicode(), default='noname')
+       id = db.Column(db.Integer(), primary_key=True)
+       nickname = db.Column(db.Unicode(), default='noname')
 
 
    async def main():
@@ -78,7 +77,7 @@ A piece of code is worth a thousand words:
        print(u2.nickname)  # fantix
 
        # Update affects only database row and the operating object
-       await u2.update(nickname='daisy')
+       await u2.update(nickname='daisy').apply()
        print(u2.nickname)  # daisy
        print(u1.nickname)  # fantix
 
@@ -90,7 +89,7 @@ A piece of code is worth a thousand words:
 
        # Execute complex statement and return command status
        status = await User.update.values(
-           nickname='No.' + cast(User.id, Unicode),
+           nickname='No.' + db.cast(User.id, db.Unicode),
        ).where(
            User.id > 10,
        ).gino.status()
@@ -124,8 +123,8 @@ declarative way as shown above:
    class User(db.Model):
        __tablename__ = 'users'
 
-       id = Column(Integer(), primary_key=True)
-       nickname = Column(Unicode(), default='noname')
+       id = db.Column(db.Integer(), primary_key=True)
+       nickname = db.Column(db.Unicode(), default='noname')
 
 Note that ``__tablename__`` is required, GINO suggests singular for model
 names, and plural for table names. After declaration, access to SQLAlchemy
@@ -140,21 +139,21 @@ like this:
 
 But on object level, model objects are just normal objects in memory. The only
 connection to database happens when you explicitly calls a GINO API,
-``user.update`` for example. Otherwise, any changes made to the object stay in
+``user.delete`` for example. Otherwise, any changes made to the object stay in
 memory only. That said, different objects are isolated from each other, even if
 they all map to the same database row - modifying one doesn't affect another.
 
 Speaking of mapping, GINO automatically detects the primary keys and uses them
 to identify the correct row in database. This is no magic, it is only a
 ``WHERE`` clause automatically added to the ``UPDATE`` statement when calling
-the ``user.update`` method, or during ``User.get`` retrieval.
+the ``user.update().apply`` method, or during ``User.get`` retrieval.
 
 .. code-block:: python
 
-   u = await User.get(1)              # SELECT * FROM users WHERE id = 1
-   await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 1
-   u.id = 2                           # No SQL here!!
-   await u.update(nickname='fantix')  # UPDATE users SET ... WHERE id = 2
+   u = await User.get(1)                      # SELECT * FROM users WHERE id = 1
+   await u.update(nickname='fantix').apply()  # UPDATE users SET ... WHERE id = 1
+   u.id = 2                                   # No SQL here!!
+   await u.update(nickname='fantix').apply()  # UPDATE users SET ... WHERE id = 2
 
 Under the hood, model values are stored in a dict named ``__values__``. And the
 columns you defined are wrapped with special attribute objects, which deliver
@@ -221,8 +220,11 @@ There are several levels of API available for use in GINO. On model objects:
 
 .. code-block:: python
 
-   await user.update(nickname='fantix')
+   await user.update(nickname='fantix').apply()
    await user.delete()
+
+Please note, ``update`` without ``apply`` only update the object in memory,
+while ``apply`` flush the changes to database.
 
 On model class level, to operate objects:
 
@@ -357,6 +359,68 @@ To integrate with Sanic_, a few configurations needs to be set in ``app.config``
 
    db = Gino()
    db.init_app(app)
+
+
+JSON Property
+-------------
+
+PostgreSQL started to support native JSON type since 9.2, and became more
+feature complete in 9.4. JSON is ideal to store varying key-value data. GINO
+offers objective support for this scenario, requiring PostgreSQL 9.5 for now.
+
+.. code-block:: python
+
+   from gino import Gino
+
+   db = Gino()
+
+   class User(db.Model):
+       __tablename__ = 'users'
+
+       id = db.Column(db.Integer(), primary_key=True)
+       profile = db.Column(db.JSONB())
+       nickname = db.StringProperty(default='noname')
+       age = db.IntegerProperty()
+
+``nickname`` and ``age`` look just like normal columns, but they are actually
+key-value pairs in the ``profile`` column. ``profile`` is the default column
+name for JSON properties, you can specify a different name by offering the
+argument ``column_name`` when defining a JSON property. Actually multiple JSON
+columns are allowed, storing different JSON properties as needed. Also, both
+``JSON`` and ``JSONB`` can be used, depending on your choice. For example:
+
+.. code-block:: python
+
+   from gino import Gino
+
+   db = Gino()
+
+   class Article(db.Model):
+       __tablename__ = 'articles'
+
+       id = db.Column(db.Integer(), primary_key=True)
+
+       profile = db.Column(db.JSONB())
+       author = db.StringProperty(default='noname')
+       pub_index = db.IntegerProperty()
+
+       values = db.Column(db.JSON())
+       read_count = db.IntegerProperty(default=0, column_name='values')
+       last_update = db.DateTimeProperty(column_name='values')
+
+JSON properties work like normal columns too:
+
+.. code-block:: python
+
+   # Create with JSON property values
+   u = await User.create(age=18)
+
+   # Default value is immediately available
+   u.nickname = 'Name: ' + u.nickname
+   # identical to: u.update(nickname='Name' + u.nickname)
+
+   # Updating only age, accept clause:
+   await u.update(age=User.age + 2).apply()
 
 
 Contribute
