@@ -2,6 +2,19 @@
 History
 =======
 
+0.4.0 (2017-08-15)
+------------------
+
+* Made ``get_or_404`` more friendly when Sanic is missing (Contributed by Neal Wang in #23 #31)
+* Delegated ``sqlalchemy.__all__`` (Contributed by Neal Wang in #10 #33)
+* [Breaking] Rewrote JSON/JSONB support (#29)
+* Added ``lazy`` parameter on ``db.acquire`` (Contributed by Binghan Li in #32)
+* Added Sanic integration (Contributed by Binghan Li, Tony Wang in #30 #32 #34)
+* Fixed ``iterate`` API to be compatible with asyncpg (#32)
+* Unified exceptions
+* [Breaking] Changed ``update`` API (#29)
+* Bug fixes
+
 0.3.0 (2017-08-07)
 ------------------
 
