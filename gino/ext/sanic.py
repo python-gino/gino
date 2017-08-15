@@ -2,6 +2,7 @@ from ..declarative import Gino as _Gino
 from ..local import enable_task_local, disable_task_local
 
 
+# noinspection PyClassHasNoInit
 class Gino(_Gino):
     """Support Sanic web server.
 
@@ -26,7 +27,6 @@ class Gino(_Gino):
         if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
             @app.middleware('request')
             async def on_request(request):
-                # noinspection PyUnresolvedReferences
                 request['connection_ctx'] = ctx = self.acquire(lazy=True)
                 request['connection'] = await ctx.__aenter__()
 
@@ -43,7 +43,6 @@ class Gino(_Gino):
                 enable_task_local(loop)
                 task_local_enabled[0] = True
 
-            # noinspection PyUnresolvedReferences
             await self.create_pool(
                 host=app.config.setdefault('DB_HOST', 'localhost'),
                 port=app.config.setdefault('DB_PORT', 5432),
@@ -57,7 +56,6 @@ class Gino(_Gino):
 
         @app.listener('after_server_stop')
         async def after_server_stop(_, loop):
-            # noinspection PyUnresolvedReferences
             await self.bind.close()
             if task_local_enabled[0]:
                 disable_task_local(loop)
