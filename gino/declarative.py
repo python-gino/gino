@@ -3,7 +3,7 @@ import weakref
 
 import sqlalchemy
 import sqlalchemy.dialects.postgresql as sa_pg
-from sqlalchemy import MetaData, Column, Table, select, text
+from sqlalchemy import MetaData, Column, Table, text
 from sqlalchemy import cutils
 
 from . import json_support
@@ -35,7 +35,7 @@ class ColumnAttribute:
 
 class Query:
     def __get__(self, instance, owner):
-        q = select([owner.__table__])
+        q = sqlalchemy.select([owner.__table__])
         q.__model__ = weakref.ref(owner)
         if instance is not None:
             q = instance.append_where_primary_key(q)
@@ -127,12 +127,24 @@ class Delete:
             return instance._delete
 
 
+class Select:
+    def __get__(self, instance, owner):
+        def select(*args):
+            q = sqlalchemy.select([getattr(owner, x) for x in args])
+            q.__model__ = weakref.ref(owner)
+            if instance is not None:
+                q = instance.append_where_primary_key(q)
+            return q
+        return select
+
+
 class Model:
     __metadata__ = None
     __table__ = None
     query = Query()
     update = Update()
     delete = Delete()
+    select = Select()
 
     def __init__(self, **values):
         self.__values__ = {}
@@ -168,12 +180,6 @@ class Model:
                 setattr(cls, k, v)
             table.__model__ = weakref.ref(cls)
         super().__init_subclass__()
-
-    @classmethod
-    def select(cls, *args):
-        q = select([getattr(cls, x) for x in args])
-        q.__model__ = weakref.ref(cls)
-        return q
 
     @classmethod
     async def create(cls, bind=None, timeout=None, **values):
