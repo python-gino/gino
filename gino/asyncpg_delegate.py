@@ -3,9 +3,15 @@ from collections import deque
 
 from asyncpg.pool import Pool
 from asyncpg.connection import Connection
+import sqlalchemy as sa
 from sqlalchemy.sql.base import Executable
+from sqlalchemy.dialects import postgresql as sa_pg
 
+from .crud import guess_model, CRUDModel
+from .dialect import AsyncpgDialect
 from .local import get_local
+from .declarative import declarative_base
+from . import json_support
 
 
 class GinoPool(Pool):
@@ -166,7 +172,6 @@ class GinoTransaction:
         return conn, await self._ctx.__aenter__()
 
     async def __aexit__(self, extype, ex, tb):
-        # noinspection PyBroadException
         try:
             await self._ctx.__aexit__(extype, ex, tb)
         except:
@@ -176,7 +181,27 @@ class GinoTransaction:
             await self._conn_ctx.__aexit__(extype, ex, tb)
 
 
-class AsyncpgMixin:
+class Gino(sa.MetaData):
+    def __init__(self, bind=None, dialect=None, model_class=CRUDModel,
+                 **kwargs):
+        self._bind = None
+        super().__init__(bind=bind, **kwargs)
+        self.dialect = dialect or AsyncpgDialect()
+        self.Model = declarative_base(self, model_class)
+        for mod in sa, sa_pg, json_support:
+            for key in mod.__all__:
+                if not hasattr(self, key):
+                    setattr(self, key, getattr(mod, key))
+
+    @property
+    def bind(self):
+        return self._bind
+
+    # noinspection PyMethodOverriding
+    @bind.setter
+    def bind(self, val):
+        self._bind = val
+
     def create_pool(self, dsn=None, *,
                     min_size=10,
                     max_size=10,
@@ -194,7 +219,6 @@ class AsyncpgMixin:
 
         connection_class = type(connection_class.__name__, (connection_class,),
                                 {'metadata': self})
-        # noinspection PyAttributeOutsideInit
         pool = GinoPool(
             self, dsn,
             connection_class=connection_class,
@@ -212,40 +236,36 @@ class AsyncpgMixin:
                 if stack:
                     bind = await stack[-1].get()
             if bind is None:
-                # noinspection PyUnresolvedReferences
                 bind = self.bind
         return bind
+
+    def compile(self, elem, *multiparams, **params):
+        return self.dialect.compile(elem, *multiparams, **params)
 
     async def all(self, clause, *multiparams,
                   bind=None, timeout=None, **params):
         bind = await self.get_bind(bind)
-        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetch(query, *args, timeout=timeout)
 
-        # noinspection PyUnresolvedReferences
-        model = self.guess_model(clause)
+        model = guess_model(clause)
         if model is not None:
             rv = list(map(model.from_row, rv))
 
         return rv
 
-    # noinspection PyUnresolvedReferences
     async def first(self, clause, *multiparams, bind=None,
                     timeout=None, **params):
         bind = await self.get_bind(bind)
-        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         rv = await bind.fetchrow(query, *args, timeout=timeout)
 
-        # noinspection PyUnresolvedReferences
-        model = self.guess_model(clause)
+        model = guess_model(clause)
         if model is not None:
             rv = model.from_row(rv)
 
         return rv
 
-    # noinspection PyUnresolvedReferences
     async def scalar(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
         bind = await self.get_bind(bind)
@@ -255,20 +275,16 @@ class AsyncpgMixin:
     async def status(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
         bind = await self.get_bind(bind)
-        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
         return await bind.execute(query, *args, timeout=timeout)
 
     def iterate(self, clause, *multiparams, connection=None,
                 timeout=None, **params):
-        # noinspection PyUnresolvedReferences
         query, args = self.compile(clause, *multiparams, **params)
-        # noinspection PyUnresolvedReferences
-        model = self.guess_model(clause)
+        model = guess_model(clause)
         return GinoCursorFactory(self, query, args, connection, model, timeout)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
-        # noinspection PyUnresolvedReferences
         return GinoAcquireContext(self.bind, timeout, reuse, lazy)
 
     def transaction(self, *, isolation='read_committed', readonly=False,
