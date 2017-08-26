@@ -1,4 +1,7 @@
-from sqlalchemy import cutils
+import weakref
+from collections import OrderedDict
+
+from sqlalchemy import cutils, util
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
@@ -28,8 +31,6 @@ class NoopConnection:
 
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(PGExecutionContext):
-    model = None
-
     @classmethod
     def init_clause(cls, dialect, elem, *multiparams, **params):
         # partially copied from:
@@ -49,35 +50,36 @@ class AsyncpgExecutionContext(PGExecutionContext):
         conn = NoopConnection(dialect)
         rv = cls._init_compiled(
             dialect, conn, conn, compiled_sql, distilled_params)
-        rv.guess_model(elem)
         return rv
 
-    def guess_model(self, query):
-        # query.__model__ is weak references, which need dereference
-        model = getattr(query, '__model__', lambda: None)()
-        if model is None:
-            tables = getattr(query, 'froms', [])
-            if len(tables) != 1:
-                return
-            model = getattr(tables[0], '__model__', lambda: None)()
-            if not model:
-                return
-            for c in query.columns:
-                if not hasattr(model, c.name):
-                    return
-        self.model = model
+    @util.memoized_property
+    def return_model(self):
+        # noinspection PyUnresolvedReferences
+        return self.execution_options.get('return_model', True)
+
+    @util.memoized_property
+    def model(self):
+        # noinspection PyUnresolvedReferences
+        rv = self.execution_options.get('model', None)
+        if isinstance(rv, weakref.ref):
+            rv = rv()
+        return rv
 
     def from_row(self, row):
         if self.model is None or row is None:
             return row
-        rv = self.model()
+        if self.return_model:
+            rv = self.model()
+            d = rv.__values__
+        else:
+            rv = d = OrderedDict()
         for key, value in row.items():
             type_ = getattr(getattr(self.model, key), 'type', None)
             if type_ is not None:
                 processor = self.get_result_processor(type_, None, None)
                 if processor:
                     value = processor(value)
-            setattr(rv, key, value)
+            d[key] = value
         return rv
 
 

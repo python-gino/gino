@@ -13,20 +13,18 @@ from .exceptions import NotInstalledError, NoSuchRowError
 class Query:
     def __get__(self, instance, owner):
         q = sa.select([owner.__table__])
-        q.__model__ = weakref.ref(owner)
         if instance is not None:
             q = instance.append_where_primary_key(q)
-        return q
+        return q.execution_options(model=weakref.ref(owner))
 
 
 class Select:
     def __get__(self, instance, owner):
         def select(*args):
             q = sa.select([getattr(owner, x) for x in args])
-            q.__model__ = weakref.ref(owner)
             if instance is not None:
                 q = instance.append_where_primary_key(q)
-            return q
+            return q.execution_options(model=weakref.ref(owner))
         return select
 
 
@@ -34,8 +32,7 @@ class Update:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.update()
-            q.__model__ = weakref.ref(owner)
-            return q
+            return q.execution_options(model=weakref.ref(owner))
         else:
             # noinspection PyProtectedMember
             return instance._update
@@ -45,8 +42,7 @@ class Delete:
     def __get__(self, instance, owner):
         if instance is None:
             q = owner.__table__.delete()
-            q.__model__ = weakref.ref(owner)
-            return q
+            return q.execution_options(model=weakref.ref(owner))
         else:
             # noinspection PyProtectedMember
             return instance._delete
