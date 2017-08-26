@@ -272,7 +272,7 @@ class Gino(sa.MetaData):
         async def env_factory():
             return await self.get_bind(connection), self
         return GinoCursorFactory(env_factory, timeout,
-                                 clause, *multiparams, **params)
+                                 clause, multiparams, params)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
         return GinoAcquireContext(self._bind, timeout, reuse, lazy)
@@ -331,7 +331,7 @@ class GinoExecutor:
             bind = await self.get_bind(connection)
             return bind, bind.metadata
         return GinoCursorFactory(env_factory, timeout,
-                                 clause, *multiparams, **params)
+                                 clause, multiparams, params)
 
 
 Executable.gino = property(GinoExecutor)

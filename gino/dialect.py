@@ -32,7 +32,7 @@ class NoopConnection:
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(PGExecutionContext):
     @classmethod
-    def init_clause(cls, dialect, elem, *multiparams, **params):
+    def init_clause(cls, dialect, elem, multiparams, params):
         # partially copied from:
         # sqlalchemy.engine.base.Connection:_execute_clauseelement
         # noinspection PyProtectedMember
@@ -84,7 +84,7 @@ class AsyncpgExecutionContext(PGExecutionContext):
 
 
 class GinoCursorFactory:
-    def __init__(self, env_factory, timeout, clause, *multiparams, **params):
+    def __init__(self, env_factory, timeout, clause, multiparams, params):
         self._env_factory = env_factory
         self._context = None
         self._timeout = timeout
@@ -95,7 +95,7 @@ class GinoCursorFactory:
     async def get_cursor_factory(self):
         connection, metadata = await self._env_factory()
         self._context = metadata.dialect.execution_ctx_cls.init_clause(
-            metadata.dialect, self._clause, *self._multiparams, **self._params)
+            metadata.dialect, self._clause, self._multiparams, self._params)
         return connection.cursor(self._context.statement,
                                  *self._context.parameters[0],
                                  timeout=self._timeout)
@@ -157,7 +157,7 @@ class AsyncpgDialect(PGDialect):
 
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
-            self, elem, *multiparams, **params)
+            self, elem, multiparams, params)
         return context.statement, context.parameters[0]
 
     def get_result_processor(self, col):
@@ -166,7 +166,7 @@ class AsyncpgDialect(PGDialect):
 
     async def do_all(self, bind, clause, *multiparams, timeout=None, **params):
         context = self.execution_ctx_cls.init_clause(
-            self, clause, *multiparams, **params)
+            self, clause, multiparams, params)
         rows = await bind.fetch(context.statement, *context.parameters[0],
                                 timeout=timeout)
         return list(map(context.from_row, rows))
@@ -174,7 +174,7 @@ class AsyncpgDialect(PGDialect):
     async def do_first(self, bind, clause, *multiparams,
                        timeout=None, **params):
         context = self.execution_ctx_cls.init_clause(
-            self, clause, *multiparams, **params)
+            self, clause, multiparams, params)
         row = await bind.fetchrow(context.statement, *context.parameters[0],
                                   timeout=timeout)
         return context.from_row(row)
@@ -182,13 +182,13 @@ class AsyncpgDialect(PGDialect):
     async def do_scalar(self, bind, clause, *multiparams,
                         timeout=None, **params):
         context = self.execution_ctx_cls.init_clause(
-            self, clause, *multiparams, **params)
+            self, clause, multiparams, params)
         return await bind.fetchval(context.statement, *context.parameters[0],
                                    timeout=timeout)
 
     async def do_status(self, bind, clause, *multiparams,
                         timeout=None, **params):
         context = self.execution_ctx_cls.init_clause(
-            self, clause, *multiparams, **params)
+            self, clause, multiparams, params)
         return await bind.execute(context.statement, *context.parameters[0],
                                   timeout=timeout)
