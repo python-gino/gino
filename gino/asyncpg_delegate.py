@@ -195,7 +195,7 @@ class Gino(sa.MetaData):
 
     @property
     def bind(self):
-        return self._bind
+        return self.get_bind()
 
     # noinspection PyMethodOverriding
     @bind.setter
@@ -236,7 +236,7 @@ class Gino(sa.MetaData):
                 if stack:
                     bind = await stack[-1].get()
             if bind is None:
-                bind = self.bind
+                bind = self._bind
         return bind
 
     def compile(self, elem, *multiparams, **params):
@@ -275,7 +275,7 @@ class Gino(sa.MetaData):
             timeout=timeout, **params)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
-        return GinoAcquireContext(self.bind, timeout, reuse, lazy)
+        return GinoAcquireContext(self._bind, timeout, reuse, lazy)
 
     def transaction(self, *, isolation='read_committed', readonly=False,
                     deferrable=False, timeout=None, reuse=True):

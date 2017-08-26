@@ -56,7 +56,7 @@ class Gino(_Gino):
 
         @app.listener('after_server_stop')
         async def after_server_stop(_, loop):
-            await self.bind.close()
+            await self._bind.close()
             if task_local_enabled[0]:
                 disable_task_local(loop)
                 task_local_enabled[0] = False
