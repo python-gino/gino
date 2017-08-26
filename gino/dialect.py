@@ -82,13 +82,18 @@ class AsyncpgExecutionContext(PGExecutionContext):
 
 
 class GinoCursorFactory:
-    def __init__(self, context, connection_factory, timeout):
-        self._context = context
-        self._connection_factory = connection_factory
+    def __init__(self, env_factory, timeout, clause, *multiparams, **params):
+        self._env_factory = env_factory
+        self._context = None
         self._timeout = timeout
+        self._clause = clause
+        self._multiparams = multiparams
+        self._params = params
 
     async def get_cursor_factory(self):
-        connection = await self._connection_factory()
+        connection, metadata = await self._env_factory()
+        self._context = metadata.dialect.execution_ctx_cls.init_clause(
+            metadata.dialect, self._clause, *self._multiparams, **self._params)
         return connection.cursor(self._context.statement,
                                  *self._context.parameters[0],
                                  timeout=self._timeout)
@@ -185,9 +190,3 @@ class AsyncpgDialect(PGDialect):
             self, clause, *multiparams, **params)
         return await bind.execute(context.statement, *context.parameters[0],
                                   timeout=timeout)
-
-    def do_iterate(self, connection_factory, clause, *multiparams,
-                   timeout=None, **params):
-        context = self.execution_ctx_cls.init_clause(
-            self, clause, *multiparams, **params)
-        return GinoCursorFactory(context, connection_factory, timeout)

@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from collections import deque
 
@@ -8,7 +9,7 @@ from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
 
 from .crud import CRUDModel
-from .dialect import AsyncpgDialect
+from .dialect import AsyncpgDialect, GinoCursorFactory
 from .local import get_local
 from .declarative import declarative_base
 from . import json_support
@@ -268,11 +269,10 @@ class Gino(sa.MetaData):
 
     def iterate(self, clause, *multiparams, connection=None,
                 timeout=None, **params):
-        async def connection_factory():
-            return await self.get_bind(connection)
-        return self.dialect.do_iterate(
-            connection_factory, clause, *multiparams,
-            timeout=timeout, **params)
+        async def env_factory():
+            return await self.get_bind(connection), self
+        return GinoCursorFactory(env_factory, timeout,
+                                 clause, *multiparams, **params)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
         return GinoAcquireContext(self._bind, timeout, reuse, lazy)
@@ -288,30 +288,50 @@ class GinoExecutor:
         self._query = query
 
     @property
-    def db(self):
-        return self._query.__model__().__metadata__
-
-    @property
     def query(self):
         return self._query
 
-    def all(self, *args, **kwargs):
-        return self.db.all(self._query, *args, **kwargs)
+    async def get_bind(self, bind):
+        if bind is None:
+            bind = self._query.bind
+            if asyncio.iscoroutine(bind):
+                bind = await bind
+        return bind
 
-    def first(self, *args, **kwargs):
-        return self.db.first(self._query, *args, **kwargs)
+    async def all(self, clause, *multiparams,
+                  bind=None, timeout=None, **params):
+        bind = await self.get_bind(bind)
+        return await bind.metadata.dialect.do_all(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
-    def scalar(self, *args, **kwargs):
-        return self.db.scalar(self._query, *args, **kwargs)
+    async def first(self, clause, *multiparams, bind=None,
+                    timeout=None, **params):
+        bind = await self.get_bind(bind)
+        return await bind.metadata.dialect.do_first(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
-    def status(self, *args, **kwargs):
+    async def scalar(self, clause, *multiparams, bind=None,
+                     timeout=None, **params):
+        bind = await self.get_bind(bind)
+        return await bind.metadata.dialect.do_scalar(
+            bind, clause, *multiparams, timeout=timeout, **params)
+
+    async def status(self, clause, *multiparams, bind=None,
+                     timeout=None, **params):
         """
         You can parse the return value like this: https://git.io/v7oze
         """
-        return self.db.status(self._query, *args, **kwargs)
+        bind = await self.get_bind(bind)
+        return await bind.metadata.dialect.do_status(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
-    def iterate(self, *args, **kwargs):
-        return self.db.iterate(self._query, *args, **kwargs)
+    def iterate(self, clause, *multiparams, connection=None,
+                timeout=None, **params):
+        async def env_factory():
+            bind = await self.get_bind(connection)
+            return bind, bind.metadata
+        return GinoCursorFactory(env_factory, timeout,
+                                 clause, *multiparams, **params)
 
 
 Executable.gino = property(GinoExecutor)
