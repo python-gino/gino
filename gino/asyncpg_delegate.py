@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
 
-from .crud import guess_model, CRUDModel
+from .crud import CRUDModel
 from .dialect import AsyncpgDialect
 from .local import get_local
 from .declarative import declarative_base
@@ -245,44 +245,34 @@ class Gino(sa.MetaData):
     async def all(self, clause, *multiparams,
                   bind=None, timeout=None, **params):
         bind = await self.get_bind(bind)
-        query, args = self.compile(clause, *multiparams, **params)
-        rv = await bind.fetch(query, *args, timeout=timeout)
-
-        model = guess_model(clause)
-        if model is not None:
-            rv = list(map(model.from_row, rv))
-
-        return rv
+        return await self.dialect.do_all(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
     async def first(self, clause, *multiparams, bind=None,
                     timeout=None, **params):
         bind = await self.get_bind(bind)
-        query, args = self.compile(clause, *multiparams, **params)
-        rv = await bind.fetchrow(query, *args, timeout=timeout)
-
-        model = guess_model(clause)
-        if model is not None:
-            rv = model.from_row(rv)
-
-        return rv
+        return await self.dialect.do_first(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
     async def scalar(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
         bind = await self.get_bind(bind)
-        query, args = self.compile(clause, *multiparams, **params)
-        return await bind.fetchval(query, *args, timeout=timeout)
+        return await self.dialect.do_scalar(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
     async def status(self, clause, *multiparams, bind=None,
                      timeout=None, **params):
         bind = await self.get_bind(bind)
-        query, args = self.compile(clause, *multiparams, **params)
-        return await bind.execute(query, *args, timeout=timeout)
+        return await self.dialect.do_status(
+            bind, clause, *multiparams, timeout=timeout, **params)
 
     def iterate(self, clause, *multiparams, connection=None,
                 timeout=None, **params):
-        query, args = self.compile(clause, *multiparams, **params)
-        model = guess_model(clause)
-        return GinoCursorFactory(self, query, args, connection, model, timeout)
+        async def connection_factory():
+            return await self.get_bind(connection)
+        return self.dialect.do_iterate(
+            connection_factory, clause, *multiparams,
+            timeout=timeout, **params)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
         return GinoAcquireContext(self.bind, timeout, reuse, lazy)
@@ -293,97 +283,35 @@ class Gino(sa.MetaData):
                                isolation, readonly, deferrable)
 
 
-class GinoCursorFactory:
-    def __init__(self, metadata, query, args, connection, model, timeout):
-        self._metadata = metadata
-        self._query = query
-        self._args = args
-        self._connection = connection
-        self._model = model
-        self._timeout = timeout
-
-    async def get_cursor_factory(self):
-        connection = await self._metadata.get_bind(self._connection)
-        return connection.cursor(self._query, *self._args,
-                                 timeout=self._timeout)
-
-    @property
-    def model(self):
-        return self._model
-
-    def __aiter__(self):
-        return GinoCursorIterator(self)
-
-    def __await__(self):
-        return GinoCursor(self).async_init().__await__()
-
-
-class GinoCursorIterator:
-    def __init__(self, factory):
-        self._factory = factory
-        self._iterator = None
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self._iterator is None:
-            factory = await self._factory.get_cursor_factory()
-            self._iterator = factory.__aiter__()
-        rv = await self._iterator.__anext__()
-        if self._factory.model is not None:
-            rv = self._factory.model.from_row(rv)
-        return rv
-
-
-class GinoCursor:
-    def __init__(self, factory):
-        self._factory = factory
-        self._cursor = None
-
-    async def async_init(self):
-        factory = await self._factory.get_cursor_factory()
-        self._cursor = await factory
-        return self
-
-    async def many(self, n, *, timeout=None):
-        rv = await self._cursor.fetch(n, timeout=timeout)
-        if self._factory.model is not None:
-            rv = list(map(self._factory.model.from_row, rv))
-        return rv
-
-    async def next(self, *, timeout=None):
-        rv = await self._cursor.fetchrow(timeout=timeout)
-        if self._factory.model is not None:
-            rv = self._factory.model.from_row(rv)
-        return rv
-
-    def __getattr__(self, item):
-        return getattr(self._cursor, item)
-
-
 class GinoExecutor:
     def __init__(self, query):
-        self.query = query
-        self.gino = query.__model__().__metadata__
+        self._query = query
+
+    @property
+    def db(self):
+        return self._query.__model__().__metadata__
+
+    @property
+    def query(self):
+        return self._query
 
     def all(self, *args, **kwargs):
-        return self.gino.all(self.query, *args, **kwargs)
+        return self.db.all(self._query, *args, **kwargs)
 
     def first(self, *args, **kwargs):
-        return self.gino.first(self.query, *args, **kwargs)
+        return self.db.first(self._query, *args, **kwargs)
 
     def scalar(self, *args, **kwargs):
-        return self.gino.scalar(self.query, *args, **kwargs)
+        return self.db.scalar(self._query, *args, **kwargs)
 
     def status(self, *args, **kwargs):
         """
         You can parse the return value like this: https://git.io/v7oze
         """
-        return self.gino.status(self.query, *args, **kwargs)
+        return self.db.status(self._query, *args, **kwargs)
 
     def iterate(self, *args, **kwargs):
-        return self.gino.iterate(self.query, *args, **kwargs)
+        return self.db.iterate(self._query, *args, **kwargs)
 
 
 Executable.gino = property(GinoExecutor)

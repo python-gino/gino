@@ -242,20 +242,3 @@ class CRUDModel(Model):
         cls = type(self)
         clause = self.append_where_primary_key(cls.delete)
         return await self.__metadata__.status(clause, bind=bind)
-
-
-def guess_model(query):
-    # query.__model__ is weak references, which need dereference
-    model = getattr(query, '__model__', lambda: None)()
-    if model is not None:
-        return model
-    tables = getattr(query, 'froms', [])
-    if len(tables) != 1:
-        return
-    model = getattr(tables[0], '__model__', lambda: None)()
-    if not model:
-        return
-    for c in query.columns:
-        if not hasattr(model, c.name):
-            return
-    return model

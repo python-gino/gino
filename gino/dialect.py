@@ -2,6 +2,7 @@ from sqlalchemy import cutils
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
+    PGExecutionContext,
 )
 
 
@@ -26,11 +27,11 @@ class NoopConnection:
 
 
 # noinspection PyAbstractClass
-class AsyncpgDialect(PGDialect):
-    default_paramstyle = 'numeric'
-    statement_compiler = AsyncpgCompiler
+class AsyncpgExecutionContext(PGExecutionContext):
+    model = None
 
-    def compile(self, elem, *multiparams, **params):
+    @classmethod
+    def init_clause(cls, dialect, elem, *multiparams, **params):
         # partially copied from:
         # sqlalchemy.engine.base.Connection:_execute_clauseelement
         # noinspection PyProtectedMember
@@ -42,15 +43,151 @@ class AsyncpgDialect(PGDialect):
         else:
             keys = []
         compiled_sql = elem.compile(
-            dialect=self, column_keys=keys,
+            dialect=dialect, column_keys=keys,
             inline=len(distilled_params) > 1,
         )
-        conn = NoopConnection(self)
-        # noinspection PyProtectedMember
-        context = self.execution_ctx_cls._init_compiled(
-            self, conn, conn, compiled_sql, distilled_params)
+        conn = NoopConnection(dialect)
+        rv = cls._init_compiled(
+            dialect, conn, conn, compiled_sql, distilled_params)
+        rv.guess_model(elem)
+        return rv
+
+    def guess_model(self, query):
+        # query.__model__ is weak references, which need dereference
+        model = getattr(query, '__model__', lambda: None)()
+        if model is None:
+            tables = getattr(query, 'froms', [])
+            if len(tables) != 1:
+                return
+            model = getattr(tables[0], '__model__', lambda: None)()
+            if not model:
+                return
+            for c in query.columns:
+                if not hasattr(model, c.name):
+                    return
+        self.model = model
+
+    def from_row(self, row):
+        if self.model is None or row is None:
+            return row
+        rv = self.model()
+        for key, value in row.items():
+            type_ = getattr(getattr(self.model, key), 'type', None)
+            if type_ is not None:
+                processor = self.get_result_processor(type_, None, None)
+                if processor:
+                    value = processor(value)
+            setattr(rv, key, value)
+        return rv
+
+
+class GinoCursorFactory:
+    def __init__(self, context, connection_factory, timeout):
+        self._context = context
+        self._connection_factory = connection_factory
+        self._timeout = timeout
+
+    async def get_cursor_factory(self):
+        connection = await self._connection_factory()
+        return connection.cursor(self._context.statement,
+                                 *self._context.parameters[0],
+                                 timeout=self._timeout)
+
+    @property
+    def context(self):
+        return self._context
+
+    def __aiter__(self):
+        return GinoCursorIterator(self)
+
+    def __await__(self):
+        return GinoCursor(self).async_init().__await__()
+
+
+class GinoCursorIterator:
+    def __init__(self, factory):
+        self._factory = factory
+        self._iterator = None
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self._iterator is None:
+            factory = await self._factory.get_cursor_factory()
+            self._iterator = factory.__aiter__()
+        row = await self._iterator.__anext__()
+        return self._factory.context.from_row(row)
+
+
+class GinoCursor:
+    def __init__(self, factory):
+        self._factory = factory
+        self._cursor = None
+
+    async def async_init(self):
+        factory = await self._factory.get_cursor_factory()
+        self._cursor = await factory
+        return self
+
+    async def many(self, n, *, timeout=None):
+        rows = await self._cursor.fetch(n, timeout=timeout)
+        return list(map(self._factory.context.from_row, rows))
+
+    async def next(self, *, timeout=None):
+        row = await self._cursor.fetchrow(timeout=timeout)
+        return self._factory.context.from_row(row)
+
+    def __getattr__(self, item):
+        return getattr(self._cursor, item)
+
+
+# noinspection PyAbstractClass
+class AsyncpgDialect(PGDialect):
+    default_paramstyle = 'numeric'
+    statement_compiler = AsyncpgCompiler
+    execution_ctx_cls = AsyncpgExecutionContext
+
+    def compile(self, elem, *multiparams, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, elem, *multiparams, **params)
         return context.statement, context.parameters[0]
 
     def get_result_processor(self, col):
         # noinspection PyProtectedMember
         return col.type._cached_result_processor(self, None)
+
+    async def do_all(self, bind, clause, *multiparams, timeout=None, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, *multiparams, **params)
+        rows = await bind.fetch(context.statement, *context.parameters[0],
+                                timeout=timeout)
+        return list(map(context.from_row, rows))
+
+    async def do_first(self, bind, clause, *multiparams,
+                       timeout=None, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, *multiparams, **params)
+        row = await bind.fetchrow(context.statement, *context.parameters[0],
+                                  timeout=timeout)
+        return context.from_row(row)
+
+    async def do_scalar(self, bind, clause, *multiparams,
+                        timeout=None, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, *multiparams, **params)
+        return await bind.fetchval(context.statement, *context.parameters[0],
+                                   timeout=timeout)
+
+    async def do_status(self, bind, clause, *multiparams,
+                        timeout=None, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, *multiparams, **params)
+        return await bind.execute(context.statement, *context.parameters[0],
+                                  timeout=timeout)
+
+    def do_iterate(self, connection_factory, clause, *multiparams,
+                   timeout=None, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, *multiparams, **params)
+        return GinoCursorFactory(context, connection_factory, timeout)
