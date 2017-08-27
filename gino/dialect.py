@@ -50,6 +50,13 @@ class AsyncpgExecutionContext(PGExecutionContext):
             dialect=dialect, column_keys=keys,
             inline=len(distilled_params) > 1,
         )
+        if execution_options:
+            execution_options = dict(execution_options)
+        else:
+            execution_options = {}
+        for opt in ('return_model', 'model', 'timeout'):
+            if opt in compiled_sql.execution_options:
+                execution_options.pop(opt, None)
         conn = NoopConnection(dialect, execution_options)
         rv = cls._init_compiled(
             dialect, conn, conn, compiled_sql, distilled_params)

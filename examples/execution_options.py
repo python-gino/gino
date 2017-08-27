@@ -17,13 +17,15 @@ async def main():
     async with db.create_pool('postgresql://localhost/gino') as pool:
         # You will need to create the database and table manually
 
-        q = User.query.execution_options(return_model=True)
+        q = User.query
         print(await q.gino.first())
         pool.execution_options['return_model'] = False
         print(await q.gino.first())
         async with db.acquire() as conn:
             conn.execution_options['return_model'] = True
             print(await q.gino.first())
+            print(await q.execution_options(return_model=False).gino.first())
+        print(await q.execution_options(return_model=True).gino.first())
         print(await q.gino.first())
         pool.execution_options.clear()
         print(await q.gino.first())
