@@ -20,6 +20,7 @@ class GinoPool(Pool):
                  max_queries, max_inactive_connection_lifetime, setup, init,
                  loop, connection_class, **connect_kwargs):
         self.metadata = metadata
+        self._execution_options = {}
         super().__init__(
             *connect_args, min_size=min_size, max_size=max_size,
             max_queries=max_queries,
@@ -36,6 +37,20 @@ class GinoPool(Pool):
         self.metadata.bind = None
         self.metadata = None
         return await super().close()
+
+    @property
+    def execution_options(self):
+        return self._execution_options
+
+    async def _acquire(self, timeout):
+        conn = await super()._acquire(timeout)
+        conn.execution_options.clear()
+        conn.execution_options.update(self._execution_options)
+        return conn
+
+    async def release(self, connection):
+        connection.execution_options.clear()
+        return await super().release(connection)
 
     async def all(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.all(clause, *multiparams, **params,
@@ -56,6 +71,14 @@ class GinoPool(Pool):
 
 class GinoConnection(Connection):
     metadata = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._execution_options = {}
+
+    @property
+    def execution_options(self):
+        return self._execution_options
 
     async def all(self, clause, *multiparams, timeout=None, **params):
         return await self.metadata.all(clause, *multiparams, **params,
