@@ -196,7 +196,7 @@ class Gino(sa.MetaData):
 
     @property
     def bind(self):
-        return self.get_bind()
+        return self.get_bind
 
     # noinspection PyMethodOverriding
     @bind.setter
@@ -294,8 +294,10 @@ class GinoExecutor:
     async def get_bind(self, bind):
         if bind is None:
             bind = self._query.bind
-            if asyncio.iscoroutine(bind):
-                bind = await bind
+            if callable(bind):
+                bind = bind()
+                if asyncio.iscoroutine(bind):
+                    bind = await bind
         return bind
 
     async def all(self, *multiparams, bind=None, timeout=None, **params):
