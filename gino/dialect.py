@@ -8,6 +8,8 @@ from sqlalchemy.dialects.postgresql.base import (
     PGExecutionContext,
 )
 
+DEFAULT = object()
+
 
 class AsyncpgCompiler(PGCompiler):
     @property
@@ -66,6 +68,11 @@ class AsyncpgExecutionContext(PGExecutionContext):
             rv = rv()
         return rv
 
+    @util.memoized_property
+    def timeout(self):
+        # noinspection PyUnresolvedReferences
+        return self.execution_options.get('timeout', None)
+
     def from_row(self, row):
         if self.model is None or row is None:
             return row
@@ -85,19 +92,24 @@ class AsyncpgExecutionContext(PGExecutionContext):
 
 
 class GinoCursorFactory:
-    def __init__(self, env_factory, timeout, clause, multiparams, params):
+    def __init__(self, env_factory, clause, multiparams, params):
         self._env_factory = env_factory
         self._context = None
-        self._timeout = timeout
+        self._timeout = None
         self._clause = clause
         self._multiparams = multiparams
         self._params = params
+
+    @property
+    def timeout(self):
+        return self._timeout
 
     async def get_cursor_factory(self):
         connection, metadata = await self._env_factory()
         self._context = metadata.dialect.execution_ctx_cls.init_clause(
             metadata.dialect, self._clause, self._multiparams, self._params,
             getattr(connection, 'execution_options', None))
+        self._timeout = self._context.timeout
         return connection.cursor(self._context.statement,
                                  *self._context.parameters[0],
                                  timeout=self._timeout)
@@ -139,11 +151,15 @@ class GinoCursor:
         self._cursor = await factory
         return self
 
-    async def many(self, n, *, timeout=None):
+    async def many(self, n, *, timeout=DEFAULT):
+        if timeout is DEFAULT:
+            timeout = self._factory.timeout
         rows = await self._cursor.fetch(n, timeout=timeout)
         return list(map(self._factory.context.from_row, rows))
 
-    async def next(self, *, timeout=None):
+    async def next(self, *, timeout=DEFAULT):
+        if timeout is DEFAULT:
+            timeout = self._factory.timeout
         row = await self._cursor.fetchrow(timeout=timeout)
         return self._factory.context.from_row(row)
 
@@ -166,35 +182,32 @@ class AsyncpgDialect(PGDialect):
         # noinspection PyProtectedMember
         return col.type._cached_result_processor(self, None)
 
-    async def do_all(self, bind, clause, *multiparams, timeout=None, **params):
+    async def do_all(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
             getattr(bind, 'execution_options', None))
         rows = await bind.fetch(context.statement, *context.parameters[0],
-                                timeout=timeout)
+                                timeout=context.timeout)
         return list(map(context.from_row, rows))
 
-    async def do_first(self, bind, clause, *multiparams,
-                       timeout=None, **params):
+    async def do_first(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
             getattr(bind, 'execution_options', None))
         row = await bind.fetchrow(context.statement, *context.parameters[0],
-                                  timeout=timeout)
+                                  timeout=context.timeout)
         return context.from_row(row)
 
-    async def do_scalar(self, bind, clause, *multiparams,
-                        timeout=None, **params):
+    async def do_scalar(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
             getattr(bind, 'execution_options', None))
         return await bind.fetchval(context.statement, *context.parameters[0],
-                                   timeout=timeout)
+                                   timeout=context.timeout)
 
-    async def do_status(self, bind, clause, *multiparams,
-                        timeout=None, **params):
+    async def do_status(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
             getattr(bind, 'execution_options', None))
         return await bind.execute(context.statement, *context.parameters[0],
-                                  timeout=timeout)
+                                  timeout=context.timeout)

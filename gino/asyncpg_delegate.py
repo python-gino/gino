@@ -52,21 +52,21 @@ class GinoPool(Pool):
         connection.execution_options.clear()
         return await super().release(connection)
 
-    async def all(self, clause, *multiparams, timeout=None, **params):
+    async def all(self, clause, *multiparams, **params):
         return await self.metadata.all(clause, *multiparams, **params,
-                                       timeout=timeout, bind=self)
+                                       bind=self)
 
-    async def first(self, clause, *multiparams, timeout=None, **params):
+    async def first(self, clause, *multiparams, **params):
         return await self.metadata.first(clause, *multiparams, **params,
-                                         timeout=timeout, bind=self)
+                                         bind=self)
 
-    async def scalar(self, clause, *multiparams, timeout=None, **params):
+    async def scalar(self, clause, *multiparams, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
-                                          timeout=timeout, bind=self)
+                                          bind=self)
 
-    async def status(self, clause, *multiparams, timeout=None, **params):
+    async def status(self, clause, *multiparams, **params):
         return await self.metadata.status(clause, *multiparams, **params,
-                                          timeout=timeout, bind=self)
+                                          bind=self)
 
 
 class GinoConnection(Connection):
@@ -80,25 +80,25 @@ class GinoConnection(Connection):
     def execution_options(self):
         return self._execution_options
 
-    async def all(self, clause, *multiparams, timeout=None, **params):
+    async def all(self, clause, *multiparams, **params):
         return await self.metadata.all(clause, *multiparams, **params,
-                                       timeout=timeout, bind=self)
+                                       bind=self)
 
-    async def first(self, clause, *multiparams, timeout=None, **params):
+    async def first(self, clause, *multiparams, **params):
         return await self.metadata.first(clause, *multiparams, **params,
-                                         timeout=timeout, bind=self)
+                                         bind=self)
 
-    async def scalar(self, clause, *multiparams, timeout=None, **params):
+    async def scalar(self, clause, *multiparams, **params):
         return await self.metadata.scalar(clause, *multiparams, **params,
-                                          timeout=timeout, bind=self)
+                                          bind=self)
 
-    async def status(self, clause, *multiparams, timeout=None, **params):
+    async def status(self, clause, *multiparams, **params):
         return await self.metadata.status(clause, *multiparams, **params,
-                                          timeout=timeout, bind=self)
+                                          bind=self)
 
-    def iterate(self, clause, *multiparams, timeout=None, **params):
+    def iterate(self, clause, *multiparams, **params):
         return self.metadata.iterate(clause, *multiparams, **params,
-                                     timeout=timeout, connection=self)
+                                     connection=self)
 
 
 class LazyConnection:
@@ -266,36 +266,29 @@ class Gino(sa.MetaData):
     def compile(self, elem, *multiparams, **params):
         return self.dialect.compile(elem, *multiparams, **params)
 
-    async def all(self, clause, *multiparams,
-                  bind=None, timeout=None, **params):
+    async def all(self, clause, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
-        return await self.dialect.do_all(
-            bind, clause, *multiparams, timeout=timeout, **params)
+        return await self.dialect.do_all(bind, clause, *multiparams, **params)
 
-    async def first(self, clause, *multiparams, bind=None,
-                    timeout=None, **params):
+    async def first(self, clause, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await self.dialect.do_first(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, clause, *multiparams, **params)
 
-    async def scalar(self, clause, *multiparams, bind=None,
-                     timeout=None, **params):
+    async def scalar(self, clause, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await self.dialect.do_scalar(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, clause, *multiparams, **params)
 
-    async def status(self, clause, *multiparams, bind=None,
-                     timeout=None, **params):
+    async def status(self, clause, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await self.dialect.do_status(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, clause, *multiparams, **params)
 
-    def iterate(self, clause, *multiparams, connection=None,
-                timeout=None, **params):
+    def iterate(self, clause, *multiparams, connection=None, **params):
         async def env_factory():
             return await self.get_bind(connection), self
-        return GinoCursorFactory(env_factory, timeout,
-                                 clause, multiparams, params)
+        return GinoCursorFactory(env_factory, clause, multiparams, params)
 
     def acquire(self, *, timeout=None, reuse=True, lazy=False):
         return GinoAcquireContext(self._bind, timeout, reuse, lazy)
@@ -323,35 +316,34 @@ class GinoExecutor:
                     bind = await bind
         return bind
 
-    async def all(self, *multiparams, bind=None, timeout=None, **params):
+    async def all(self, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_all(
-            bind, self._query, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, **params)
 
-    async def first(self, *multiparams, bind=None, timeout=None, **params):
+    async def first(self, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_first(
-            bind, self._query, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, **params)
 
-    async def scalar(self, *multiparams, bind=None, timeout=None, **params):
+    async def scalar(self, *multiparams, bind=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_scalar(
-            bind, self._query, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, **params)
 
-    async def status(self, *multiparams, bind=None, timeout=None, **params):
+    async def status(self, *multiparams, bind=None, **params):
         """
         You can parse the return value like this: https://git.io/v7oze
         """
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_status(
-            bind, self._query, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, **params)
 
-    def iterate(self, *multiparams, connection=None, timeout=None, **params):
+    def iterate(self, *multiparams, connection=None, **params):
         async def env_factory():
             bind = await self.get_bind(connection)
             return bind, bind.metadata
-        return GinoCursorFactory(env_factory, timeout,
-                                 self._query, multiparams, params)
+        return GinoCursorFactory(env_factory, self._query, multiparams, params)
 
 
 Executable.gino = property(GinoExecutor)
