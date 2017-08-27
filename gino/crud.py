@@ -9,6 +9,8 @@ from . import json_support
 from .declarative import Model
 from .exceptions import NotInstalledError, NoSuchRowError
 
+DEFAULT = object()
+
 
 class Query:
     def __get__(self, instance, owner):
@@ -65,7 +67,7 @@ class UpdateRequest:
             self._literal = False
         self._props[prop] = value
 
-    async def apply(self, bind=None, timeout=None):
+    async def apply(self, bind=None, timeout=DEFAULT):
         cls = type(self._instance)
         values = self._values.copy()
 
@@ -94,17 +96,18 @@ class UpdateRequest:
                 values[column_name] = column.concat(
                     func(*itertools.chain(*updates.items())))
 
+        opts = dict(return_model=False)
+        if timeout is not DEFAULT:
+            opts['timeout'] = timeout
         clause = self._clause.values(
             **values,
         ).returning(
             *[getattr(cls, key) for key in values],
-        )
-        query, args = cls.__metadata__.compile(clause)
-        bind = await cls.__metadata__.get_bind(bind)
-        row = await bind.fetchrow(query, *args, timeout=timeout)
+        ).execution_options(**opts)
+        row = await cls.__metadata__.first(clause, bind=bind)
         if not row:
             raise NoSuchRowError()
-        self._instance.update_with_row(row)
+        self._instance.__values__.update(row)
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -130,18 +133,7 @@ class CRUDModel(Model):
         return rv
 
     @classmethod
-    async def map(cls, iterable):
-        async for row in iterable:
-            yield cls.from_row(row)
-
-    @classmethod
-    def from_row(cls, row):
-        if row is None:
-            return None
-        return cls().update_with_row(row)
-
-    @classmethod
-    async def create(cls, bind=None, timeout=None, **values):
+    async def create(cls, bind=None, timeout=DEFAULT, **values):
         rv = cls(**values)
 
         # handle JSON properties
@@ -161,17 +153,18 @@ class CRUDModel(Model):
                 prop.save(rv)
                 props.append(prop)
 
+        opts = dict(return_model=False, model=cls)
+        if timeout is not DEFAULT:
+            opts['timeout'] = timeout
         q = cls.__table__.insert().values(**rv.__values__).returning(
-            sa.text('*'))
-        bind = await cls.__metadata__.get_bind(bind)
-        query, args = cls.__metadata__.compile(q)
-        row = await bind.fetchrow(query, *args, timeout=timeout)
-        rv.update_with_row(row)
+            sa.text('*')).execution_options(**opts)
+        row = await cls.__metadata__.first(q, bind=bind)
+        rv.__values__.update(row)
         rv.__profile__ = None
         return rv
 
     @classmethod
-    async def get(cls, ident, bind=None, timeout=None):
+    async def get(cls, ident, bind=None, timeout=DEFAULT):
         if hasattr(ident, '__iter__'):
             ident_ = list(ident)
         else:
@@ -185,10 +178,12 @@ class CRUDModel(Model):
         clause = cls.query
         for i, c in enumerate(columns):
             clause = clause.where(c == ident_[i])
-        return await cls.__metadata__.first(clause, bind=bind, timeout=timeout)
+        if timeout is not DEFAULT:
+            clause = clause.execution_options(timeout=timeout)
+        return await cls.__metadata__.first(clause, bind=bind)
 
     @classmethod
-    async def get_or_404(cls, id_, bind=None, timeout=None):
+    async def get_or_404(cls, id_, bind=None, timeout=DEFAULT):
         try:
             # noinspection PyPackageRequirements
             from sanic.exceptions import NotFound
@@ -204,16 +199,6 @@ class CRUDModel(Model):
         for c in self.__table__.primary_key.columns:
             q = q.where(c == getattr(self, c.name))
         return q
-
-    def update_with_row(self, row):
-        cls = type(self)
-        dialect = self.__metadata__.dialect
-        for key, value in row.items():
-            processor = dialect.get_result_processor(getattr(cls, key))
-            if processor:
-                value = processor(value)
-            setattr(self, key, value)
-        return self
 
     def _update(self, **values):
         cls = type(self)
@@ -234,7 +219,9 @@ class CRUDModel(Model):
             method(k, value)
         return rv
 
-    async def _delete(self, bind=None):
+    async def _delete(self, bind=None, timeout=DEFAULT):
         cls = type(self)
         clause = self.append_where_primary_key(cls.delete)
+        if timeout is not DEFAULT:
+            clause = clause.execution_options(timeout=timeout)
         return await self.__metadata__.status(clause, bind=bind)

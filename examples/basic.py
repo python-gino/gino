@@ -9,6 +9,7 @@ class User(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column(db.Unicode(), default='noname')
+    profile = db.Column(db.JSONB())
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
@@ -21,10 +22,6 @@ async def main():
 
     print(await User.create(bind=conn, nickname='fantix'))
     print(await User.get(1, bind=conn))
-    async with conn.transaction():
-        query, params = db.compile(User.query.where(User.id > 3))
-        async for u in User.map(conn.cursor(query, *params)):
-            print(u)
 
 
 if __name__ == '__main__':
