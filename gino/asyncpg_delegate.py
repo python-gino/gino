@@ -298,40 +298,35 @@ class GinoExecutor:
                 bind = await bind
         return bind
 
-    async def all(self, clause, *multiparams,
-                  bind=None, timeout=None, **params):
+    async def all(self, *multiparams, bind=None, timeout=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_all(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, timeout=timeout, **params)
 
-    async def first(self, clause, *multiparams, bind=None,
-                    timeout=None, **params):
+    async def first(self, *multiparams, bind=None, timeout=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_first(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, timeout=timeout, **params)
 
-    async def scalar(self, clause, *multiparams, bind=None,
-                     timeout=None, **params):
+    async def scalar(self, *multiparams, bind=None, timeout=None, **params):
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_scalar(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, timeout=timeout, **params)
 
-    async def status(self, clause, *multiparams, bind=None,
-                     timeout=None, **params):
+    async def status(self, *multiparams, bind=None, timeout=None, **params):
         """
         You can parse the return value like this: https://git.io/v7oze
         """
         bind = await self.get_bind(bind)
         return await bind.metadata.dialect.do_status(
-            bind, clause, *multiparams, timeout=timeout, **params)
+            bind, self._query, *multiparams, timeout=timeout, **params)
 
-    def iterate(self, clause, *multiparams, connection=None,
-                timeout=None, **params):
+    def iterate(self, *multiparams, connection=None, timeout=None, **params):
         async def env_factory():
             bind = await self.get_bind(connection)
             return bind, bind.metadata
         return GinoCursorFactory(env_factory, timeout,
-                                 clause, multiparams, params)
+                                 self._query, multiparams, params)
 
 
 Executable.gino = property(GinoExecutor)
