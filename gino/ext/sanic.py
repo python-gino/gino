@@ -1,9 +1,9 @@
-from ..declarative import Gino as _Gino
+from .. import api
 from ..local import enable_task_local, disable_task_local
 
 
 # noinspection PyClassHasNoInit
-class Gino(_Gino):
+class Gino(api.Gino):
     """Support Sanic web server.
 
     By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could

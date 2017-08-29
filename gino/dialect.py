@@ -112,7 +112,7 @@ class GinoCursorFactory:
         return self._timeout
 
     async def get_cursor_factory(self):
-        connection, metadata = await self._env_factory()
+        connection, metadata = self._env_factory()
         self._context = metadata.dialect.execution_ctx_cls.init_clause(
             metadata.dialect, self._clause, self._multiparams, self._params,
             getattr(connection, 'execution_options', None))
