@@ -22,6 +22,12 @@ class ColumnAttribute:
         raise AttributeError('Cannot delete column or value.')
 
 
+class ModelType(type):
+    def __iter__(self):
+        # noinspection PyUnresolvedReferences
+        return iter(self.__table__.columns)
+
+
 class Model:
     __metadata__ = None
     __table__ = None
@@ -67,7 +73,7 @@ class Model:
 
 
 def declarative_base(metadata, model_classes=(Model,), name='Model'):
-    return type(name, model_classes, {'__metadata__': metadata})
+    return ModelType(name, model_classes, {'__metadata__': metadata})
 
 
 __all__ = ['ColumnAttribute', 'Model', 'declarative_base']
