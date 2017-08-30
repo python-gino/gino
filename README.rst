@@ -14,8 +14,12 @@ GINO
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/fantix/gino/shield.svg
-     :target: https://pyup.io/repos/github/fantix/gino/
-     :alt: Updates
+        :target: https://pyup.io/repos/github/fantix/gino/
+        :alt: Updates
+
+.. image:: https://badges.gitter.im/gitterHQ/gitter.png
+        :target: https://gitter.im/python-gino/Lobby
+        :alt: Gitter chat
 
 
 GINO - GINO Is Not ORM - is an extremely simple Python ORM, using SQLAlchemy_
@@ -483,10 +487,11 @@ To run tests:
 Credits
 -------
 
-Credit goes to all contributors listed in the AUTHORS file. This project is
-inspired by asyncpgsa_, peewee-async_ and asyncorm_. asyncpg_ and SQLAlchemy_
-as the dependencies did most of the heavy lifting. This package was created
-with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+Credit goes to all contributors listed or not listed in the AUTHORS file. This
+project is inspired by asyncpgsa_, peewee-async_ and asyncorm_. asyncpg_ and
+SQLAlchemy_ as the dependencies did most of the heavy lifting. This package was
+created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project
+template.
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
