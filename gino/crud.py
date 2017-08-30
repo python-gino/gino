@@ -26,7 +26,8 @@ class Select:
             q = sa.select([getattr(owner, x) for x in args])
             if instance is not None:
                 q = instance.append_where_primary_key(q)
-            return q.execution_options(model=weakref.ref(owner))
+            return q.execution_options(model=weakref.ref(owner),
+                                       return_model=False)
         return select
 
 
