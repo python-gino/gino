@@ -62,13 +62,20 @@ class LazyConnection(_ConnectionProxy):
 
     async def release(self, close=False):
         self._closed = self._closed or close
-        getattr(self._conn, '_set_metadata')(None)
-        self._conn = None
-        if self._conn_task is not None:
-            fut, self._conn_task = self._conn_task, None
-            conn = await fut
-            sup = super(self._pool.__class__, self._pool)
-            return await getattr(sup, 'release')(conn)
+        rv = None
+        try:
+            conn_to_release = None
+            if self._conn_task is not None:
+                fut, self._conn_task = self._conn_task, None
+                conn_to_release = await fut
+            if self._conn is not None:
+                getattr(self._conn, '_set_metadata')(None)
+            if conn_to_release is not None:
+                sup = super(self._pool.__class__, self._pool)
+                rv = await getattr(sup, 'release')(conn_to_release)
+        finally:
+            self._conn = None
+        return rv
 
     def __getattr__(self, attr):
         rv = self._wrap_cache.get(attr)
