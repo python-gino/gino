@@ -80,10 +80,10 @@ class AsyncpgExecutionContext(PGExecutionContext):
         # noinspection PyUnresolvedReferences
         return self.execution_options.get('timeout', None)
 
-    def from_row(self, row):
+    def from_row(self, row, return_row=False):
         if self.model is None or row is None:
             return row
-        if self.return_model:
+        if not return_row and self.return_model:
             rv = self.model()
             d = rv.__values__
         else:
@@ -205,8 +205,11 @@ class AsyncpgDialect(PGDialect):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
             getattr(bind, 'execution_options', None))
-        return await bind.fetchval(context.statement, *context.parameters[0],
-                                   timeout=context.timeout)
+        row = await bind.fetchrow(context.statement, *context.parameters[0],
+                                  timeout=context.timeout)
+        if not row:
+            return None
+        return next(iter(context.from_row(row, return_row=True).values()))
 
     async def do_status(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
