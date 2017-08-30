@@ -1,4 +1,5 @@
 import sys
+import weakref
 
 import sqlalchemy as sa
 from sqlalchemy.sql.base import Executable
@@ -67,6 +68,18 @@ class GinoExecutor:
     @property
     def query(self):
         return self._query
+
+    def model(self, model):
+        self._query = self._query.execution_options(model=weakref.ref(model))
+        return self
+
+    def return_model(self, switch):
+        self._query = self._query.execution_options(return_model=switch)
+        return self
+
+    def timeout(self, timeout):
+        self._query = self._query.execution_options(timeout)
+        return self
 
     def get_bind(self, bind):
         return bind or self._query.bind
