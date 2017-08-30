@@ -185,10 +185,6 @@ class AsyncpgDialect(PGDialect):
             self, elem, multiparams, params, None)
         return context.statement, context.parameters[0]
 
-    def get_result_processor(self, col):
-        # noinspection PyProtectedMember
-        return col.type._cached_result_processor(self, None)
-
     async def do_all(self, bind, clause, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, clause, multiparams, params,
