@@ -115,12 +115,16 @@ class GinoExecutor:
 
 
 class Gino(sa.MetaData):
-    def __init__(self, bind=None, dialect=None, model_class=CRUDModel,
+    default_model_classes = (CRUDModel,)
+
+    def __init__(self, bind=None, dialect=None, model_classes=None,
                  query_ext=True, **kwargs):
         self._bind = None
         super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect()
-        self.Model = declarative_base(self, model_class)
+        if model_classes is None:
+            model_classes = self.default_model_classes
+        self.Model = declarative_base(self, model_classes)
         for mod in sa, sa_pg, json_support:
             for key in mod.__all__:
                 if not hasattr(self, key):

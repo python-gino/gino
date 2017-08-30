@@ -66,8 +66,8 @@ class Model:
         return rv
 
 
-def declarative_base(metadata, model_class=Model, name='Model'):
-    return type(name, (model_class,), {'__metadata__': metadata})
+def declarative_base(metadata, model_classes=(Model,), name='Model'):
+    return type(name, model_classes, {'__metadata__': metadata})
 
 
 __all__ = ['ColumnAttribute', 'Model', 'declarative_base']

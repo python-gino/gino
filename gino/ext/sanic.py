@@ -1,5 +1,18 @@
+# noinspection PyPackageRequirements
+from sanic.exceptions import NotFound
+
 from .. import api
 from ..local import enable_task_local, disable_task_local
+
+
+class SanicModelMixin:
+    @classmethod
+    async def get_or_404(cls, *args, **kwargs):
+        # noinspection PyUnresolvedReferences
+        rv = await cls.get(*args, **kwargs)
+        if rv is None:
+            raise NotFound('{} is not found'.format(cls.__name__))
+        return rv
 
 
 # noinspection PyClassHasNoInit
@@ -21,6 +34,8 @@ class Gino(api.Gino):
     Here `request['connection']` is a :class:`LazyConnection` object, see its
     doc string for more information.
     """
+    default_model_classes = api.Gino.default_model_classes + (SanicModelMixin,)
+
     def init_app(self, app):
         task_local_enabled = [False]
 

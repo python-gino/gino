@@ -7,7 +7,7 @@ from sqlalchemy.dialects import postgresql as sa_pg
 
 from . import json_support
 from .declarative import Model
-from .exceptions import NotInstalledError, NoSuchRowError
+from .exceptions import NoSuchRowError
 
 DEFAULT = object()
 
@@ -182,19 +182,6 @@ class CRUDModel(Model):
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
         return await cls.__metadata__.first(clause, bind=bind)
-
-    @classmethod
-    async def get_or_404(cls, id_, bind=None, timeout=DEFAULT):
-        try:
-            # noinspection PyPackageRequirements
-            from sanic.exceptions import NotFound
-        except ModuleNotFoundError:
-            raise NotInstalledError('Sanic has not been installed yet.')
-
-        rv = await cls.get(id_, bind=bind, timeout=timeout)
-        if rv is None:
-            raise NotFound('{} is not found'.format(cls.__name__))
-        return rv
 
     def append_where_primary_key(self, q):
         for c in self.__table__.primary_key.columns:
