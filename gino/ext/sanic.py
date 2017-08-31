@@ -1,7 +1,7 @@
 # noinspection PyPackageRequirements
 from sanic.exceptions import NotFound
 
-from .. import api
+from ..api import Gino as _Gino
 from ..local import enable_task_local, disable_task_local
 
 
@@ -16,7 +16,7 @@ class SanicModelMixin:
 
 
 # noinspection PyClassHasNoInit
-class Gino(api.Gino):
+class Gino(_Gino):
     """Support Sanic web server.
 
     By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could
@@ -34,7 +34,7 @@ class Gino(api.Gino):
     Here `request['connection']` is a :class:`LazyConnection` object, see its
     doc string for more information.
     """
-    default_model_classes = api.Gino.default_model_classes + (SanicModelMixin,)
+    default_model_classes = _Gino.default_model_classes + (SanicModelMixin,)
 
     def init_app(self, app):
         task_local_enabled = [False]
