@@ -213,3 +213,12 @@ class CRUDModel(Model):
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
         return await self.__metadata__.status(clause, bind=bind)
+
+    def to_dict(self):
+        cls = type(self)
+        keys = set(c.name for c in cls)
+        for key, prop in cls.__dict__.items():
+            if isinstance(prop, json_support.JSONProperty):
+                keys.add(key)
+                keys.discard(prop.column_name)
+        return dict((k, getattr(self, k)) for k in keys)
