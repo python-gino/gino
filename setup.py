@@ -12,10 +12,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    'asyncpg~=0.12',
-    'SQLAlchemy~=1.1',
-]
+
+def req_file(filename):
+    with open(filename) as f:
+        content = f.readlines()
+    return [x.strip() for x in content if x.strip()]
 
 setup_requirements = [
     'Cython>=0.24',
@@ -57,7 +58,7 @@ setup(
         LazyExtension('gino.record', ['gino/record.pyx']),
     ],
     include_package_data=True,
-    install_requires=requirements,
+    install_requires=req_file('requirements.txt'),
     license="BSD license",
     zip_safe=False,
     keywords='gino',
