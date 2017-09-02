@@ -1,59 +1,89 @@
 """
-Integrate GINO and Tornado webserver
-====================================
+GINO provides a convenient plugin for integrating with Tornado_ webserver.
+It consists of two parts, each of them is optional.
 
-We provide a convenient way to integrate GINO and tornado.
-
-A few steps required to get it working:
-
-- use the :py:class:`gino.ext.tornado.Gino` class as your database metadata;
-- derive your app class from :py:class:`gino.ext.tornado.Application` or use
-  the ``Application`` directly;
-- derive your request handlers from
-  :py:class:`gino.ext.tornado.RequestHandlerBase`.
-- run :py:meth:`.Application.late_init` coroutine somewhere between spawning
-  an ``HTTPServer`` and starting the main loop.
-
-That's it! We will automatically create a connection pool for you, assign
-a connection to request whenever you need it.
+.. _Tornado: http://www.tornadoweb.org
 
 .. warning::
 
-    Task locals as implemented by :py:module:`gino.local` utilize
-    ``asyncio.Task.current_task()`` method for identifying current context.
-    Naturally, it only works in coroutines that are wrapped to
-    ``asyncio.Task`` class. This is not the case for default tornado
-    request handlers.
+    Tornado doesn't wrap request handlers to asyncio tasks, hence
+    task locals doesn't work in request handlers by default. To fix this,
+    you may either redefine ``_execute()`` method on you handlers to wrap
+    request processing into a task, or simply use
+    :py:class:`gino.ext.tornado.AsyncioRequestHandler`
+    as a base class for all of your handlers.
 
-    If you want to use task locals, it is critical that you inherit your
-    request handlers from :py:class:`~.RequestHandlerBase`.
+    See `integrate GINO with application and request handlers`_ for more details.
+
+
+Provide tornado-specific methods on models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+GINO can provide a webframework-aware ``.get_or_404()`` method which work
+similar to ``.get()`` but raises an appropriate error whenever requested object
+not found. In case of tornado, an appropriate error is
+``tornado.web.HTTPError(404)``.
+
+To have it working, simply use :py:class:`gino.ext.tornado.Gino` as your
+database metadata.
+
+
+Integrate GINO with application and request handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to ``.get_or_404()``, GINO provides bases for application and
+request handler objects.
+
+Inherit your application class from :py:class:`gino.ext.tornado.Application`
+to automate connection pool management and provide access to the database
+object to all of your request handlers via ``self.application.db``.
+
+Inherit your request handlers from
+:py:class:`gino.ext.tornado.AsyncioRequestHandler` to enable task locals
+support.
+
+Inherit your request handlers from :py:class:`gino.ext.tornado.GinoRequestHandler`
+to enable active connection management.
+Note that :py:class:`gino.ext.tornado.GinoRequestHandler` requires your application
+to have a ``db`` property with ``acquire`` coroutine so its best to use it
+with :py:class:`gino.ext.tornado.Application`.
+
+
+Settings defined by this extension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 GINO would define some options for database configuration. Use them with
 the standard ``tornado.options`` module:
 
-- ``'db_host'`` -- if not set, ``localhost``
-- ``'db_port'`` -- if not set, ``5432``
-- ``'db_user'`` -- if not set, ``postgres``
-- ``'db_password'`` -- if not set, empty string.
-- ``'db_database'`` -- if not set, ``postgres``
+- ``'db_host'`` -- if not set, ``localhost``;
+- ``'db_port'`` -- if not set, ``5432``;
+- ``'db_user'`` -- if not set, ``postgres``;
+- ``'db_password'`` -- if not set, empty string;
+- ``'db_database'`` -- if not set, ``postgres``;
 - ``'db_pool_min_size'`` -- number of connection the pool will be initialized
-  with. Default is ``5``
+  with. Default is ``5``;
 - ``'db_pool_max_size'`` -- max number of connections in the pool.
-  Default is ``10``
+  Default is ``10``;
 - ``'db_pool_max_inactive_conn_lifetime'`` -- number of seconds after which
   inactive connections in the pool will be closed.  Pass ``0`` to disable this
-  mechanism. Default is ``300``.
+  mechanism. Default is ``300``;
 - ``'db_pool_max_queries '`` -- number of queries after a connection is closed
-  and replaced with a new connection. Default is ``50000``
+  and replaced with a new connection. Default is ``50000``.
 
-A helloworld application that uses tornado and GINO may look like this::
+
+An example application
+^^^^^^^^^^^^^^^^^^^^^^
+
+A helloworld application that uses tornado and GINO may look like this:
+
+.. code-block:: python
 
     import tornado.web
     import tornado.ioloop
     import tornado.options
     import tornado.escape
 
-    from gino.ext.tornado import Gino, Application, RequestHandlerBase
+    from gino.ext.tornado import Gino, Application, GinoRequestHandler
 
 
     # Define your database metadata
@@ -75,7 +105,7 @@ A helloworld application that uses tornado and GINO may look like this::
     # Now just use your tables
     # ------------------------
 
-    class AllUsers(RequestHandlerBase):
+    class AllUsers(GinoRequestHandler):
         async def get(self):
             users = await User.query.gino.all()
 
@@ -85,7 +115,7 @@ A helloworld application that uses tornado and GINO may look like this::
                 self.write(f'<a href="{url}">{nickname}</a><br/>')
 
 
-    class GetUser(RequestHandlerBase):
+    class GetUser(GinoRequestHandler):
         async def get(self, uid):
             user: User = await User.get_or_404(int(uid))
             self.write(f'Hi, {user.nickname}!')
@@ -102,12 +132,17 @@ A helloworld application that uses tornado and GINO may look like this::
 
         loop = tornado.ioloop.IOLoop.current().asyncio_loop
 
+        # If you intend to use HTTPServer in multiprocessed environment,
+        # call the app.late_init method after calling HTTPServer.start(n).
+        # This will create one connection pool per process.
         loop.run_until_complete(app.late_init(db))
 
         app.listen(8888)
 
         loop.run_forever()
 
+API reference
+^^^^^^^^^^^^^
 
 """
 
@@ -123,7 +158,7 @@ import tornado.web
 
 from tornado.options import options as _options, define as _define
 
-from ..api import Gino as _Gino, GinoPool as _GinoPool
+from ..api import Gino as _Gino
 from ..local import enable_task_local as _enable_task_local
 
 
@@ -164,9 +199,7 @@ class Gino(_Gino):
     Base class for GINO database.
 
     Using this class as a metadata for your database adds an additional
-    ``get_or_404()`` method to all of your table classes. This method works as
-    the ``get()`` method except that it would throw throw the
-    ``tornado.web.HTTPError(404)`` if the requested object cannot be found.
+    ``get_or_404()`` method to all of your table classes.
 
     """
 
@@ -193,14 +226,9 @@ class Application(tornado.web.Application):
     #: Use :py:meth:`~.late_init()` to init this or set it manually.
     db: Gino = None
 
-    #: Connection pool or any pool-like bind with ``acquire()`` and
-    #: ``release()`` coroutines. You may try setting this to a single
-    #: connection, just remember to set ``use_connection_for_request = False``.
-    db_pool: _GinoPool = None
-
-    #: If ``True``, a lazy connection is created for each request.
+    #: If ``True``, enables ``GinoRequestHandler`` to create lazy connections.
     #:
-    #: See :py:attr:`~.RequestHandlerBase.use_connection_for_request`
+    #: See :py:attr:`~.GinoRequestHandler.use_connection_for_request`
     #: for more info.
     use_connection_for_request: bool = True
 
@@ -212,8 +240,8 @@ class Application(tornado.web.Application):
         the database:
 
         - it enables task local storage;
-        - creates a connection pool and binds it to the database object;
-        - populates :py:attr:`~.db` and :py:attr:`~.db_pool` attributes.
+        - creates a connection pool and binds it to the passed database object;
+        - populates :py:attr:`~.db`.
 
         :param db: the :py:class:`gino.ext.tornado.Gino()` class instance that
             will be used in this application.
@@ -237,7 +265,7 @@ class Application(tornado.web.Application):
         _enable_task_local(asyncio_loop)
 
         self.db: Gino = db
-        self.db_pool: _GinoPool = await db.create_pool(
+        await db.create_pool(
             host=options['db_host'],
             port=options['db_port'],
             user=options['db_user'],
@@ -254,70 +282,28 @@ class Application(tornado.web.Application):
 
 
 # noinspection PyAbstractClass
-class RequestHandlerBase(tornado.web.RequestHandler):
+class AsyncioRequestHandler(tornado.web.RequestHandler):
     """
-    Base class for all request handlers that use GINO.
-
-    This base class serves two main purposes. The first is to enable task
-    locals by wrapping ``tornado.web.RequestHandler._execute()`` into the
-    ``asyncio.Task``. The second is to acquire a lazy connection before
-    request processing starts (before the ``prepare()`` method is called) and
-    dispose it after it finishes (after the ``on_finish()`` method is called).
+    This class enables support for task locals by wrapping the ``_execute()``
+    method into ``asyncio.Task`` instances.
 
     """
 
-    application: Application
-
-    __db_connection = None
-
-    @property
-    def use_connection_for_request(self):
-        """
-        If ``True``, a lazy connection is created for each request.
-
-        That is, whenever the first query occurs, a new connection is
-        borrowed from the application's pool. All succeeding queries will
-        reuse that connection. The connection will be returned to the pool
-        once the request is finished or the :py:meth:`~.release_connection()`
-        method is called explicitly.
-
-        This property is equal to
-        :py:attr:`~.Application.use_connection_for_request`
-        by default.
-
-        """
-        return self.application.use_connection_for_request
-
-    @property
-    def db_connection(self):
-        """
-        The actual connection created via ``use_connection_for_request``.
-
-        This will be ``None`` if no connection was acquired of the connection
-        was returned to the pool.
-
-        """
-        return self.__db_connection
-
-    async def release_connection(self):
-        """
-        Release the connection acquired via ``use_connection_for_request``.
-        """
-        if self.__db_connection is not None:
-            await self.application.db_pool.release(self.__db_connection)
-            self.__db_connection = None
+    application: tornado.web.Application
 
     async def _setup_connection(self):
         """
         Hook for creating connection.
+
         """
-        self.__db_connection = await self.application.db_pool.acquire(lazy=True)
+        pass
 
     async def _teardown_connection(self):
         """
         Hook for destroying connection.
+
         """
-        await self.release_connection()
+        pass
 
     def _execute(self, transforms, *args, **kwargs):
         loop = tornado.ioloop.IOLoop.current()
@@ -333,6 +319,19 @@ class RequestHandlerBase(tornado.web.RequestHandler):
         )
 
     async def _do_execute(self, transforms, *args, **kwargs):
+        """
+        An actual asyncio-compatible implementation on the ``_execute``.
+
+        This function just takes the original generator ``_execute.__wrapped__``
+        and manages to pass its futures to the underlying asyncio loop.
+
+        It also calls ``_setup_connection`` and ``_teardown_connection``
+        methods and manages all errors that happen there.
+
+        """
+
+        self._transforms = transforms
+
         try:
             gen = super()._execute.__wrapped__(
                 self, transforms, *args, **kwargs
@@ -341,10 +340,7 @@ class RequestHandlerBase(tornado.web.RequestHandler):
             data = None
             exc_info = None
 
-            use_connection_for_request = self.use_connection_for_request
-
-            if use_connection_for_request:
-                await self._setup_connection()
+            await self._setup_connection()
 
             try:
                 while True:
@@ -363,8 +359,7 @@ class RequestHandlerBase(tornado.web.RequestHandler):
                     except:
                         exc_info = sys.exc_info()
             finally:
-                if use_connection_for_request:
-                    await self._teardown_connection()
+                await self._teardown_connection()
         except Exception as e:
             # noinspection PyBroadException
             try:
@@ -375,3 +370,71 @@ class RequestHandlerBase(tornado.web.RequestHandler):
             if self._prepared_future is not None:
                 if not self._prepared_future.done():
                     self._prepared_future.set_result(None)
+
+
+# noinspection PyAbstractClass
+class GinoRequestHandler(AsyncioRequestHandler):
+    """
+    Base class for all request handlers that use GINO.
+
+    In addition to features provided by :py:class:`~.AsyncioRequestHandler`,
+    this class manages lazy connections for each request.
+
+    """
+
+    application: Application
+
+    __db_connection = None
+
+    @property
+    def use_connection_for_request(self):
+        """
+        If ``True``, a lazy connection is created for each request.
+
+        That is, whenever the first query occurs, a new connection is
+        borrowed from the application's db object. All succeeding queries made
+        within this request will reuse that connection. The connection will be
+        returned to the pool once the request is finished or the
+        :py:meth:`~.release_connection()` method is called explicitly.
+
+        This property is equal to
+        :py:attr:`Application.use_connection_for_request`
+        by default.
+
+        """
+        return self.application.use_connection_for_request
+
+    @property
+    def db(self):
+        """
+        Access to the database object.
+
+        This property is equal to :py:attr:`Application.db` by default.
+
+        """
+        return self.application.db
+
+    async def _setup_connection(self):
+        if self.use_connection_for_request:
+            self.__db_connection = await self.db.acquire(lazy=True)
+
+    async def _teardown_connection(self):
+        if self.__db_connection is not None:
+            await self.__db_connection.release()
+            self.__db_connection = None
+
+    @property
+    def db_connection(self):
+        """
+        The actual connection associated with this request or ``None`` if
+        ``use_connection_for_request`` is ``False``.
+
+        """
+        return self.__db_connection
+
+    async def release_connection(self):
+        """
+        Return the connection associated with this request back to the pool.
+
+        """
+        await self._teardown_connection()
