@@ -8,9 +8,10 @@ class User(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column(db.Unicode(), default='noname')
+    profile = db.Column(db.JSONB())
 
     def __repr__(self):
-        return '{}<{}>'.format(self.nickname, self.id)
+        return '{}<{}> {}'.format(self.nickname, self.id, self.profile)
 
 
 async def main():

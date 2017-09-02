@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+gino/record.c
 
 # Distribution / packaging
 .Python

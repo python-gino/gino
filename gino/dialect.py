@@ -1,5 +1,4 @@
 import weakref
-from collections import OrderedDict
 
 from sqlalchemy import cutils, util
 from sqlalchemy.dialects.postgresql.base import (
@@ -7,6 +6,8 @@ from sqlalchemy.dialects.postgresql.base import (
     PGDialect,
     PGExecutionContext,
 )
+
+from .record import update_record
 
 DEFAULT = object()
 
@@ -83,18 +84,19 @@ class AsyncpgExecutionContext(PGExecutionContext):
     def from_row(self, row, return_row=False):
         if self.model is None or row is None:
             return row
-        if not return_row and self.return_model:
-            rv = self.model()
-            d = rv.__values__
-        else:
-            rv = d = OrderedDict()
-        for key, value in row.items():
+        for index, (key, value) in enumerate(row.items()):
             type_ = getattr(getattr(self.model, key), 'type', None)
             if type_ is not None:
                 processor = self.get_result_processor(type_, None, None)
                 if processor:
-                    value = processor(value)
-            d[key] = value
+                    new_value = processor(value)
+                    if new_value is not value:
+                        update_record(row, index, new_value)
+        if not return_row and self.return_model:
+            rv = self.model()
+            rv.__values__.update(row)
+        else:
+            rv = row
         return rv
 
 
