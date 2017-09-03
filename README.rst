@@ -17,7 +17,7 @@ GINO
         :target: https://pyup.io/repos/github/fantix/gino/
         :alt: Updates
 
-.. image:: https://badges.gitter.im/gitterHQ/gitter.png
+.. image:: https://img.shields.io/gitter/room/python-gino/Lobby.svg
         :target: https://gitter.im/python-gino/Lobby
         :alt: Gitter chat
 
