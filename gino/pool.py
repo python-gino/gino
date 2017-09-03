@@ -51,7 +51,7 @@ class LazyConnection(_ConnectionProxy):
             raise InterfaceError('This LazyConnection is returned to pool')
         if self._root is self:
             if self._conn_task is None:
-                sup = super(self._pool.__class__, self._pool)
+                sup = super(GinoPool, self._pool)
                 self._conn_task = self._loop.create_task(
                     getattr(sup, '_acquire')(timeout=self._timeout))
             self._conn = await self._conn_task
@@ -71,7 +71,7 @@ class LazyConnection(_ConnectionProxy):
             if self._conn is not None:
                 getattr(self._conn, '_set_metadata')(None)
             if conn_to_release is not None:
-                sup = super(self._pool.__class__, self._pool)
+                sup = super(GinoPool, self._pool)
                 rv = await getattr(sup, 'release')(conn_to_release)
         finally:
             self._conn = None
