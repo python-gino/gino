@@ -9,8 +9,8 @@ GINO
 .. image:: https://img.shields.io/travis/fantix/gino.svg
         :target: https://travis-ci.org/fantix/gino
 
-.. image:: https://readthedocs.org/projects/ginorm/badge/?version=latest
-        :target: https://ginorm.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/python-gino/badge/?version=latest
+        :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/fantix/gino/shield.svg
@@ -27,7 +27,7 @@ core to define table models, and asyncpg_ to interact with database.
 
 
 * Free software: BSD license
-* Documentation: https://gino.readthedocs.io.
+* Documentation: https://python-gino.readthedocs.io.
 
 There's been a lot of words about ORM a.k.a. Object-relational mapping - good
 or bad - as well as a lot of ORM libraries in Python. It is crucial to pick a
