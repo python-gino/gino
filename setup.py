@@ -46,7 +46,7 @@ class LazyExtension(Extension):
 
 setup(
     name='gino',
-    version='0.4.1',
+    version='0.5.0',
     description="GINO Is Not ORM - "
                 "a Python ORM on asyncpg and SQLAlchemy core.",
     long_description=readme + '\n\n' + history,
