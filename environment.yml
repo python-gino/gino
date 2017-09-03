@@ -6,3 +6,5 @@ dependencies:
   - python=3.6
   - pip:
     - asyncpg
+    - sanic
+    - tornado
