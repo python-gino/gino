@@ -158,8 +158,10 @@ import tornado.web
 
 from tornado.options import options as _options, define as _define
 
-from ..api import Gino as _Gino
+from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..local import enable_task_local as _enable_task_local
+from ..connection import GinoConnection as _Connection
+from ..pool import GinoPool as _Pool
 
 
 def _assert_not_negative(name):
@@ -194,6 +196,33 @@ class TornadoModelMixin:
         return rv
 
 
+# noinspection PyClassHasNoInit
+class GinoExecutor(_Executor):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise tornado.web.HTTPError(404)
+        return rv
+
+
+# noinspection PyClassHasNoInit
+class GinoConnection(_Connection):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise tornado.web.HTTPError(404)
+        return rv
+
+
+# noinspection PyClassHasNoInit
+class GinoPool(_Pool):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise tornado.web.HTTPError(404)
+        return rv
+
+
 class Gino(_Gino):
     """
     Base class for GINO database.
@@ -203,7 +232,10 @@ class Gino(_Gino):
 
     """
 
-    default_model_classes = _Gino.default_model_classes + (TornadoModelMixin,)
+    model_base_classes = _Gino.model_base_classes + (TornadoModelMixin,)
+    query_executor = GinoExecutor
+    connection_cls = GinoConnection
+    pool_cls = GinoPool
 
     if typing.TYPE_CHECKING:
         # Typehints to enable autocompletion on all Gino.Model-derived classes
@@ -213,6 +245,12 @@ class Gino(_Gino):
 
         class Model(__CRUDModel, TornadoModelMixin, metaclass=__ModelType):
             ...
+
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise tornado.web.HTTPError(404)
+        return rv
 
 
 class Application(tornado.web.Application):

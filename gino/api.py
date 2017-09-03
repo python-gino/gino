@@ -115,7 +115,10 @@ class GinoExecutor:
 
 
 class Gino(sa.MetaData):
-    default_model_classes = (CRUDModel,)
+    model_base_classes = (CRUDModel,)
+    query_executor = GinoExecutor
+    connection_cls = GinoConnection
+    pool_cls = GinoPool
 
     def __init__(self, bind=None, dialect=None, model_classes=None,
                  query_ext=True, **kwargs):
@@ -123,14 +126,14 @@ class Gino(sa.MetaData):
         super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect()
         if model_classes is None:
-            model_classes = self.default_model_classes
+            model_classes = self.model_base_classes
         self.Model = declarative_base(self, model_classes)
         for mod in sa, sa_pg, json_support:
             for key in mod.__all__:
                 if not hasattr(self, key):
                     setattr(self, key, getattr(mod, key))
         if query_ext:
-            Executable.gino = property(GinoExecutor)
+            Executable.gino = property(self.query_executor)
 
     @property
     def bind(self):
@@ -150,14 +153,16 @@ class Gino(sa.MetaData):
                     setup=None,
                     init=None,
                     loop=None,
-                    connection_class=GinoConnection,
+                    connection_class=None,
                     **connect_kwargs):
-        if not issubclass(connection_class, GinoConnection):
+        if connection_class is None:
+            connection_class = self.connection_cls
+        elif not issubclass(connection_class, self.connection_cls):
             raise TypeError(
                 'connection_class is expected to be a subclass of '
-                'gino.GinoConnection, got {!r}'.format(connection_class))
+                '{!r}, got {!r}'.format(self.connection_cls, connection_class))
 
-        pool = GinoPool(
+        pool = self.pool_cls(
             self, dsn,
             connection_class=connection_class,
             min_size=min_size, max_size=max_size,

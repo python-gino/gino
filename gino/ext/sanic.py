@@ -1,8 +1,10 @@
 # noinspection PyPackageRequirements
 from sanic.exceptions import NotFound
 
-from ..api import Gino as _Gino
+from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..local import enable_task_local, disable_task_local
+from ..connection import GinoConnection as _Connection
+from ..pool import GinoPool as _Pool
 
 
 class SanicModelMixin:
@@ -12,6 +14,33 @@ class SanicModelMixin:
         rv = await cls.get(*args, **kwargs)
         if rv is None:
             raise NotFound('{} is not found'.format(cls.__name__))
+        return rv
+
+
+# noinspection PyClassHasNoInit
+class GinoExecutor(_Executor):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise NotFound('No such data')
+        return rv
+
+
+# noinspection PyClassHasNoInit
+class GinoConnection(_Connection):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise NotFound('No such data')
+        return rv
+
+
+# noinspection PyClassHasNoInit
+class GinoPool(_Pool):
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise NotFound('No such data')
         return rv
 
 
@@ -34,7 +63,10 @@ class Gino(_Gino):
     Here `request['connection']` is a :class:`LazyConnection` object, see its
     doc string for more information.
     """
-    default_model_classes = _Gino.default_model_classes + (SanicModelMixin,)
+    model_base_classes = _Gino.model_base_classes + (SanicModelMixin,)
+    query_executor = GinoExecutor
+    connection_cls = GinoConnection
+    pool_cls = GinoPool
 
     def init_app(self, app):
         task_local_enabled = [False]
@@ -75,3 +107,9 @@ class Gino(_Gino):
             if task_local_enabled[0]:
                 disable_task_local(loop)
                 task_local_enabled[0] = False
+
+    async def first_or_404(self, *args, **kwargs):
+        rv = await self.first(*args, **kwargs)
+        if rv is None:
+            raise NotFound('No such data')
+        return rv
