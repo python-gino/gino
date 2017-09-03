@@ -2,6 +2,26 @@
 History
 =======
 
+0.5.0 (2017-09-03)
+------------------
+
+This is also version 1.0 beta 1.
+
+* [Breaking] Internal refactor: extracted and isolated a few modules, partially rewritten
+
+  * Extracted CRUD operations
+  * Core operations are moved to ``dialect`` and execution context
+  * Removed ``guess_model``, switched to explicit execution options
+  * Turned ``timeout`` parameter to an execution option
+  * Extracted ``pool``, ``connection`` and ``api`` from ``asyncpg_delegate``
+* Added support for SQLAlchemy execution options, and a few custom options
+* [Breaking] Made `Model.select` return rows by default (#39)
+* Moved `get_or_404` to extensions (#38)
+* Added iterator on model classes (#43)
+* Added Tornado extension (Contributed by Vladimir Goncharov)
+* Added `Model.to_dict` (#47)
+* Added an extension module to update `asyncpg.Record` with processed results
+
 0.4.1 (2017-08-20)
 ------------------
 
