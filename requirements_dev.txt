@@ -9,7 +9,7 @@ Sphinx==1.6.3
 cryptography==2.0.3
 PyYAML==3.12
 pytest==3.2.1
-pytest-runner==2.11.1
+pytest-runner==2.12
 pytest-asyncio==0.6.0
 psycopg2==2.7.3.1
 Cython>=0.24
