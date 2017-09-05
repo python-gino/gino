@@ -68,6 +68,10 @@ class GinoPool(Pool):
         return await self.metadata.status(clause, *multiparams, **params,
                                           bind=self)
 
+    async def executemany(self, clause, args, **params):
+        with await self._acquire(params.get('timeout', None)) as conn:
+            return self.metadata.executemany(clause, args, **params, bind=conn)
+
 
 class GinoConnection(Connection):
     metadata = None
@@ -99,6 +103,9 @@ class GinoConnection(Connection):
     def iterate(self, clause, *multiparams, **params):
         return self.metadata.iterate(clause, *multiparams, **params,
                                      connection=self)
+
+    async def executemany(self, clause, args, **params):
+        return self.metadata.executemany(clause, args, **params, bind=self)
 
 
 class LazyConnection:
