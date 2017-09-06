@@ -219,3 +219,11 @@ class AsyncpgDialect(PGDialect):
             getattr(bind, 'execution_options', None))
         return await bind.execute(context.statement, *context.parameters[0],
                                   timeout=context.timeout)
+
+    async def do_executemany(self, bind, clause, *multiparams, **params):
+        context = self.execution_ctx_cls.init_clause(
+            self, clause, multiparams, params,
+            getattr(bind, 'execution_options', None))
+        ps = await bind.prepare(context.statement)
+        for row in context.parameters:
+            await  ps.fetchval(*row)

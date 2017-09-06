@@ -165,6 +165,32 @@ class CRUDModel(Model):
         return rv
 
     @classmethod
+    async def create_many(cls, args, bind=None, timeout=DEFAULT):
+        """
+        Example:
+
+        .. code-block:: pycon
+
+            >>> async with pool.acquire() as conn:
+            ...     await User.create_many(
+            ...         [
+            ...             {'id':1, 'nickname':'nickname'},
+            ...             {'id':2, 'nickname':'nickname'}
+            ...         ],
+            ...         bind=conn)
+
+        :param args: An iterable containing sequences of arguments.
+        :param bind: gino connection instance
+        :param float timeout: Optional timeout value in seconds.
+        :return: None: this method discards the results of the operation
+        """
+        q = cls.__table__.insert().returning(sa.text('*'))
+        row = await cls.__metadata__.executemany(
+            q, args, bind=bind, timeout=timeout
+        )
+        return row
+
+    @classmethod
     async def get(cls, ident, bind=None, timeout=DEFAULT):
         if hasattr(ident, '__iter__'):
             ident_ = list(ident)

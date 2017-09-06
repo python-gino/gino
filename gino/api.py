@@ -190,6 +190,10 @@ class Gino(sa.MetaData):
         return await self.dialect.do_status(
             bind or self.bind, clause, *multiparams, **params)
 
+    async def executemany(self, clause, args, bind=None, **params):
+        return await self.dialect.do_executemany(
+            bind or self.bind, clause, args, **params)
+
     def iterate(self, clause, *multiparams, connection=None, **params):
         return GinoCursorFactory(lambda: (connection or self.bind, self),
                                  clause, multiparams, params)
