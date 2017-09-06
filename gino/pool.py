@@ -13,11 +13,11 @@ from .local import get_local
 
 class LazyConnection(_ConnectionProxy):
     """
-    Use :class:`LazyConnection` to create a lazy connection which does not 
+    Use :class:`LazyConnection` to create a lazy connection which does not
     immediately return a connection on creation. Connection is acquired before
     any public async method. User should explicitly call :meth:`get_connection`
     to get a real connection before calling public sync methods. And
-    :meth:`release` should be called when the real connection is no longer 
+    :meth:`release` should be called when the real connection is no longer
     needed. Both methods can be called multiple times, and are coroutine-safe.
     """
 
@@ -227,3 +227,9 @@ class GinoPool(Pool):
     async def status(self, clause, *multiparams, **params):
         return await self.dialect.do_status(self, clause,
                                             *multiparams, **params)
+
+    async def executemany(self, clause, args, **params):
+        async with self.acquire() as conn:
+            return await self.metadata.executemany(
+                clause, args, **params, bind=conn
+            )

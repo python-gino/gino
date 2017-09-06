@@ -44,3 +44,6 @@ class GinoConnection(Connection):
     def iterate(self, clause, *multiparams, **params):
         return GinoCursorFactory(lambda: (self, self.metadata), clause,
                                  multiparams, params)
+
+    async def executemany(self, clause, args, **params):
+        return self.metadata.executemany(clause, args, **params, bind=self)
