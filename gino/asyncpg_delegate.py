@@ -69,8 +69,10 @@ class GinoPool(Pool):
                                           bind=self)
 
     async def executemany(self, clause, args, **params):
-        with await self._acquire(params.get('timeout', None)) as conn:
-            return self.metadata.executemany(clause, args, **params, bind=conn)
+        async with self.acquire() as conn:
+            return await self.metadata.executemany(
+                clause, args, **params, bind=conn
+            )
 
 
 class GinoConnection(Connection):
