@@ -27,6 +27,14 @@ class ModelType(type):
         # noinspection PyUnresolvedReferences
         return iter(self.__table__.columns)
 
+    def __getattr__(self, item):
+        try:
+            return getattr(self.__table__, item)
+        except AttributeError:
+            raise AttributeError(
+                "'{}' object has no attribute '{}'".format(self.__name__, item)
+            )
+
 
 class Model:
     __metadata__ = None
