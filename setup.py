@@ -3,8 +3,7 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages, Extension
-from pkg_resources import resource_filename
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -19,7 +18,6 @@ def req_file(filename):
     return [x.strip() for x in content if x.strip()]
 
 setup_requirements = [
-    'Cython>=0.24',
     'pytest-runner',
 ]
 
@@ -28,21 +26,6 @@ test_requirements = [
     'pytest-asyncio',
     'psycopg2',
 ]
-
-
-class LazyExtension(Extension):
-    def __init__(self, *args, **kwargs):
-        self._include_dirs = []
-        super().__init__(*args, **kwargs)
-
-    @property
-    def include_dirs(self):
-        return self._include_dirs + [resource_filename('asyncpg', 'protocol')]
-
-    @include_dirs.setter
-    def include_dirs(self, val):
-        self._include_dirs = val
-
 
 setup(
     name='gino',
@@ -54,9 +37,6 @@ setup(
     author_email='fantix.king@gmail.com',
     url='https://github.com/fantix/gino',
     packages=find_packages(),
-    ext_modules=[
-        LazyExtension('gino.record', ['gino/record.pyx']),
-    ],
     include_package_data=True,
     install_requires=req_file('requirements.txt'),
     license="BSD license",
