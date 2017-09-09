@@ -32,8 +32,8 @@ class ModelType(type):
             return getattr(self.__table__, item)
         except AttributeError:
             raise AttributeError(
-                "'{}' object has no attribute '{}'".format(self.__name__, item)
-            )
+                "type object '{}' has no attribute '{}'".format(
+                    self.__name__, item))
 
 
 class Model:
