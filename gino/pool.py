@@ -213,17 +213,21 @@ class GinoPool(Pool):
         return self._metadata.dialect
 
     async def all(self, clause, *multiparams, **params):
-        return await self.dialect.do_all(self, clause,
-                                         *multiparams, **params)
+        async with self.acquire(reuse=True) as conn:
+            return await self.dialect.do_all(conn, clause,
+                                             *multiparams, **params)
 
     async def first(self, clause, *multiparams, **params):
-        return await self.dialect.do_first(self, clause,
-                                           *multiparams, **params)
+        async with self.acquire(reuse=True) as conn:
+            return await self.dialect.do_first(conn, clause,
+                                               *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, **params):
-        return await self.dialect.do_scalar(self, clause,
-                                            *multiparams, **params)
+        async with self.acquire(reuse=True) as conn:
+            return await self.dialect.do_scalar(conn, clause,
+                                                *multiparams, **params)
 
     async def status(self, clause, *multiparams, **params):
-        return await self.dialect.do_status(self, clause,
-                                            *multiparams, **params)
+        async with self.acquire(reuse=True) as conn:
+            return await self.dialect.do_status(conn, clause,
+                                                *multiparams, **params)

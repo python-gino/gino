@@ -2,6 +2,7 @@ import sys
 import weakref
 
 import sqlalchemy as sa
+from asyncpg import Connection
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
 
@@ -59,6 +60,27 @@ class ConnectionAcquireContext:
         raise StopIteration(self._connection)
 
 
+class BindContext:
+    def __init__(self, bind):
+        self._bind = bind
+        self._ctx = None
+
+    async def __aenter__(self):
+        args = {}
+        if isinstance(self._bind, Connection):
+            return self._bind
+        elif isinstance(self._bind, GinoPool):
+            args = dict(reuse=True)
+        # noinspection PyArgumentList
+        self._ctx = self._bind.acquire(**args)
+        return await self._ctx.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        ctx, self._ctx = self._ctx, None
+        if ctx is not None:
+            await ctx.__aexit__(exc_type, exc_val, exc_tb)
+
+
 class GinoExecutor:
     __slots__ = ('_query',)
 
@@ -82,34 +104,34 @@ class GinoExecutor:
         return self
 
     def get_bind(self, bind):
-        return bind or self._query.bind
+        return BindContext(bind or self._query.bind)
 
     async def all(self, *multiparams, bind=None, **params):
-        bind = self.get_bind(bind)
-        return await bind.metadata.dialect.do_all(
-            bind, self._query, *multiparams, **params)
+        async with self.get_bind(bind) as conn:
+            return await conn.metadata.dialect.do_all(
+                conn, self._query, *multiparams, **params)
 
     async def first(self, *multiparams, bind=None, **params):
-        bind = self.get_bind(bind)
-        return await bind.metadata.dialect.do_first(
-            bind, self._query, *multiparams, **params)
+        async with self.get_bind(bind) as conn:
+            return await conn.metadata.dialect.do_first(
+                conn, self._query, *multiparams, **params)
 
     async def scalar(self, *multiparams, bind=None, **params):
-        bind = self.get_bind(bind)
-        return await bind.metadata.dialect.do_scalar(
-            bind, self._query, *multiparams, **params)
+        async with self.get_bind(bind) as conn:
+            return await conn.metadata.dialect.do_scalar(
+                conn, self._query, *multiparams, **params)
 
     async def status(self, *multiparams, bind=None, **params):
         """
         You can parse the return value like this: https://git.io/v7oze
         """
-        bind = self.get_bind(bind)
-        return await bind.metadata.dialect.do_status(
-            bind, self._query, *multiparams, **params)
+        async with self.get_bind(bind) as conn:
+            return await conn.metadata.dialect.do_status(
+                conn, self._query, *multiparams, **params)
 
     def iterate(self, *multiparams, connection=None, **params):
         def env_factory():
-            conn = self.get_bind(connection)
+            conn = connection or self._query.bind
             return conn, conn.metadata
         return GinoCursorFactory(env_factory, self._query, multiparams, params)
 
@@ -128,7 +150,7 @@ class Gino(sa.MetaData):
         if model_classes is None:
             model_classes = self.model_base_classes
         self.Model = declarative_base(self, model_classes)
-        for mod in sa, sa_pg, json_support:
+        for mod in json_support, sa_pg, sa:
             for key in mod.__all__:
                 if not hasattr(self, key):
                     setattr(self, key, getattr(mod, key))
@@ -175,20 +197,24 @@ class Gino(sa.MetaData):
         return self.dialect.compile(elem, *multiparams, **params)
 
     async def all(self, clause, *multiparams, bind=None, **params):
-        return await self.dialect.do_all(
-            bind or self.bind, clause, *multiparams, **params)
+        async with BindContext(bind or self.bind) as conn:
+            return await self.dialect.do_all(
+                conn, clause, *multiparams, **params)
 
     async def first(self, clause, *multiparams, bind=None, **params):
-        return await self.dialect.do_first(
-            bind or self.bind, clause, *multiparams, **params)
+        async with BindContext(bind or self.bind) as conn:
+            return await self.dialect.do_first(
+                conn, clause, *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, bind=None, **params):
-        return await self.dialect.do_scalar(
-            bind or self.bind, clause, *multiparams, **params)
+        async with BindContext(bind or self.bind) as conn:
+            return await self.dialect.do_scalar(
+                conn, clause, *multiparams, **params)
 
     async def status(self, clause, *multiparams, bind=None, **params):
-        return await self.dialect.do_status(
-            bind or self.bind, clause, *multiparams, **params)
+        async with BindContext(bind or self.bind) as conn:
+            return await self.dialect.do_status(
+                conn, clause, *multiparams, **params)
 
     def iterate(self, clause, *multiparams, connection=None, **params):
         return GinoCursorFactory(lambda: (connection or self.bind, self),

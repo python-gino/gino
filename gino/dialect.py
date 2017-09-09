@@ -1,7 +1,7 @@
 import weakref
-from collections import OrderedDict
 
 from sqlalchemy import cutils, util
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
@@ -22,20 +22,50 @@ class AsyncpgCompiler(PGCompiler):
         self._bindtemplate = val.replace(':', '$')
 
 
-class NoopConnection:
-    def __init__(self, dialect, execution_options):
-        self.dialect = dialect
-        self._execution_options = execution_options or {}
+class ConnectionAdaptor:
+    __slots__ = ('_dialect', '_conn', '_opts', '_stmt', '_echo')
+
+    def __init__(self, dialect, connection, compiled_sql):
+        self._dialect = dialect
+        self._conn = connection
+        self._opts = dict(getattr(connection, 'execution_options', {}))
+        for opt in ('return_model', 'model', 'timeout'):
+            if opt in compiled_sql.execution_options:
+                self._opts.pop(opt, None)
+        self._stmt = None
+        self._echo = False
 
     def cursor(self):
-        pass
+        return self
+
+    @property
+    def dialect(self):
+        return self._dialect
+
+    @property
+    def _execution_options(self):
+        return self._opts
+
+    @property
+    def description(self):
+        try:
+            return [((a[0], a[1][0]) + (None,) * 5)
+                    for a in self._stmt.get_attributes()]
+        except TypeError:  # asyncpg <= 0.12.0
+            return []
+
+    def _branch(self):
+        return self
+
+    async def prepare(self, statement):
+        rv = self._stmt = await self._conn.prepare(statement)
+        return rv
 
 
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(PGExecutionContext):
     @classmethod
-    def init_clause(cls, dialect, elem, multiparams, params,
-                    execution_options):
+    def init_clause(cls, dialect, elem, multiparams, params, connection):
         # partially copied from:
         # sqlalchemy.engine.base.Connection:_execute_clauseelement
         # noinspection PyProtectedMember
@@ -50,14 +80,7 @@ class AsyncpgExecutionContext(PGExecutionContext):
             dialect=dialect, column_keys=keys,
             inline=len(distilled_params) > 1,
         )
-        if execution_options:
-            execution_options = dict(execution_options)
-        else:
-            execution_options = {}
-        for opt in ('return_model', 'model', 'timeout'):
-            if opt in compiled_sql.execution_options:
-                execution_options.pop(opt, None)
-        conn = NoopConnection(dialect, execution_options)
+        conn = ConnectionAdaptor(dialect, connection, compiled_sql)
         rv = cls._init_compiled(
             dialect, conn, conn, compiled_sql, distilled_params)
         return rv
@@ -80,22 +103,18 @@ class AsyncpgExecutionContext(PGExecutionContext):
         # noinspection PyUnresolvedReferences
         return self.execution_options.get('timeout', None)
 
-    def from_row(self, row, return_row=False):
-        if self.model is None or row is None:
-            return row
-        if not return_row and self.return_model:
-            rv = self.model()
-            d = rv.__values__
-        else:
-            rv = d = OrderedDict()
-        for key, value in row.items():
-            type_ = getattr(getattr(self.model, key), 'type', None)
-            if type_ is not None:
-                processor = self.get_result_processor(type_, None, None)
-                if processor:
-                    value = processor(value)
-            d[key] = value
+    def process_rows(self, rows, return_model=True):
+        rv = rows = self.get_result_proxy().process_rows(rows)
+        if self.model is not None and return_model and self.return_model:
+            rv = []
+            for row in rows:
+                obj = self.model()
+                obj.__values__.update(row)
+                rv.append(obj)
         return rv
+
+    async def prepare(self):
+        return await self.connection.prepare(self.statement)
 
 
 class GinoCursorFactory:
@@ -115,11 +134,12 @@ class GinoCursorFactory:
         connection, metadata = self._env_factory()
         self._context = metadata.dialect.execution_ctx_cls.init_clause(
             metadata.dialect, self._clause, self._multiparams, self._params,
-            getattr(connection, 'execution_options', None))
+            connection)
+        if self._context.executemany:
+            raise ValueError('too many multiparams')
         self._timeout = self._context.timeout
-        return connection.cursor(self._context.statement,
-                                 *self._context.parameters[0],
-                                 timeout=self._timeout)
+        ps = await self._context.prepare()
+        return ps.cursor(*self._context.parameters[0], timeout=self._timeout)
 
     @property
     def context(self):
@@ -145,7 +165,7 @@ class GinoCursorIterator:
             factory = await self._factory.get_cursor_factory()
             self._iterator = factory.__aiter__()
         row = await self._iterator.__anext__()
-        return self._factory.context.from_row(row)
+        return self._factory.context.process_rows([row])[0]
 
 
 class GinoCursor:
@@ -162,13 +182,13 @@ class GinoCursor:
         if timeout is DEFAULT:
             timeout = self._factory.timeout
         rows = await self._cursor.fetch(n, timeout=timeout)
-        return list(map(self._factory.context.from_row, rows))
+        return self._factory.context.process_rows(rows)
 
     async def next(self, *, timeout=DEFAULT):
         if timeout is DEFAULT:
             timeout = self._factory.timeout
         row = await self._cursor.fetchrow(timeout=timeout)
-        return self._factory.context.from_row(row)
+        return self._factory.context.process_rows([row])[0]
 
     def __getattr__(self, item):
         return getattr(self._cursor, item)
@@ -179,41 +199,56 @@ class AsyncpgDialect(PGDialect):
     default_paramstyle = 'numeric'
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
+    dbapi_type_map = {
+        114: JSON(),
+        3802: JSONB(),
+    }
 
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, elem, multiparams, params, None)
-        return context.statement, context.parameters[0]
+        if context.executemany:
+            return context.statement, context.parameters
+        else:
+            return context.statement, context.parameters[0]
 
-    async def do_all(self, bind, clause, *multiparams, **params):
+    async def _execute_clauseelement(self, connection, clause, multiparams,
+                                     params, many=False, status=False,
+                                     return_model=True):
         context = self.execution_ctx_cls.init_clause(
-            self, clause, multiparams, params,
-            getattr(bind, 'execution_options', None))
-        rows = await bind.fetch(context.statement, *context.parameters[0],
-                                timeout=context.timeout)
-        return list(map(context.from_row, rows))
+            self, clause, multiparams, params, connection)
+        if context.executemany and not many:
+            raise ValueError('too many multiparams')
+        prepared = await context.prepare()
+        rv = []
+        for args in context.parameters:
+            rows = await prepared.fetch(*args, timeout=context.timeout)
+            item = context.process_rows(rows, return_model=return_model)
+            if status:
+                item = prepared.get_statusmsg(), item
+            if not many:
+                return item
+            rv.append(item)
+        return rv
 
-    async def do_first(self, bind, clause, *multiparams, **params):
-        context = self.execution_ctx_cls.init_clause(
-            self, clause, multiparams, params,
-            getattr(bind, 'execution_options', None))
-        row = await bind.fetchrow(context.statement, *context.parameters[0],
-                                  timeout=context.timeout)
-        return context.from_row(row)
+    async def do_all(self, connection, clause, *multiparams, **params):
+        return await self._execute_clauseelement(
+            connection, clause, multiparams, params)
 
-    async def do_scalar(self, bind, clause, *multiparams, **params):
-        context = self.execution_ctx_cls.init_clause(
-            self, clause, multiparams, params,
-            getattr(bind, 'execution_options', None))
-        row = await bind.fetchrow(context.statement, *context.parameters[0],
-                                  timeout=context.timeout)
-        if not row:
+    async def do_first(self, connection, clause, *multiparams, **params):
+        items = await self._execute_clauseelement(
+            connection, clause, multiparams, params)
+        if not items:
             return None
-        return next(iter(context.from_row(row, return_row=True).values()))
+        return items[0]
 
-    async def do_status(self, bind, clause, *multiparams, **params):
-        context = self.execution_ctx_cls.init_clause(
-            self, clause, multiparams, params,
-            getattr(bind, 'execution_options', None))
-        return await bind.execute(context.statement, *context.parameters[0],
-                                  timeout=context.timeout)
+    async def do_scalar(self, connection, clause, *multiparams, **params):
+        items = await self._execute_clauseelement(
+            connection, clause, multiparams, params, return_model=False)
+        if not items:
+            return None
+        return items[0][0]
+
+    async def do_status(self, connection, clause, *multiparams, **params):
+        return (await self._execute_clauseelement(
+            connection, clause, multiparams, params, status=True))[0]
