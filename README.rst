@@ -300,9 +300,9 @@ separately:
        async with conn.transaction() as tx:
            # play within a transaction
 
-Please note, there is no ``db.release`` to return the connection to the pool,
-thus you cannot do ``conn = await db.acquire()``. Using ``async with`` is the
-only way, and the reason is about context.
+There is an alternative to do this without ``async with``, but this may be
+changed in next version, as discussed in #59. Also, ``tx`` is always ``None``
+for now.
 
 Because GINO offers query APIs on not only connections but also model classes
 and objects and even query objects, it would be too much trouble passing
@@ -334,8 +334,8 @@ to borrow new connections from the pool. Non-reused connections are stacked,
 they will be returned to the pool in the reversed order as they were borrowed.
 Local storage covers between different tasks that are awaited in a chain, it is
 theoretically safe in most cases. However it is still some sort of a hack, but
-it would be like this before Python officially supports task local storage one
-day.
+it would be like this before Python officially supports task local storage in
+PEP 550.
 
 
 Sanic Support

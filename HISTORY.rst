@@ -2,6 +2,16 @@
 History
 =======
 
+0.5.1 (2017-09-09)
+------------------
+
+This is an emergency fix for 0.5.0.
+
+* Reverted the extension, back to pure Python (#60)
+* Used SQLAlchemy ``RowProxy``
+* Added ``first_or_404``
+* Fixed bug that ``GinoPool`` cannot be inherited
+
 0.5.0 (2017-09-03)
 ------------------
 
