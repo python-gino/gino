@@ -2,6 +2,12 @@
 History
 =======
 
+0.5.2 (2017-09-10)
+------------------
+
+* Added missing driver name on dialect (#67)
+* Fixed dialect to support native decimal type (#67)
+
 0.5.1 (2017-09-09)
 ------------------
 
