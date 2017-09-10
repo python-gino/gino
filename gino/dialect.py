@@ -196,6 +196,8 @@ class GinoCursor:
 
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):
+    driver = 'asyncpg'
+    supports_native_decimal = True
     default_paramstyle = 'numeric'
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
