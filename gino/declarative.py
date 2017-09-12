@@ -29,7 +29,9 @@ class ModelType(type):
 
     def __getattr__(self, item):
         try:
-            return getattr(self.__table__, item)
+            if item in ('insert',):
+                return getattr(self.__table__, item)
+            raise AttributeError
         except AttributeError:
             raise AttributeError(
                 "type object '{}' has no attribute '{}'".format(
