@@ -1,6 +1,8 @@
 import weakref
 
-from sqlalchemy import cutils, util
+from sqlalchemy import util
+# noinspection PyProtectedMember
+from sqlalchemy.engine.util import _distill_params
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
@@ -68,8 +70,7 @@ class AsyncpgExecutionContext(PGExecutionContext):
     def init_clause(cls, dialect, elem, multiparams, params, connection):
         # partially copied from:
         # sqlalchemy.engine.base.Connection:_execute_clauseelement
-        # noinspection PyProtectedMember
-        distilled_params = cutils._distill_params(multiparams, params)
+        distilled_params = _distill_params(multiparams, params)
         if distilled_params:
             # note this is usually dict but we support RowProxy
             # as well; but dict.keys() as an iterable is OK
