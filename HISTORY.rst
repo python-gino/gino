@@ -2,6 +2,11 @@
 History
 =======
 
+0.5.3 (2017-09-23)
+------------------
+
+* Fixed `no module named cutils` error (Contributed by Vladimir Goncharov in #73)
+
 0.5.2 (2017-09-10)
 ------------------
 
