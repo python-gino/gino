@@ -16,9 +16,20 @@ class User(db.Model):
 
 
 async def main():
-    conn = await asyncpg.connect('postgresql://localhost/gino')
+    # Database endpoint.
+    db_endpoint = 'postgresql://localhost/gino'
 
-    # You will need to create the database and table manually
+    # In this example we create the database tables directly using SQLAlchemy
+    # and non-async Postgres (uses psycopg2 python module, not asyncpg which
+    # Gino uses). For a production application you would probably use a full
+    # schema migration solution like Alembic.
+    import sqlalchemy as sa
+    db_engine = sa.create_engine(db_endpoint)
+    db.create_all(bind=db_engine)
+    db_engine.dispose()
+
+    # Here starts the normal async application
+    conn = await asyncpg.connect(db_endpoint)
 
     print(await User.create(bind=conn, nickname='fantix'))
     print(await User.get(1, bind=conn))
