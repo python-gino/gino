@@ -27,6 +27,16 @@ class ModelType(type):
         # noinspection PyUnresolvedReferences
         return iter(self.__table__.columns)
 
+    def __getattr__(self, item):
+        try:
+            if item in {'insert'}:
+                return getattr(self.__table__, item)
+            raise AttributeError
+        except AttributeError:
+            raise AttributeError(
+                "type object '{}' has no attribute '{}'".format(
+                    self.__name__, item))
+
 
 class Model:
     __metadata__ = None
