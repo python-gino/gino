@@ -5,6 +5,7 @@ import asyncpg
 import pytest
 import sqlalchemy
 
+import gino
 from .models import db, DB_ARGS
 
 
@@ -38,3 +39,10 @@ async def asyncpg_pool(engine):
 @pytest.fixture
 def random_name(length=8) -> str:
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+
+
+@pytest.fixture
+def task_local(event_loop):
+    gino.enable_task_local(event_loop)
+    yield
+    gino.disable_task_local(event_loop)
