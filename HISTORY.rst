@@ -2,6 +2,13 @@
 History
 =======
 
+0.5.4 (2017-10-04)
+------------------
+
+* Updated example (Contributed by Kinware in #75)
+* Added `Model.insert` (Contributed by Neal Wang in #63)
+* Fixed issue that non-lazy acquiring fails dirty (#79)
+
 0.5.3 (2017-09-23)
 ------------------
 
