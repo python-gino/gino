@@ -26,15 +26,19 @@ class GinoTransaction:
 
     async def __aenter__(self):
         conn = await self._conn_ctx.__aenter__()
-        self._ctx = conn.transaction(isolation=self._isolation,
-                                     readonly=self._readonly,
-                                     deferrable=self._deferrable)
-        return conn, await self._ctx.__aenter__()
+        try:
+            self._ctx = conn.transaction(isolation=self._isolation,
+                                         readonly=self._readonly,
+                                         deferrable=self._deferrable)
+            return conn, await self._ctx.__aenter__()
+        except Exception:
+            await self._conn_ctx.__aexit__(*sys.exc_info())
+            raise
 
     async def __aexit__(self, extype, ex, tb):
         try:
             await self._ctx.__aexit__(extype, ex, tb)
-        except:
+        except Exception:
             await self._conn_ctx.__aexit__(*sys.exc_info())
             raise
         else:
