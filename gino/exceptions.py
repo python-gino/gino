@@ -4,3 +4,7 @@ class GinoException(Exception):
 
 class NoSuchRowError(GinoException):
     pass
+
+
+class InterfaceError(GinoException):
+    pass

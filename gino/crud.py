@@ -105,7 +105,9 @@ class UpdateRequest:
         ).returning(
             *[getattr(cls, key) for key in values],
         ).execution_options(**opts)
-        row = await cls.__metadata__.first(clause, bind=bind)
+        if bind is None:
+            bind = cls.__metadata__.bind
+        row = await bind.execute(clause).first()
         if not row:
             raise NoSuchRowError()
         self._instance.__values__.update(row)
@@ -177,7 +179,9 @@ class CRUDModel(Model):
             opts['timeout'] = timeout
         q = cls.__table__.insert().values(**rv.__values__).returning(
             sa.text('*')).execution_options(**opts)
-        row = await cls.__metadata__.first(q, bind=bind)
+        if bind is None:
+            bind = cls.__metadata__.bind
+        row = await bind.execute(q).first()
         rv.__values__.update(row)
         rv.__profile__ = None
         return rv
@@ -199,7 +203,9 @@ class CRUDModel(Model):
             clause = clause.where(c == ident_[i])
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
-        return await cls.__metadata__.first(clause, bind=bind)
+        if bind is None:
+            bind = cls.__metadata__.bind
+        return await bind.execute(clause).first()
 
     def append_where_primary_key(self, q):
         for c in self.__table__.primary_key.columns:
@@ -214,7 +220,9 @@ class CRUDModel(Model):
         clause = self.append_where_primary_key(cls.delete)
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
-        return await self.__metadata__.status(clause, bind=bind)
+        if bind is None:
+            bind = cls.__metadata__.bind
+        return await bind.execute(clause).status()
 
     def to_dict(self):
         cls = type(self)

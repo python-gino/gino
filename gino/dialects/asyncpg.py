@@ -1,9 +1,13 @@
+import asyncio
 import weakref
 
+import asyncpg
+from asyncpg.connection import Connection
 from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util
 # noinspection PyProtectedMember
 from sqlalchemy.engine.util import _distill_params
+from sqlalchemy.events import PoolEvents
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
@@ -12,7 +16,46 @@ from sqlalchemy.dialects.postgresql.base import (
 )
 from .pool import LazyConnection
 
+from .base import Database, AsyncDialectMixin
+
 DEFAULT = object()
+
+
+class AsyncpgPool(Database):
+    def __init__(self, creator, *,
+                 dialect=None,
+                 dsn=None,
+                 min_size=10,
+                 max_size=10,
+                 max_queries=50000,
+                 max_inactive_connection_lifetime=300.0,
+                 setup=None,
+                 init=None,
+                 loop=None,
+                 connection_class=Connection,
+                 connect_kwargs=None):
+        if connect_kwargs is None:
+            connect_kwargs = {}
+        if dsn is None:
+            dsn = creator()
+        self._pool = asyncio.ensure_future(asyncpg.create_pool(
+            dsn,
+            connection_class=connection_class,
+            min_size=min_size, max_size=max_size,
+            max_queries=max_queries, loop=loop, setup=setup, init=init,
+            max_inactive_connection_lifetime=max_inactive_connection_lifetime,
+            **connect_kwargs
+        ), loop=loop)
+
+    async def acquire(self, kwargs):
+        return await (await self._pool).acquire(**kwargs)
+
+    async def release(self, conn):
+        return await (await self._pool).release(conn)
+
+
+class AsyncpgPoolEvents(PoolEvents):
+    _dispatch_target = AsyncpgPool
 
 
 class AsyncpgCompiler(PGCompiler):
@@ -133,8 +176,13 @@ class AsyncpgExecutionContext(PGExecutionContext):
                 rv.append(obj)
         return rv
 
-    async def prepare(self, named=True):
-        return await self.connection.prepare(self.statement, named)
+    async def _async_init(self):
+        # noinspection PyUnresolvedReferences
+        await self.cursor.prepare(self.statement)
+        return self
+
+    def __await__(self):
+        return self._async_init().__await__()
 
 
 class GinoCursorFactory:
@@ -214,17 +262,32 @@ class GinoCursor:
         return getattr(self._cursor, item)
 
 
+class DBAPIAdaptor:
+    paramstyle = 'numeric'
+
+    @classmethod
+    def connect(cls, url):
+        return url
+
+
 # noinspection PyAbstractClass
-class AsyncpgDialect(PGDialect):
+class AsyncpgDialect(PGDialect, AsyncDialectMixin):
     driver = 'asyncpg'
     supports_native_decimal = True
-    default_paramstyle = 'numeric'
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
+    poolclass = AsyncpgPool
     dbapi_type_map = {
         114: JSON(),
         3802: JSONB(),
     }
+
+    @classmethod
+    def dbapi(cls):
+        return DBAPIAdaptor
+
+    def create_connect_args(self, url):
+        return [str(url)], {}
 
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(

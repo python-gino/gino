@@ -1,5 +1,4 @@
-import asyncpg
-from gino import Gino
+from gino import Gino, create_engine
 
 db = Gino()
 
@@ -29,10 +28,15 @@ async def main():
     db_engine.dispose()
 
     # Here starts the normal async application
-    conn = await asyncpg.connect(db_endpoint)
+    engine = await create_engine(db_endpoint)
 
-    print(await User.create(bind=conn, nickname='fantix'))
-    print(await User.get(1, bind=conn))
+    u = await User.create(bind=engine, nickname='fantix')
+    print(u)
+    print(await User.get(u.id, bind=engine))
+    await u.update(nickname='daisy').apply(bind=engine)
+    print(await User.get(u.id, bind=engine))
+    await u.delete(bind=engine)
+    print(await User.get(u.id, bind=engine))
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-import sys
 import weakref
 
 import sqlalchemy as sa
@@ -6,43 +5,11 @@ from asyncpg import Connection
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
 
-from .connection import GinoConnection
 from .crud import CRUDModel
 from .declarative import declarative_base
-from .dialect import AsyncpgDialect, GinoCursorFactory
-from .pool import GinoPool
 from . import json_support
-
-
-class GinoTransaction:
-    __slots__ = ('_conn_ctx', '_isolation', '_readonly', '_deferrable', '_ctx')
-
-    def __init__(self, conn_ctx, isolation, readonly, deferrable):
-        self._conn_ctx = conn_ctx
-        self._isolation = isolation
-        self._readonly = readonly
-        self._deferrable = deferrable
-        self._ctx = None
-
-    async def __aenter__(self):
-        conn = await self._conn_ctx.__aenter__()
-        try:
-            self._ctx = conn.transaction(isolation=self._isolation,
-                                         readonly=self._readonly,
-                                         deferrable=self._deferrable)
-            return conn, await self._ctx.__aenter__()
-        except Exception:
-            await self._conn_ctx.__aexit__(*sys.exc_info())
-            raise
-
-    async def __aexit__(self, extype, ex, tb):
-        try:
-            await self._ctx.__aexit__(extype, ex, tb)
-        except Exception:
-            await self._conn_ctx.__aexit__(*sys.exc_info())
-            raise
-        else:
-            await self._conn_ctx.__aexit__(extype, ex, tb)
+from .dialects.asyncpg import AsyncpgDialect
+from .strategies import create_engine
 
 
 class ConnectionAcquireContext:
@@ -143,8 +110,6 @@ class GinoExecutor:
 class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
-    connection_cls = GinoConnection
-    pool_cls = GinoPool
 
     def __init__(self, bind=None, dialect=None, model_classes=None,
                  query_ext=True, **kwargs):
@@ -171,31 +136,27 @@ class Gino(sa.MetaData):
     def bind(self, val):
         self._bind = val
 
-    def create_pool(self, dsn=None, *,
-                    min_size=10,
-                    max_size=10,
-                    max_queries=50000,
-                    max_inactive_connection_lifetime=300.0,
-                    setup=None,
-                    init=None,
-                    loop=None,
-                    connection_class=None,
-                    **connect_kwargs):
-        if connection_class is None:
-            connection_class = self.connection_cls
-        elif not issubclass(connection_class, self.connection_cls):
-            raise TypeError(
-                'connection_class is expected to be a subclass of '
-                '{!r}, got {!r}'.format(self.connection_cls, connection_class))
-
-        pool = self.pool_cls(
-            self, dsn,
-            connection_class=connection_class,
-            min_size=min_size, max_size=max_size,
-            max_queries=max_queries, loop=loop, setup=setup, init=init,
-            max_inactive_connection_lifetime=max_inactive_connection_lifetime,
-            **connect_kwargs)
-        return pool
+    @staticmethod
+    def create_engine(*args, **kwargs):
+        return create_engine(*args, **kwargs)
+    # async def create_engine(self, dsn=None, *,
+    #                         min_size=10,
+    #                         max_size=10,
+    #                         max_queries=50000,
+    #                         max_inactive_connection_lifetime=300.0,
+    #                         setup=None,
+    #                         init=None,
+    #                         loop=None,
+    #                         **connect_kwargs):
+    #     database = await AsyncpgDatabase.create(
+    #         dsn,
+    #         min_size=min_size, max_size=max_size,
+    #         max_queries=max_queries, loop=loop, setup=setup, init=init,
+    #         max_inactive_connection_lifetime=max_inactive_connection_lifetime,
+    #         **connect_kwargs)
+    #     rv = Engine(database, AsyncpgDialect())
+    #     self.bind = rv
+    #     return rv
 
     def compile(self, elem, *multiparams, **params):
         return self.dialect.compile(elem, *multiparams, **params)
