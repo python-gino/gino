@@ -46,6 +46,10 @@ class LazyConnection(_ConnectionProxy):
     def execution_options(self):
         return self._execution_options
 
+    @property
+    def is_root(self):
+        return self._root is self
+
     async def get_connection(self):
         if self._closed:
             raise InterfaceError('This LazyConnection is returned to pool')
