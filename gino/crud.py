@@ -60,10 +60,10 @@ class UpdateRequest:
         self._clause = self._instance.append_where_primary_key(
             type(self._instance).update)
 
-    def set(self, key, value):
+    def _set(self, key, value):
         self._values[key] = value
 
-    def set_prop(self, prop, value):
+    def _set_prop(self, prop, value):
         if isinstance(value, ClauseElement):
             self._literal = False
         self._props[prop] = value
@@ -111,6 +111,24 @@ class UpdateRequest:
         self._instance.__values__.update(row)
         for prop in self._props:
             prop.reload(self._instance)
+        return self
+
+    def update(self, **values):
+        cls = type(self._instance)
+        for key, value in values.items():
+            prop = cls.__dict__.get(key)
+            if isinstance(prop, json_support.JSONProperty):
+                value_from = '__profile__'
+                method = self._set_prop
+                k = prop
+            else:
+                value_from = '__values__'
+                method = self._set
+                k = key
+            if not isinstance(value, ClauseElement):
+                setattr(self._instance, key, value)
+                value = getattr(self._instance, value_from)[key]
+            method(k, value)
         return self
 
 
@@ -189,23 +207,7 @@ class CRUDModel(Model):
         return q
 
     def _update(self, **values):
-        cls = type(self)
-        rv = UpdateRequest(self)
-        for key, value in values.items():
-            prop = cls.__dict__.get(key)
-            if isinstance(prop, json_support.JSONProperty):
-                value_from = '__profile__'
-                method = rv.set_prop
-                k = prop
-            else:
-                value_from = '__values__'
-                method = rv.set
-                k = key
-            if not isinstance(value, ClauseElement):
-                setattr(self, key, value)
-                value = getattr(self, value_from)[key]
-            method(k, value)
-        return rv
+        return UpdateRequest(self).update(**values)
 
     async def _delete(self, bind=None, timeout=DEFAULT):
         cls = type(self)
