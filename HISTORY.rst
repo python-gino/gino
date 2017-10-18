@@ -2,6 +2,14 @@
 History
 =======
 
+0.5.5 (2017-10-18)
+------------------
+
+* Ensured clean connection if transaction acquire fails (Contributed by Vladimir Goncharov in #87)
+* Added ability to reset local storage (#84)
+* Fixed bug in JSON property update
+* Added update chaining feature
+
 0.5.4 (2017-10-04)
 ------------------
 
