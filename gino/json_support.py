@@ -78,6 +78,8 @@ class JSONProperty:
         return rv
 
     def reload(self, instance):
+        if instance.__profile__ is None:
+            return
         profile = getattr(instance, self.column_name, None) or {}
         value = profile.get(self.name, NONE)
         if value is NONE:

@@ -42,6 +42,10 @@ async def main():
     u = await User.get(u.id)
     print('Reload from DB:', u)
 
+    u = await User.get(u.id)
+    await u.update(age=User.age - 2, nickname='daisy').apply()
+    print('Update both without cache:', u)
+
     print(await u.delete())
 
 
