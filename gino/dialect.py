@@ -1,5 +1,6 @@
 import weakref
 
+from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util
 # noinspection PyProtectedMember
 from sqlalchemy.engine.util import _distill_params
@@ -22,6 +23,11 @@ class AsyncpgCompiler(PGCompiler):
     def bindtemplate(self, val):
         # noinspection PyAttributeOutsideInit
         self._bindtemplate = val.replace(':', '$')
+
+
+class AnonymousPreparedStatement(PreparedStatement):
+    def __del__(self):
+        self._state.detach()
 
 
 class ConnectionAdaptor:
@@ -59,8 +65,20 @@ class ConnectionAdaptor:
     def _branch(self):
         return self
 
-    async def prepare(self, statement):
-        rv = self._stmt = await self._conn.prepare(statement)
+    async def prepare(self, statement, named=True):
+        if named:
+            rv = await self._conn.prepare(statement)
+        else:
+            # it may still be a named statement, if cache is not disabled
+            # noinspection PyProtectedMember
+            self._conn._check_open()
+            # noinspection PyProtectedMember
+            state = await self._conn._get_statement(statement, None)
+            if state.name:
+                rv = PreparedStatement(self._conn, statement, state)
+            else:
+                rv = AnonymousPreparedStatement(self._conn, statement, state)
+        self._stmt = rv
         return rv
 
 
@@ -114,8 +132,8 @@ class AsyncpgExecutionContext(PGExecutionContext):
                 rv.append(obj)
         return rv
 
-    async def prepare(self):
-        return await self.connection.prepare(self.statement)
+    async def prepare(self, named=True):
+        return await self.connection.prepare(self.statement, named)
 
 
 class GinoCursorFactory:
@@ -222,17 +240,19 @@ class AsyncpgDialect(PGDialect):
             self, clause, multiparams, params, connection)
         if context.executemany and not many:
             raise ValueError('too many multiparams')
-        prepared = await context.prepare()
-        rv = []
-        for args in context.parameters:
-            rows = await prepared.fetch(*args, timeout=context.timeout)
-            item = context.process_rows(rows, return_model=return_model)
-            if status:
-                item = prepared.get_statusmsg(), item
-            if not many:
-                return item
-            rv.append(item)
-        return rv
+        # noinspection PyProtectedMember
+        with connection._stmt_exclusive_section:
+            prepared = await context.prepare(named=False)
+            rv = []
+            for args in context.parameters:
+                rows = await prepared.fetch(*args, timeout=context.timeout)
+                item = context.process_rows(rows, return_model=return_model)
+                if status:
+                    item = prepared.get_statusmsg(), item
+                if not many:
+                    return item
+                rv.append(item)
+            return rv
 
     async def do_all(self, connection, clause, *multiparams, **params):
         return await self._execute_clauseelement(
