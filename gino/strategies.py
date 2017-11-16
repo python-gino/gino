@@ -1,3 +1,4 @@
+import asyncio
 from sqlalchemy import engine
 from sqlalchemy.dialects import registry
 from sqlalchemy.engine.strategies import DefaultEngineStrategy
@@ -21,10 +22,12 @@ class TaskLocalEngineStrategy(DefaultEngineStrategy):
 TaskLocalEngineStrategy()
 
 
-async def create_engine(*args, **kwargs):
+def create_engine(*args, **kwargs):
     registry.register('postgresql', 'gino.dialects.asyncpg', 'AsyncpgDialect')
     try:
         kwargs.setdefault('strategy', 'gino')
+        if 'loop' not in kwargs:
+            kwargs['loop'] = asyncio.get_event_loop()
         return engine.create_engine(*args, **kwargs)
     finally:
         registry.auto_fn('postgresql')

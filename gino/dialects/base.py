@@ -1,5 +1,15 @@
-class Database:
-    async def acquire(self, kwargs):
+class AsyncPool:
+    def __init__(self, creator, dialect=None, loop=None):
+        self.url = creator()
+        self.dialect = dialect
+        self.loop = loop
+
+    def unique_connection(self):
+        return self.loop.create_task(self.acquire())
+
+    connect = unique_connection
+
+    async def acquire(self):
         pass
 
     async def release(self, conn):
@@ -28,6 +38,7 @@ class DBAPICursorAdaptor:
 
 class DBAPIConnectionAdaptor:
     def __init__(self, conn):
+        self._conn = conn
         self._cursor = DBAPICursorAdaptor(conn)
 
     def cursor(self):
@@ -35,10 +46,10 @@ class DBAPIConnectionAdaptor:
 
 
 class AsyncResultProxy:
-    def __init__(self, dialect, connection_factory, constructor, statement,
+    def __init__(self, dialect, connection, constructor, statement,
                  parameters, args):
         self._dialect = dialect
-        self._connection_factory = connection_factory
+        self._connection = connection
         self._constructor = constructor
         self._statement = statement
         self._parameters = parameters
@@ -48,10 +59,10 @@ class AsyncResultProxy:
         self._proxy = None
         self._buffer = None
 
-    async def _prepare(self, sa_conn, conn):
-        conn = DBAPIConnectionAdaptor(conn)
-        self._context = await self._constructor(self._dialect, sa_conn, conn,
-                                                *self._args)
+    async def _prepare(self):
+        conn = await self._connection.connection
+        self._context = await self._constructor(
+            self._dialect, self._connection, conn, *self._args)
         self._proxy = self._context.get_result_proxy()
 
     def process_rows(self, rows, return_model=True):
@@ -66,9 +77,8 @@ class AsyncResultProxy:
         return rv
 
     async def _execute(self):
-        with self._connection_factory as (sa_conn, conn):
-            await self._prepare(sa_conn, conn)
-            self.all()
+        await self._prepare()
+        return await self.all()
 
     def __await__(self):
         return self._execute().__await__()
@@ -84,7 +94,7 @@ class AsyncResultProxy:
                                            column=column)
 
     async def all(self):
-        rows = await self._cursor.fetch(*self._context.parameters[0])
+        rows = await self._context.cursor.fetch(*self._context.parameters[0])
         return self.process_rows(rows)
 
     async def buffer_all(self):
@@ -92,6 +102,21 @@ class AsyncResultProxy:
         self._cursor.get_statusmsg()
 
 
+class DBAPIAdaptor:
+    paramstyle = 'numeric'
+    Error = Exception
+
+    @classmethod
+    def connect(cls, url):
+        return url
+
+
 class AsyncDialectMixin:
+    dbapi_class = DBAPIAdaptor
+
+    @classmethod
+    def dbapi(cls):
+        return cls.dbapi_class
+
     def get_async_result_proxy(self, *args):
         return AsyncResultProxy(self, *args)

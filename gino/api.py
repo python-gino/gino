@@ -12,6 +12,37 @@ from .dialects.asyncpg import AsyncpgDialect
 from .strategies import create_engine
 
 
+class GinoTransaction:
+    __slots__ = ('_conn_ctx', '_isolation', '_readonly', '_deferrable', '_ctx')
+
+    def __init__(self, conn_ctx, isolation, readonly, deferrable):
+        self._conn_ctx = conn_ctx
+        self._isolation = isolation
+        self._readonly = readonly
+        self._deferrable = deferrable
+        self._ctx = None
+
+    async def __aenter__(self):
+        conn = await self._conn_ctx.__aenter__()
+        try:
+            self._ctx = conn.transaction(isolation=self._isolation,
+                                         readonly=self._readonly,
+                                         deferrable=self._deferrable)
+            return conn, await self._ctx.__aenter__()
+        except Exception:
+            await self._conn_ctx.__aexit__(*sys.exc_info())
+            raise
+
+    async def __aexit__(self, extype, ex, tb):
+        try:
+            await self._ctx.__aexit__(extype, ex, tb)
+        except Exception:
+            await self._conn_ctx.__aexit__(*sys.exc_info())
+            raise
+        else:
+            await self._conn_ctx.__aexit__(extype, ex, tb)
+
+
 class ConnectionAcquireContext:
     __slots__ = ('_connection',)
 
@@ -136,9 +167,10 @@ class Gino(sa.MetaData):
     def bind(self, val):
         self._bind = val
 
-    @staticmethod
-    def create_engine(*args, **kwargs):
-        return create_engine(*args, **kwargs)
+    async def create_engine(self, *args, **kwargs):
+        rv = await create_engine(*args, **kwargs)
+        self.bind = rv
+        return rv
     # async def create_engine(self, dsn=None, *,
     #                         min_size=10,
     #                         max_size=10,

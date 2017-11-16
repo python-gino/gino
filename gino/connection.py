@@ -61,32 +61,38 @@ class SAConnectionAdaptor(SAConnection):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def _execute_context(self, dialect, constructor,
-                         statement, parameters, *args):
-        return dialect.get_async_result_proxy(self, constructor, statement,
-                                              parameters, args)
-
     def _branch(self):
         return self
 
 
-class Connection:
-    def __init__(self, engine, kwargs, root=None, loop=None):
-        if root is None:
-            root = self
-        if loop is None:
-            loop = asyncio.get_event_loop()
+class Connection(SAConnection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loop = self.engine.loop
+        # if root is None:
+        #     root = self
+        # if loop is None:
+        #     loop = asyncio.get_event_loop()
+        #
+        # self._engine = engine
+        # self._kwargs = kwargs
+        # self._root = root
+        # self._loop = loop
+        #
+        # self._future = True
+        # self._sa_conn = SAConnectionAdaptor(self)
 
-        self._engine = engine
-        self._kwargs = kwargs
-        self._root = root
-        self._loop = loop
+    async def _async_init(self):
+        await self.__connection
+        return self
 
-        self._future = True
-        self._sa_conn = SAConnectionAdaptor(self)
+    def __await__(self):
+        return self._async_init().__await__()
 
-    def execute(self, obj, *multiparams, **params):
-        return self._sa_conn.execute(obj, *multiparams, **params)
+    def _execute_context(self, dialect, constructor,
+                         statement, parameters, *args):
+        return dialect.get_async_result_proxy(self, constructor, statement,
+                                              parameters, args)
 
     async def release(self, *, close=False):
         if self._root is self:
@@ -106,5 +112,8 @@ class Connection:
             awaitable = self._root._get_conn()
         return await awaitable
 
-    def _execute_clauseelement(self, elem, multiparams, params):
-        return self._sa_conn._execute_clauseelement(elem, multiparams, params)
+    def create(self, entity, **kwargs):
+        pass
+
+    def drop(self, entity, **kwargs):
+        pass

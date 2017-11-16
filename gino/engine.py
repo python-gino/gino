@@ -4,6 +4,7 @@ import types
 from collections import deque
 
 from sqlalchemy.engine import Engine as SAEngine
+from sqlalchemy.engine.interfaces import Connectable
 from asyncpg import create_pool
 # noinspection PyProtectedMember
 from asyncpg.connection import _ConnectionProxy
@@ -401,36 +402,64 @@ class EngineMethod:
         return AsyncExecution(engine, self._name, args, kwargs)
 
 
-class Engine:
+class Engine(SAEngine):
     _connection_cls = Connection
 
-    def __init__(self, pool, dialect, url,
-                 logging_name=None, echo=None, proxy=None,
-                 execution_options=None, loop=None):
+    def __init__(self, pool, dialect, url, logging_name=None, echo=None,
+                 proxy=None, execution_options=None, loop=None):
+        super().__init__(pool, dialect, url, logging_name, echo, proxy,
+                         execution_options)
         if loop is None:
             loop = asyncio.get_event_loop()
-
-        self.pool = pool
-        self.dialect = dialect
-        self._loop = loop
-
-        self._sa_engine = SAEngineAdaptor(dialect)
+        self.loop = loop
 
     # API
 
-    def acquire(self, *, reuse=True, **kwargs):
-        return AcquireContext(self._new_connection, reuse, kwargs)
+    # def acquire(self, *, reuse=True, **kwargs):
+    #     return AcquireContext(self._new_connection, reuse, kwargs)
 
     # Internal API
 
-    def _new_connection(self, kwargs, root):
-        return self._connection_cls(self, kwargs, root=root, loop=self._loop)
+    # def _new_connection(self, kwargs, root):
+    #     return self._connection_cls(self, kwargs, root=root, loop=self._loop)
+    #
+    # async def _acquire(self, kwargs):
+    #     return await self.pool.acquire(kwargs)
+    #
+    # async def _release(self, conn):
+    #     return await self.pool.release(conn)
+    #
+    # execute = EngineMethod()
+    # _execute_clauseelement = EngineMethod()
 
-    async def _acquire(self, kwargs):
-        return await self.pool.acquire(kwargs)
+    async def _async_init(self):
+        await self.pool.init()
+        return self
 
-    async def _release(self, conn):
-        return await self.pool.release(conn)
+    def __await__(self):
+        return self._async_init().__await__()
 
-    execute = EngineMethod()
-    _execute_clauseelement = EngineMethod()
+    def _wrap_pool_connect(self, fn, connection):
+        rv = asyncio.Future(loop=self.loop)
+        fut = fn()
+        super_method = super()._wrap_pool_connect
+
+        def cb(_):
+            try:
+                rv.set_result(super_method(fut.result, connection))
+            except Exception as e:
+                rv.set_exception(e)
+        fut.add_done_callback(cb)
+        return rv
+
+    def create(self, entity, **kwargs):
+        pass
+
+    def _run_visitor(self, visitor_callable, element, **kwargs):
+        pass
+
+    def scalar(self, obj, *multiparams, **params):
+        pass
+
+    def drop(self, entity, **kwargs):
+        pass
