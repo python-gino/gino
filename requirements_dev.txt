@@ -11,4 +11,4 @@ PyYAML==3.12
 pytest==3.2.5
 pytest-runner==3.0
 pytest-asyncio==0.8.0
-psycopg2==2.7.3.1
+psycopg2==2.7.3.2
