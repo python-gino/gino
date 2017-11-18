@@ -82,8 +82,11 @@ class Connection(SAConnection):
         # self._future = True
         # self._sa_conn = SAConnectionAdaptor(self)
 
+    async def get_dbapi_connection(self):
+        return await self.__connection
+
     async def _async_init(self):
-        await self.__connection
+        await self.get_dbapi_connection()
         return self
 
     def __await__(self):

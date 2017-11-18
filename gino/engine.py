@@ -14,6 +14,7 @@ from asyncpg.pool import Pool
 from .local import get_local
 from .connection import Connection
 from .exceptions import InterfaceError
+from .utils import deferred
 
 
 class LazyConnection(_ConnectionProxy):
@@ -439,18 +440,19 @@ class Engine(SAEngine):
     def __await__(self):
         return self._async_init().__await__()
 
-    def _wrap_pool_connect(self, fn, connection):
-        rv = asyncio.Future(loop=self.loop)
-        fut = fn()
-        super_method = super()._wrap_pool_connect
+    @deferred
+    async def _wrap_pool_connect(self, fn, connection):
+        try:
+            rv = await fn()
 
-        def cb(_):
-            try:
-                rv.set_result(super_method(fut.result, connection))
-            except Exception as e:
-                rv.set_exception(e)
-        fut.add_done_callback(cb)
-        return rv
+            def func():
+                return rv
+        except Exception as e:
+            rv = e
+
+            def func():
+                raise rv
+        return super()._wrap_pool_connect(func, connection)
 
     def create(self, entity, **kwargs):
         pass

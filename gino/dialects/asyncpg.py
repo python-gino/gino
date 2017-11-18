@@ -16,12 +16,12 @@ from sqlalchemy.dialects.postgresql.base import (
 from .pool import LazyConnection
 
 from .base import (
-    AsyncPool, AsyncDialectMixin, DBAPIAdaptor, DBAPIConnectionAdaptor)
+    Pool, AsyncDialectMixin, DBAPIAdaptor, DBAPIConnectionAdaptor)
 
 DEFAULT = object()
 
 
-class AsyncpgPool(AsyncPool):
+class AsyncpgPool(Pool):
     def __init__(self, creator,
                  dialect=None,
                  loop=None,
@@ -49,11 +49,11 @@ class AsyncpgPool(AsyncPool):
     async def init(self):
         self._pool = await asyncpg.create_pool(self.url, **self._kwargs)
 
-    async def acquire(self):
+    async def unique_connection(self):
         return DBAPIConnectionAdaptor(await self._pool.acquire())
 
     async def release(self, conn):
-        return await (await self._pool).release(conn)
+        return await self._pool.release(conn)
 
 
 class AsyncpgPoolEvents(PoolEvents):

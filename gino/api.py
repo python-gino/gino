@@ -138,6 +138,24 @@ class GinoExecutor:
         return GinoCursorFactory(env_factory, self._query, multiparams, params)
 
 
+class AsyncIterator:
+    def __init__(self, query):
+        self._result = query.execute()
+        self._all = None
+
+    @classmethod
+    def prop(cls, query):
+        return lambda: cls(query)
+
+    async def __anext__(self):
+        if self._all is None:
+            self._all = iter(await self._result)
+        try:
+            return next(self._all)
+        except StopIteration as e:
+            raise StopAsyncIteration(e.value)
+
+
 class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
@@ -155,6 +173,7 @@ class Gino(sa.MetaData):
                 if not hasattr(self, key):
                     setattr(self, key, getattr(mod, key))
         if query_ext:
+            Executable.__aiter__ = property(AsyncIterator.prop)
             Executable.gino = property(self.query_executor)
 
     @property
