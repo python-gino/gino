@@ -6,6 +6,7 @@ from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy.engine.util import _distill_params
 from asyncpg.connection import Connection
 from sqlalchemy import util
+from sqlalchemy.dialects import registry
 from sqlalchemy.events import PoolEvents
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
@@ -16,12 +17,41 @@ from sqlalchemy.dialects.postgresql.base import (
 from .pool import LazyConnection
 
 from .base import (
-    Pool, AsyncDialectMixin, DBAPIAdaptor, DBAPIConnectionAdaptor)
+    Pool, AsyncDialectMixin, DBAPIAdaptor, DBAPIConnectionAdaptor,
+    ExecutionContextMixin,
+)
 
 DEFAULT = object()
 
 
+class AsyncpgAdaptor(DBAPIConnectionAdaptor):
+    def __init__(self, conn):
+        super().__init__(conn)
+        self._stmt = None
+
+    async def prepare(self, statement):
+        self._stmt = await self._conn.prepare(statement)
+
+    async def first(self, *params):
+        return await self._stmt.fetchrow(*params)
+
+    async def scalar(self, *params):
+        return await self._stmt.fetchval(*params)
+
+    async def all(self, *params):
+        return await self._stmt.fetch(*params)
+
+    def get_description(self):
+        try:
+            return [((a[0], a[1][0]) + (None,) * 5)
+                    for a in self._stmt.get_attributes()]
+        except TypeError:  # asyncpg <= 0.12.0
+            return []
+
+
 class AsyncpgPool(Pool):
+    adaptor = AsyncpgAdaptor
+
     def __init__(self, creator,
                  dialect=None,
                  loop=None,
@@ -34,7 +64,7 @@ class AsyncpgPool(Pool):
                  connection_class=Connection,
                  connect_kwargs=None):
         super().__init__(creator, dialect, loop)
-        self._kwargs = dict(
+        self._kwargs.update(
             min_size=min_size,
             max_size=max_size,
             max_queries=max_queries,
@@ -46,18 +76,14 @@ class AsyncpgPool(Pool):
         )
         self._pool = None
 
-    async def init(self):
-        self._pool = await asyncpg.create_pool(self.url, **self._kwargs)
+    async def _init(self):
+        self._pool = await asyncpg.create_pool(*self._args, **self._kwargs)
 
-    async def unique_connection(self):
-        return DBAPIConnectionAdaptor(await self._pool.acquire())
+    async def _acquire(self):
+        return await self._pool.acquire()
 
-    async def release(self, conn):
+    async def _release(self, conn):
         return await self._pool.release(conn)
-
-
-class AsyncpgPoolEvents(PoolEvents):
-    _dispatch_target = AsyncpgPool
 
 
 class AsyncpgCompiler(PGCompiler):
@@ -126,65 +152,6 @@ class ConnectionAdaptor:
                 rv = AnonymousPreparedStatement(self._conn, statement, state)
         self._stmt = rv
         return rv
-
-
-# noinspection PyAbstractClass
-class AsyncpgExecutionContext(PGExecutionContext):
-    @classmethod
-    def init_clause(cls, dialect, elem, multiparams, params, connection):
-        # partially copied from:
-        # sqlalchemy.engine.base.Connection:_execute_clauseelement
-        distilled_params = _distill_params(multiparams, params)
-        if distilled_params:
-            # note this is usually dict but we support RowProxy
-            # as well; but dict.keys() as an iterable is OK
-            keys = distilled_params[0].keys()
-        else:
-            keys = []
-        compiled_sql = elem.compile(
-            dialect=dialect, column_keys=keys,
-            inline=len(distilled_params) > 1,
-        )
-        conn = ConnectionAdaptor(dialect, connection, compiled_sql)
-        rv = cls._init_compiled(
-            dialect, conn, conn, compiled_sql, distilled_params)
-        return rv
-
-    @util.memoized_property
-    def return_model(self):
-        # noinspection PyUnresolvedReferences
-        return self.execution_options.get('return_model', True)
-
-    @util.memoized_property
-    def model(self):
-        # noinspection PyUnresolvedReferences
-        rv = self.execution_options.get('model', None)
-        if isinstance(rv, weakref.ref):
-            rv = rv()
-        return rv
-
-    @util.memoized_property
-    def timeout(self):
-        # noinspection PyUnresolvedReferences
-        return self.execution_options.get('timeout', None)
-
-    def process_rows(self, rows, return_model=True):
-        rv = rows = self.get_result_proxy().process_rows(rows)
-        if self.model is not None and return_model and self.return_model:
-            rv = []
-            for row in rows:
-                obj = self.model()
-                obj.__values__.update(row)
-                rv.append(obj)
-        return rv
-
-    async def _async_init(self):
-        # noinspection PyUnresolvedReferences
-        await self.cursor.prepare(self.statement)
-        return self
-
-    def __await__(self):
-        return self._async_init().__await__()
 
 
 class GinoCursorFactory:
@@ -269,6 +236,14 @@ class AsyncpgDBAPI(DBAPIAdaptor):
 
 
 # noinspection PyAbstractClass
+class AsyncpgExecutionContext(PGExecutionContext, ExecutionContextMixin):
+    @util.memoized_property
+    def timeout(self):
+        # noinspection PyUnresolvedReferences
+        return self.execution_options.get('timeout', None)
+
+
+# noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect, AsyncDialectMixin):
     driver = 'asyncpg'
     supports_native_decimal = True
@@ -280,9 +255,6 @@ class AsyncpgDialect(PGDialect, AsyncDialectMixin):
         114: JSON(),
         3802: JSONB(),
     }
-
-    def create_connect_args(self, url):
-        return [str(url)], {}
 
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
@@ -336,3 +308,9 @@ class AsyncpgDialect(PGDialect, AsyncDialectMixin):
     async def do_status(self, connection, clause, *multiparams, **params):
         return (await self._execute_clauseelement(
             connection, clause, multiparams, params, status=True))[0]
+
+
+for name in ('asyncpg', 'postgresql.asyncpg', 'postgres.asyncpg'):
+    registry.register(name, 'gino.dialects.asyncpg', 'AsyncpgDialect')
+# noinspection PyUnboundLocalVariable
+del name

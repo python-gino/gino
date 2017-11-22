@@ -4,17 +4,14 @@ import types
 from collections import deque
 
 from sqlalchemy.engine import Engine as SAEngine
-from sqlalchemy.engine.interfaces import Connectable
-from asyncpg import create_pool
 # noinspection PyProtectedMember
 from asyncpg.connection import _ConnectionProxy
 from asyncpg.exceptions import InterfaceError
-from asyncpg.pool import Pool
 
 from .local import get_local
 from .connection import Connection
 from .exceptions import InterfaceError
-from .utils import deferred
+from .utils import Deferred
 
 
 class LazyConnection(_ConnectionProxy):
@@ -434,25 +431,28 @@ class Engine(SAEngine):
     # _execute_clauseelement = EngineMethod()
 
     async def _async_init(self):
-        await self.pool.init()
+        await self.pool
         return self
 
     def __await__(self):
         return self._async_init().__await__()
 
-    @deferred
-    async def _wrap_pool_connect(self, fn, connection):
-        try:
-            rv = await fn()
+    def _wrap_pool_connect(self, fn, connection):
+        super_connect = super()._wrap_pool_connect
 
-            def func():
-                return rv
-        except Exception as e:
-            rv = e
+        async def _connect():
+            try:
+                rv = await fn()
 
-            def func():
-                raise rv
-        return super()._wrap_pool_connect(func, connection)
+                def func():
+                    return rv
+            except Exception as e:
+                rv = e
+
+                def func():
+                    raise rv
+            return super_connect(func, connection)
+        return Deferred(_connect())
 
     def create(self, entity, **kwargs):
         pass

@@ -3,6 +3,7 @@ import asyncio
 from sqlalchemy.engine import Connection as SAConnection
 
 from .exceptions import InterfaceError
+from .result import AsyncResultProxy
 
 
 class AwaitableCallable:
@@ -66,9 +67,9 @@ class SAConnectionAdaptor(SAConnection):
 
 
 class Connection(SAConnection):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.loop = self.engine.loop
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.loop = self.engine.loop
         # if root is None:
         #     root = self
         # if loop is None:
@@ -94,14 +95,14 @@ class Connection(SAConnection):
 
     def _execute_context(self, dialect, constructor,
                          statement, parameters, *args):
-        return dialect.get_async_result_proxy(self, constructor, statement,
-                                              parameters, args)
+        return AsyncResultProxy(dialect, self, constructor, statement,
+                                parameters, args)
 
-    async def release(self, *, close=False):
-        if self._root is self:
-            fut, self._future = self._future, not close
-            if not isinstance(fut, bool):
-                await getattr(self._engine, '_release')(await fut)
+    # async def release(self, *, close=False):
+    #     if self._root is self:
+    #         fut, self._future = self._future, not close
+    #         if not isinstance(fut, bool):
+    #             await getattr(self._engine, '_release')(await fut)
 
     async def _get_conn(self):
         if self._root is self:

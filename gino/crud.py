@@ -232,3 +232,8 @@ class CRUDModel(Model):
                 keys.add(key)
                 keys.discard(prop.column_name)
         return dict((k, getattr(self, k)) for k in keys)
+
+
+def declarative_base(metadata, model_classes=(CRUDModel,), name='Model'):
+    from .declarative import declarative_base
+    return declarative_base(metadata, model_classes, name)

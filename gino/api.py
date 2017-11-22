@@ -143,9 +143,8 @@ class AsyncIterator:
         self._result = query.execute()
         self._all = None
 
-    @classmethod
-    def prop(cls, query):
-        return lambda: cls(query)
+    def __call__(self):
+        return self
 
     async def __anext__(self):
         if self._all is None:
@@ -154,6 +153,9 @@ class AsyncIterator:
             return next(self._all)
         except StopIteration as e:
             raise StopAsyncIteration(e.value)
+
+
+Executable.__aiter__ = property(AsyncIterator)
 
 
 class Gino(sa.MetaData):
@@ -173,7 +175,6 @@ class Gino(sa.MetaData):
                 if not hasattr(self, key):
                     setattr(self, key, getattr(mod, key))
         if query_ext:
-            Executable.__aiter__ = property(AsyncIterator.prop)
             Executable.gino = property(self.query_executor)
 
     @property
@@ -186,8 +187,8 @@ class Gino(sa.MetaData):
     def bind(self, val):
         self._bind = val
 
-    async def create_engine(self, *args, **kwargs):
-        rv = await create_engine(*args, **kwargs)
+    def create_engine(self, *args, **kwargs):
+        rv = create_engine(*args, **kwargs)
         self.bind = rv
         return rv
     # async def create_engine(self, dsn=None, *,

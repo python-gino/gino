@@ -1,23 +1,26 @@
 import asyncio
-from gino import Gino
+import gino
+
+metadata = gino.MetaData()
+Model = gino.declarative_base(metadata)
 
 
-db = Gino()
-
-
-class User(db.Model):
+class User(Model):
     __tablename__ = 'users'
 
-    id = db.Column(db.BigInteger(), primary_key=True)
-    nickname = db.Column(db.Unicode(), default='noname')
-    profile = db.Column(db.JSONB())
+    id = gino.Column(gino.BigInteger(), primary_key=True)
+    nickname = gino.Column(gino.Unicode(), default='noname')
+    profile = gino.Column(gino.JSONB())
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
 
 
 async def main():
-    e = await db.create_engine('postgresql://localhost/gino', min_size=0)
+    e = gino.create_engine('postgresql+asyncpg://localhost/gino',
+                           min_size=0, strategy='gino')
+    metadata.bind = e
+    # e = db.create_engine('asyncpg://localhost/gino')
     print(await e.execute('SELECT now()'))
     c = await e.connect()
     print(await c.execute('SELECT now()'))
