@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql.base import (
     PGDialect,
     PGExecutionContext,
 )
+from .pool import LazyConnection
 
 DEFAULT = object()
 
@@ -241,7 +242,8 @@ class AsyncpgDialect(PGDialect):
         if context.executemany and not many:
             raise ValueError('too many multiparams')
         # noinspection PyProtectedMember
-        await connection.get_connection()
+        if isinstance(connection, LazyConnection):
+            await connection.get_connection()
         with connection._stmt_exclusive_section:
             prepared = await context.prepare(named=False)
             rv = []
