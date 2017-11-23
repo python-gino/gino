@@ -29,7 +29,7 @@ class ModelType(type):
 
     def __getattr__(self, item):
         try:
-            if item in {'insert'}:
+            if item in {'insert', 'join'}:
                 return getattr(self.__table__, item)
             raise AttributeError
         except AttributeError:
@@ -84,6 +84,11 @@ class Model:
 
 def declarative_base(metadata, model_classes=(Model,), name='Model'):
     return ModelType(name, model_classes, {'__metadata__': metadata})
+
+
+@sa.inspection._inspects(ModelType)
+def inspect_model_type(target):
+    return sa.inspection.inspect(target.__table__)
 
 
 __all__ = ['ColumnAttribute', 'Model', 'declarative_base']
