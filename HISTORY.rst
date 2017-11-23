@@ -2,6 +2,13 @@
 History
 =======
 
+0.5.6 (2017-11-23)
+------------------
+
+* Changed to use unnamed statement when possible (#80 #90)
+* Added more example (Contributed by Kentoseth in #109)
+* Added ``Model.join`` and made ``Model`` selectable (Contributed by Ádám Barancsuk in #112 #113)
+
 0.5.5 (2017-10-18)
 ------------------
 
@@ -14,13 +21,13 @@ History
 ------------------
 
 * Updated example (Contributed by Kinware in #75)
-* Added `Model.insert` (Contributed by Neal Wang in #63)
+* Added ``Model.insert`` (Contributed by Neal Wang in #63)
 * Fixed issue that non-lazy acquiring fails dirty (#79)
 
 0.5.3 (2017-09-23)
 ------------------
 
-* Fixed `no module named cutils` error (Contributed by Vladimir Goncharov in #73)
+* Fixed ``no module named cutils`` error (Contributed by Vladimir Goncharov in #73)
 
 0.5.2 (2017-09-10)
 ------------------

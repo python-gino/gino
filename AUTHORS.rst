@@ -15,6 +15,8 @@ Contributors
 * Binghan Li <lbhsot@163.com>
 * Vladimir Goncharov <dev.zelta@gmail.com>
 * Kinware <oss@kinware.com>
+* Kentoseth <kentoseth@devcroo.com>
+* Ádám Barancsuk <adam.barancsuk@gmail.com>
 
 Issue Reporters
 ---------------
