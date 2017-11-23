@@ -2,6 +2,9 @@
 GINO
 ====
 
+***We are working on a huge refactor in #59, which will deprecate most current
+APIs and be more close to SQLAlchemy. This update is expected to be done within
+December 2017 as version 0.6.0.***
 
 .. image:: https://img.shields.io/pypi/v/gino.svg
         :target: https://pypi.python.org/pypi/gino
