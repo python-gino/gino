@@ -2,6 +2,14 @@
 History
 =======
 
+0.5.7 (2017-11-24)
+------------------
+
+This is an emergency fix for 0.5.6.
+
+* Fixed broken lazy connection (Contributed by Ádám Barancsuk in #114)
+* Added ``Model.outerjoin``
+
 0.5.6 (2017-11-23)
 ------------------
 
