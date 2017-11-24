@@ -2,12 +2,12 @@ import itertools
 import weakref
 
 import sqlalchemy as sa
-from sqlalchemy.sql import ClauseElement
 from sqlalchemy.dialects import postgresql as sa_pg
+from sqlalchemy.sql import ClauseElement
 
-from . import json_support
+from gino.exceptions import NoSuchRowError
+from gino.orm import json_support
 from .declarative import Model
-from .exceptions import NoSuchRowError
 
 DEFAULT = object()
 

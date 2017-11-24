@@ -155,12 +155,11 @@ import tornado.iostream
 import tornado.log
 import tornado.platform.asyncio
 import tornado.web
-
 from tornado.options import options as _options, define as _define
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
-from ..local import enable_task_local as _enable_task_local
 from ..connection import GinoConnection as _Connection
+from ..local import enable_task_local as _enable_task_local
 from ..pool import GinoPool as _Pool
 
 
@@ -241,7 +240,7 @@ class Gino(_Gino):
         # Typehints to enable autocompletion on all Gino.Model-derived classes
 
         from ..crud import CRUDModel as __CRUDModel
-        from ..declarative import ModelType as __ModelType
+        from gino.orm.declarative import ModelType as __ModelType
 
         class Model(__CRUDModel, TornadoModelMixin, metaclass=__ModelType):
             ...

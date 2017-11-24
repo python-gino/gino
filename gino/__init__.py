@@ -3,7 +3,9 @@ from sqlalchemy import *
 # noinspection PyUnresolvedReferences
 from sqlalchemy.dialects.postgresql import *
 
+from gino.orm.json_support import *
 from .api import Gino
+from .exceptions import *
 from .local import (
     get_local,
     enable_task_local,
@@ -11,10 +13,7 @@ from .local import (
     reset_local,
     is_local_root,
 )
-from .exceptions import *
+from .orm.crud import declarative_base
 from .strategies import GinoEngineStrategy, create_engine
-from .crud import declarative_base
-
-from .json_support import *
 
 __version__ = '0.5.7'

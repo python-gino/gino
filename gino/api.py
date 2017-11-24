@@ -2,12 +2,12 @@ import weakref
 
 import sqlalchemy as sa
 from asyncpg import Connection
-from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
+from sqlalchemy.sql.base import Executable
 
-from .crud import CRUDModel
-from .declarative import declarative_base
-from . import json_support
+from gino.orm import json_support
+from .orm.crud import CRUDModel
+from .orm.declarative import declarative_base
 from .dialects.asyncpg import AsyncpgDialect
 from .strategies import create_engine
 
