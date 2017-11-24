@@ -1,26 +1,27 @@
 import asyncio
-import gino
 
-metadata = gino.MetaData()
+import gino
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
+
+metadata = sa.MetaData()
 Model = gino.declarative_base(metadata)
 
 
 class User(Model):
     __tablename__ = 'users'
 
-    id = gino.Column(gino.BigInteger(), primary_key=True)
-    nickname = gino.Column(gino.Unicode(), default='noname')
-    profile = gino.Column(gino.JSONB())
+    id = sa.Column(sa.BigInteger(), primary_key=True)
+    nickname = sa.Column(sa.Unicode(), default='noname')
+    profile = sa.Column(JSONB())
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
 
 
 async def main():
-    e = gino.create_engine('postgresql+asyncpg://localhost/gino',
-                           min_size=0, strategy='gino')
+    e = sa.create_engine('asyncpg://localhost/gino', strategy='gino')
     metadata.bind = e
-    # e = db.create_engine('asyncpg://localhost/gino')
     print(await e.execute('SELECT now()'))
     c = await e.connect()
     print(await c.execute('SELECT now()'))

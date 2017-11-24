@@ -39,6 +39,12 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=req_file('requirements.txt'),
+    entry_points="""
+    [sqlalchemy.dialects]
+    postgresql.asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    postgres.asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    """,
     license="BSD license",
     zip_safe=False,
     keywords='gino',

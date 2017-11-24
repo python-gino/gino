@@ -308,9 +308,3 @@ class AsyncpgDialect(PGDialect, AsyncDialectMixin):
     async def do_status(self, connection, clause, *multiparams, **params):
         return (await self._execute_clauseelement(
             connection, clause, multiparams, params, status=True))[0]
-
-
-for name in ('asyncpg', 'postgresql.asyncpg', 'postgres.asyncpg'):
-    registry.register(name, 'gino.dialects.asyncpg', 'AsyncpgDialect')
-# noinspection PyUnboundLocalVariable
-del name
