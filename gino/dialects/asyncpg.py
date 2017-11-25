@@ -25,8 +25,8 @@ DEFAULT = object()
 
 
 class AsyncpgAdaptor(DBAPIConnectionAdaptor):
-    def __init__(self, conn):
-        super().__init__(conn)
+    def __init__(self, pool, conn):
+        super().__init__(pool, conn)
         self._stmt = None
 
     async def prepare(self, statement):
@@ -79,10 +79,10 @@ class AsyncpgPool(Pool):
     async def _init(self):
         self._pool = await asyncpg.create_pool(*self._args, **self._kwargs)
 
-    async def _acquire(self):
+    async def acquire(self):
         return await self._pool.acquire()
 
-    async def _release(self, conn):
+    async def release(self, conn):
         return await self._pool.release(conn)
 
 

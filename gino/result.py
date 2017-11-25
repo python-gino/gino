@@ -3,13 +3,14 @@ from .utils import Deferred
 
 class AsyncResultProxy:
     def __init__(self, dialect, connection, constructor, statement,
-                 parameters, args):
+                 parameters, args, auto_close_connection=False):
         self._dialect = dialect
         self._connection = connection
         self._constructor = constructor
         self._statement = statement
         self._parameters = parameters
         self._args = args
+        self._auto_close_connection = auto_close_connection
 
         self._context = None
         self._conn = None
@@ -36,26 +37,38 @@ class AsyncResultProxy:
         return rv
 
     async def _execute(self):
-        await self._preparation
-        return await self.all()
+        try:
+            await self._preparation
+            return await self.all()
+        finally:
+            await self._connection.close()
 
     def __await__(self):
         return self._execute().__await__()
 
     async def first(self):
-        await self._preparation
-        row = await self._conn.first(*self._context.parameters[0])
-        if not row:
-            return row
-        return self._process_rows([row])[0]
+        try:
+            await self._preparation
+            row = await self._conn.first(*self._context.parameters[0])
+            if not row:
+                return row
+            return self._process_rows([row])[0]
+        finally:
+            await self._connection.close()
 
     async def scalar(self):
-        await self._preparation
-        return await self._conn.scalar(*self._context.parameters[0])
+        try:
+            await self._preparation
+            return await self._conn.scalar(*self._context.parameters[0])
+        finally:
+            await self._connection.close()
 
     async def all(self):
-        rows = await self._conn.all(*self._context.parameters[0])
-        return self._process_rows(rows)
+        try:
+            rows = await self._conn.all(*self._context.parameters[0])
+            return self._process_rows(rows)
+        finally:
+            await self._connection.close()
 
     # async def buffer_all(self):
     #     self._buffer = await self.all()

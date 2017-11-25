@@ -20,11 +20,16 @@ class DBAPICursorAdaptor:
 
 
 class DBAPIConnectionAdaptor:
-    def __init__(self, conn):
+    def __init__(self, pool, conn):
+        self._pool = pool
         self._conn = conn
+        self._reset_agent = None
 
     def cursor(self):
         return DBAPICursorAdaptor(self)
+
+    async def close(self):
+        return await self._pool.release(self._conn)
 
     async def prepare(self, statement):
         raise NotImplementedError
@@ -64,17 +69,17 @@ class Pool:
     async def _init(self):
         raise NotImplementedError
 
-    async def _acquire(self):
+    async def acquire(self):
         raise NotImplementedError
 
-    async def _release(self, conn):
+    async def release(self, conn):
         raise NotImplementedError
 
     # sa.Pool APIs
 
     async def unique_connection(self):
         await self._init_done
-        return self.adaptor(await self._acquire())
+        return self.adaptor(self, await self.acquire())
 
     async def connect(self):
         return await self.unique_connection()

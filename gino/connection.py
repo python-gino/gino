@@ -95,9 +95,35 @@ class Connection(SAConnection):
 
     def _execute_context(self, dialect, constructor,
                          statement, parameters, *args):
-        return AsyncResultProxy(dialect, self, constructor, statement,
-                                parameters, args)
+        return AsyncResultProxy(
+            dialect, self, constructor, statement, parameters, args,
+            auto_close_connection=self.should_close_with_result)
 
+    async def close(self):
+        if self.__branch_from:
+            try:
+                del self.__connection
+            except AttributeError:
+                pass
+            finally:
+                self.__can_reconnect = False
+                return
+        try:
+            conn = await self.__connection
+        except AttributeError:
+            pass
+        else:
+            await conn.close()
+            if conn._reset_agent is self.__transaction:
+                conn._reset_agent = None
+
+            # the close() process can end up invalidating us,
+            # as the pool will call our transaction as the "reset_agent"
+            # for rollback(), which can then cause an invalidation
+            if not self.__invalid:
+                del self.__connection
+        self.__can_reconnect = False
+        self.__transaction = None
     # async def release(self, *, close=False):
     #     if self._root is self:
     #         fut, self._future = self._future, not close
