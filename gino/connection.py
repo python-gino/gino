@@ -67,31 +67,64 @@ class SAConnectionAdaptor(SAConnection):
 
 
 class Connection(SAConnection):
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.loop = self.engine.loop
-        # if root is None:
-        #     root = self
-        # if loop is None:
-        #     loop = asyncio.get_event_loop()
-        #
-        # self._engine = engine
-        # self._kwargs = kwargs
-        # self._root = root
-        # self._loop = loop
-        #
-        # self._future = True
-        # self._sa_conn = SAConnectionAdaptor(self)
+    _deferred = None
 
-    async def get_dbapi_connection(self):
-        return await self.__connection
+    @property
+    def deferred(self):
+        coro, self._deferred = self._deferred, None
+        return coro
 
-    async def _async_init(self):
-        await self.get_dbapi_connection()
+    @deferred.setter
+    def deferred(self, val):
+        assert self._deferred is None
+        self._deferred = val
+
+    def _clone(self):
+        rv = super()._clone()
+        rv._deferred = None
+        return rv
+
+    def __enter__(self):
+        raise NotImplementedError('Please use `async with` instead')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        raise NotImplementedError('Please use `async with` instead')
+
+    async def __aenter__(self):
+        await self.connection()
         return self
 
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
     def __await__(self):
-        return self._async_init().__await__()
+        return self.__aenter__().__await__()
+
+    async def execution_options(self, **opt):
+        rv = super().execution_options(**opt)
+        await rv.deferred
+        return rv
+
+    async def connection(self):
+        try:
+            coro = self.__connection
+        except AttributeError:
+            try:
+                return await self._revalidate_connection()
+            except BaseException as e:
+                await self._handle_dbapi_exception(e, None, None, None, None)
+        else:
+            return await coro
+
+    async def get_isolation_level(self):
+        try:
+            return await self.dialect.get_isolation_level(
+                await self.connection())
+        except BaseException as e:
+            await self._handle_dbapi_exception(e, None, None, None, None)
+
+    async def info(self):
+        return (await self.connection()).info
 
     def _execute_context(self, dialect, constructor,
                          statement, parameters, *args):
@@ -124,6 +157,7 @@ class Connection(SAConnection):
                 del self.__connection
         self.__can_reconnect = False
         self.__transaction = None
+
     # async def release(self, *, close=False):
     #     if self._root is self:
     #         fut, self._future = self._future, not close

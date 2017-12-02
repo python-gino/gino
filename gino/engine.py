@@ -452,7 +452,7 @@ class Engine(SAEngine):
                 def func():
                     raise rv
             return super_connect(func, connection)
-        return Deferred(_connect())
+        return Deferred(_connect(), loop=self.loop)
 
     def create(self, entity, **kwargs):
         pass

@@ -24,7 +24,12 @@ async def main():
     metadata.bind = e
     print(await e.execute('SELECT now()'))
     c = await e.connect()
-    print(await c.execute('SELECT now()'))
+    try:
+        print(await c.execute('SELECT now()'))
+    finally:
+        await c.close()
+    async with e.connect() as c:
+        print(await c.execute('SELECT now()'))
     print(await User.query.execute())
     print(await User.query.execute().first())
     print(await User.query.scalar())

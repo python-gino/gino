@@ -56,7 +56,7 @@ class Pool:
         if loop is None:
             loop = asyncio.get_event_loop()
         self.loop = loop
-        self._init_done = Deferred(self._init())
+        self._init_done = Deferred(self._init(), loop=loop)
 
     # noinspection PyUnusedLocal
     def __init_subclass__(cls, **kwargs):

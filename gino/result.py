@@ -15,11 +15,12 @@ class AsyncResultProxy:
         self._context = None
         self._conn = None
         self._proxy = None
-        self._preparation = Deferred(self._prepare())
+        self._preparation = Deferred(self._prepare(),
+                                     loop=connection.engine.loop)
         # self._buffer = None
 
     async def _prepare(self):
-        self._conn = await self._connection.get_dbapi_connection()
+        self._conn = await self._connection.connection()
         self._context = self._constructor(
             self._dialect, self._connection, self._conn, *self._args)
         await self._conn.prepare(self._context.statement)
