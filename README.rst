@@ -9,7 +9,7 @@ December 2017 as version 0.6.0.***
 .. image:: https://img.shields.io/pypi/v/gino.svg
         :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/travis/fantix/gino.svg
+.. image:: https://img.shields.io/travis/fantix/gino/master.svg
         :target: https://travis-ci.org/fantix/gino
 
 .. image:: https://readthedocs.org/projects/python-gino/badge/?version=latest
