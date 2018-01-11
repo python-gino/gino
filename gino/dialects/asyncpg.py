@@ -14,7 +14,7 @@ from sqlalchemy.dialects.postgresql.base import (
     PGDialect,
     PGExecutionContext,
 )
-from .pool import LazyConnection
+# from .pool import LazyConnection
 
 from .base import (
     Pool, AsyncDialectMixin, DBAPIAdaptor, DBAPIConnectionAdaptor,
