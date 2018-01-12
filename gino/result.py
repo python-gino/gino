@@ -37,12 +37,16 @@ class AsyncResultProxy:
                 rv.append(obj)
         return rv
 
+    async def _close(self):
+        if self._auto_close_connection:
+            await self._connection.close()
+
     async def _execute(self):
         try:
             await self._preparation
             return await self.all()
         finally:
-            await self._connection.close()
+            await self._close()
 
     def __await__(self):
         return self._execute().__await__()
@@ -55,21 +59,21 @@ class AsyncResultProxy:
                 return row
             return self._process_rows([row])[0]
         finally:
-            await self._connection.close()
+            await self._close()
 
     async def scalar(self):
         try:
             await self._preparation
             return await self._conn.scalar(*self._context.parameters[0])
         finally:
-            await self._connection.close()
+            await self._close()
 
     async def all(self):
         try:
             rows = await self._conn.all(*self._context.parameters[0])
             return self._process_rows(rows)
         finally:
-            await self._connection.close()
+            await self._close()
 
     # async def buffer_all(self):
     #     self._buffer = await self.all()

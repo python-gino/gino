@@ -46,6 +46,9 @@ class DBAPIConnectionAdaptor:
     def get_description(self):
         raise NotImplementedError
 
+    def transaction(self, *args, **kwargs):
+        raise NotImplementedError
+
 
 class Pool:
     adaptor = DBAPIConnectionAdaptor

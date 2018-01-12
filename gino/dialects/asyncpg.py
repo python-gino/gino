@@ -48,6 +48,9 @@ class AsyncpgAdaptor(DBAPIConnectionAdaptor):
         except TypeError:  # asyncpg <= 0.12.0
             return []
 
+    def transaction(self, *args, **kwargs):
+        return self._conn.transaction(*args, **kwargs)
+
 
 class AsyncpgPool(Pool):
     adaptor = AsyncpgAdaptor

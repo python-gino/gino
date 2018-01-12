@@ -2,6 +2,7 @@ import asyncio
 
 from sqlalchemy.engine import Connection as SAConnection
 
+from .utils import Deferred
 from .exceptions import InterfaceError
 from .result import AsyncResultProxy
 
@@ -48,6 +49,47 @@ class AsyncExecution:
 
     def __getattr__(self, item):
         return AwaitableCallable(self, item)
+
+
+class Transaction:
+    def __init__(self, sa_conn, args, kwargs):
+        self._sa_conn = sa_conn
+        self._args = args
+        self._kwargs = kwargs
+        self._transaction = Deferred(self._new_transaction())
+
+    async def _new_transaction(self):
+        conn = await self._sa_conn.connection()
+        return conn.transaction(*self._args, **self._kwargs)
+
+    async def __aenter__(self):
+        tx = await self._transaction
+        return await tx.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        tx = await self._transaction
+        return await tx.__aexit__(exc_type, exc_val, exc_tb)
+
+    async def start(self):
+        tx = await self._transaction
+        return await tx.start()
+
+    async def commit(self):
+        tx = await self._transaction
+        return await tx.commit()
+
+    async def rollback(self):
+        tx = await self._transaction
+        return await tx.rollback()
+
+    def __repr__(self):
+        try:
+            rv = repr(self._transaction.result())
+        except (asyncio.InvalidStateError, AttributeError):
+            rv = 'pending'
+        except asyncio.CancelledError:
+            rv = 'cancelled'
+        return f'<gino.connection.Transaction {rv}>'
 
 
 # noinspection PyAbstractClass
@@ -125,6 +167,14 @@ class Connection(SAConnection):
 
     async def info(self):
         return (await self.connection()).info
+
+    def contextual_connect(self, close_with_result=False):
+        rv = super().contextual_connect()
+        rv.should_close_with_result = close_with_result
+        return rv
+
+    def begin(self, *args, **kwargs):
+        return Transaction(self, args, kwargs)
 
     def _execute_context(self, dialect, constructor,
                          statement, parameters, *args):

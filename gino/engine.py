@@ -3,10 +3,14 @@ import functools
 import types
 from collections import deque
 
-from sqlalchemy.engine import Engine as SAEngine
+try:
+    from contextvars import ContextVar
+except ImportError:
+    from aiocontextvars import ContextVar
 # noinspection PyProtectedMember
 from asyncpg.connection import _ConnectionProxy
 from asyncpg.exceptions import InterfaceError
+from sqlalchemy.engine import Engine as SAEngine
 
 from .local import get_local
 from .connection import Connection
@@ -400,6 +404,25 @@ class EngineMethod:
         return AsyncExecution(engine, self._name, args, kwargs)
 
 
+class TransactionContext:
+    def __init__(self, conn, transaction, close_with_result):
+        self.conn = conn
+        self.transaction = transaction
+        self.close_with_result = close_with_result
+
+    async def __aenter__(self):
+        await self.transaction.start()
+        return self.conn
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            await self.transaction.rollback()
+        else:
+            await self.transaction.commit()
+        if not self.close_with_result:
+            await self.conn.close()
+
+
 class Engine(SAEngine):
     _connection_cls = Connection
 
@@ -410,6 +433,7 @@ class Engine(SAEngine):
         if loop is None:
             loop = asyncio.get_event_loop()
         self.loop = loop
+        self._conn_ctx = ContextVar('gino-conn', default=None)
 
     # API
 
@@ -459,6 +483,23 @@ class Engine(SAEngine):
 
     def _run_visitor(self, visitor_callable, element, **kwargs):
         pass
+
+    _trans_ctx = TransactionContext
+
+    def begin(self, *args, close_with_result=False, **kwargs):
+        conn = self.contextual_connect(close_with_result=close_with_result)
+        trans = conn.begin(*args, **kwargs)
+        return self._trans_ctx(conn, trans, close_with_result)
+
+    def contextual_connect(self, close_with_result=False, **kwargs):
+        # noinspection PyNoneFunctionAssignment
+        rv = self._conn_ctx.get()
+        if rv is None:
+            rv = super().contextual_connect(close_with_result, **kwargs)
+            self._conn_ctx.set(rv)
+        else:
+            rv = rv.contextual_connect(close_with_result=close_with_result)
+        return rv
 
     def scalar(self, obj, *multiparams, **params):
         pass
