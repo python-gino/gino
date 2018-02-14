@@ -125,7 +125,7 @@ class AsyncpgExecutionContext(PGExecutionContext):
         return self.execution_options.get('timeout', None)
 
     def process_rows(self, rows, return_model=True):
-        rv = rows = self.get_result_proxy().process_rows(rows)
+        rv = rows = super().get_result_proxy().process_rows(rows)
         if self.model is not None and return_model and self.return_model:
             rv = []
             for row in rows:
@@ -136,6 +136,9 @@ class AsyncpgExecutionContext(PGExecutionContext):
 
     async def prepare(self, named=True):
         return await self.connection.prepare(self.statement, named)
+
+    def get_result_proxy(self):
+        return ResultProxy(self)
 
 
 class GinoCursorFactory:
@@ -215,6 +218,70 @@ class GinoCursor:
         return getattr(self._cursor, item)
 
 
+class Cursor:
+    def __init__(self, apg_conn):
+        self._conn = apg_conn
+        self._stmt = None
+
+    def execute(self, statement, parameters):
+        pass
+
+    @property
+    def stmt_exclusive_section(self):
+        return getattr(self._conn, '_stmt_exclusive_section')
+
+    async def prepare(self, statement, named=True):
+        if named:
+            rv = await self._conn.prepare(statement)
+        else:
+            # it may still be a named statement, if cache is not disabled
+            # noinspection PyProtectedMember
+            self._conn._check_open()
+            # noinspection PyProtectedMember
+            state = await self._conn._get_statement(statement, None)
+            if state.name:
+                rv = PreparedStatement(self._conn, statement, state)
+            else:
+                rv = AnonymousPreparedStatement(self._conn, statement, state)
+        self._stmt = rv
+        return rv
+
+    @property
+    def description(self):
+        try:
+            return [((a[0], a[1][0]) + (None,) * 5)
+                    for a in self._stmt.get_attributes()]
+        except TypeError:  # asyncpg <= 0.12.0
+            return []
+
+
+class ResultProxy:
+    _metadata = True
+
+    def __init__(self, context):
+        self._context = context
+
+    async def execute(self, one=False, return_model=True, status=False):
+        context = self._context
+        cursor = context.cursor
+        with cursor.stmt_exclusive_section:
+            prepared = await cursor.prepare(context.statement, named=False)
+            rv = []
+            for args in context.parameters:
+                if one:
+                    rows = [await prepared.fetchrow(*args,
+                                                    timeout=context.timeout)]
+                else:
+                    rows = await prepared.fetch(*args, timeout=context.timeout)
+                item = context.process_rows(rows, return_model=return_model)
+                if status:
+                    item = prepared.get_statusmsg(), item
+                if not context.executemany:
+                    return item
+                rv.append(item)
+            return rv
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):
     driver = 'asyncpg'
@@ -222,6 +289,7 @@ class AsyncpgDialect(PGDialect):
     default_paramstyle = 'numeric'
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
+    cursor_cls = Cursor
     dbapi_type_map = {
         114: JSON(),
         3802: JSONB(),
