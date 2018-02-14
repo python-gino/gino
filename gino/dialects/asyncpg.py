@@ -246,6 +246,12 @@ class AsyncpgDialect(PGDialect):
             **url.query,
         )
 
+    async def acquire_conn(self):
+        return await self._pool.acquire()
+
+    async def release_conn(self, conn):
+        await self._pool.release(conn)
+
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, elem, multiparams, params, None)
