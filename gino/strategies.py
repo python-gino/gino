@@ -1,24 +1,29 @@
+import asyncio
+
 from sqlalchemy.engine import url
 from sqlalchemy import util
 
 from .engine import GinoEngine
 
 
-async def create_engine(name_or_url, **kwargs):
+async def create_engine(name_or_url, loop=None, **kwargs):
     u = url.make_url(name_or_url)
+    if loop is None:
+        loop = asyncio.get_event_loop()
 
     dialect_cls = u.get_dialect()
 
     pop_kwarg = kwargs.pop
 
-    dialect_args = {}
+    dialect_args = dict(loop=loop)
     # consume dialect arguments from kwargs
     for k in util.get_cls_kwargs(dialect_cls):
         if k in kwargs:
             dialect_args[k] = pop_kwarg(k)
     dialect = dialect_cls(**dialect_args)
+    await dialect.init_pool(u)
 
-    engine_args = {}
+    engine_args = dict(loop=loop)
     for k in util.get_cls_kwargs(GinoEngine):
         if k in kwargs:
             engine_args[k] = pop_kwarg(k)

@@ -150,7 +150,7 @@ class Gino(sa.MetaData):
                  query_ext=True, **kwargs):
         self._bind = None
         super().__init__(bind=bind, **kwargs)
-        self.dialect = dialect or AsyncpgDialect()
+        self.dialect = dialect or AsyncpgDialect(None)
         if model_classes is None:
             model_classes = self.model_base_classes
         self.Model = declarative_base(self, model_classes)

@@ -1,5 +1,6 @@
 import weakref
 
+import asyncpg
 from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util
 # noinspection PyProtectedMember
@@ -225,6 +226,25 @@ class AsyncpgDialect(PGDialect):
         114: JSON(),
         3802: JSONB(),
     }
+
+    def __init__(self, loop, isolation_level=None, json_serializer=None,
+                 json_deserializer=None, **kwargs):
+        super().__init__(isolation_level, json_serializer, json_deserializer,
+                         **kwargs)
+        self._pool = None
+        self._loop = loop
+
+    async def init_pool(self, url):
+        # noinspection PyAttributeOutsideInit
+        self._pool = await asyncpg.create_pool(
+            host=url.host,
+            port=url.port,
+            user=url.username,
+            database=url.database,
+            password=url.password,
+            loop=self._loop,
+            **url.query,
+        )
 
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
