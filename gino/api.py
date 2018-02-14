@@ -9,7 +9,7 @@ from sqlalchemy.dialects import postgresql as sa_pg
 from .connection import GinoConnection
 from .crud import CRUDModel
 from .declarative import declarative_base
-from .dialect import AsyncpgDialect, GinoCursorFactory
+from .dialects.asyncpg import AsyncpgDialect, GinoCursorFactory
 from .pool import GinoPool
 from . import json_support
 

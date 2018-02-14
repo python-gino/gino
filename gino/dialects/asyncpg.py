@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql.base import (
     PGDialect,
     PGExecutionContext,
 )
-from .pool import LazyConnection
+from ..pool import LazyConnection
 
 DEFAULT = object()
 

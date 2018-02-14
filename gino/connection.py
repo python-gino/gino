@@ -1,6 +1,6 @@
 from asyncpg.connection import Connection
 
-from .dialect import GinoCursorFactory
+from .dialects.asyncpg import GinoCursorFactory
 
 
 class GinoConnection(Connection):
