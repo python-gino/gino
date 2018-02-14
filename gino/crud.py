@@ -176,7 +176,8 @@ class CRUDModel(Model):
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
         q = cls.__table__.insert().values(**rv.__values__).returning(
-            sa.text('*')).execution_options(**opts)
+            *cls.__table__.columns
+        ).execution_options(**opts)
         row = await cls.__metadata__.first(q, bind=bind)
         rv.__values__.update(row)
         rv.__profile__ = None

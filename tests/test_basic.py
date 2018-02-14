@@ -1,16 +1,17 @@
 import random
 
 import pytest
-from .models import User, Friendship
+from .models import User, UserType, Friendship
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_create(asyncpg_pool):
     nickname = 'test_create_{}'.format(random.random())
-    u = await User.create(bind=asyncpg_pool, nickname=nickname)
+    u = await User.create(bind=asyncpg_pool, nickname=nickname, type=UserType.USER)
     assert u.id is not None
     assert u.nickname == nickname
+    assert u.type == UserType.USER
     return u
 
 

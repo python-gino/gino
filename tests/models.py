@@ -1,4 +1,5 @@
 import os
+import enum
 
 from gino import Gino
 
@@ -12,11 +13,20 @@ DB_ARGS = dict(
 db = Gino()
 
 
+class UserType(enum.Enum):
+    USER = 'USER'
+
+
 class User(db.Model):
     __tablename__ = 'gino_users'
 
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column(db.Unicode(), default='noname')
+    type = db.Column(
+        db.Enum(UserType),
+        nullable=False,
+        default=UserType.USER,
+    )
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
