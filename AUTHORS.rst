@@ -17,6 +17,7 @@ Contributors
 * Kinware <oss@kinware.com>
 * Kentoseth <kentoseth@devcroo.com>
 * Ádám Barancsuk <adam.barancsuk@gmail.com>
+* Sergey Kovalev <s_kovalev@wargaming.net>
 
 Issue Reporters
 ---------------
