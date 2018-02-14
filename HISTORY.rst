@@ -2,6 +2,12 @@
 History
 =======
 
+0.5.8 (2018-02-14)
+------------------
+
+* Preparing for 0.6.0 which will be a breaking release
+* Fixed wrong value of ``Enum`` in creation (Contributed by Sergey Kovalev in #126)
+
 0.5.7 (2017-11-24)
 ------------------
 
