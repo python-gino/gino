@@ -24,7 +24,7 @@ setup_requirements = [
 test_requirements = [
     'pytest',
     'pytest-asyncio',
-    'psycopg2',
+    'psycopg2-binary',
 ]
 
 setup(
