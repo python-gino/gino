@@ -12,6 +12,9 @@ February 2018 as version 0.6.0.***
 .. image:: https://img.shields.io/travis/fantix/gino/master.svg
         :target: https://travis-ci.org/fantix/gino
 
+.. image:: https://coveralls.io/repos/github/fantix/gino/badge.svg?branch=master
+        :target: https://coveralls.io/github/fantix/gino?branch=master
+
 .. image:: https://readthedocs.org/projects/python-gino/badge/?version=latest
         :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
