@@ -13,14 +13,15 @@ class DBAPIConnection:
         return self._dialect.cursor_cls(self._raw_conn)
 
 
+class SAConnection(Connection):
+    pass
+
+
 class SAEngine(Engine):
+    _connection_cls = SAConnection
+
     def __init__(self, dialect):
         super().__init__(None, dialect, None)
-
-
-class SAConnection(Connection):
-    def _branch(self):
-        return self
 
 
 class AcquireContext:
@@ -38,11 +39,9 @@ class AcquireContext:
 
 
 class GinoEngine:
-    def __init__(self, dialect, loop=None):
+    def __init__(self, dialect, loop):
         self._sa_engine = SAEngine(dialect)
         self._dialect = dialect
-        if loop is None:
-            loop = asyncio.get_event_loop()
         self._loop = loop
 
     def acquire(self):
@@ -55,6 +54,9 @@ class GinoEngine:
 
     async def _release(self, conn):
         await self._dialect.release_conn(conn.raw_connection)
+
+    async def close(self):
+        await self._dialect.close_pool()
 
 
 class GinoConnection:
@@ -96,4 +98,3 @@ class GinoConnection:
     async def status(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
         return await result.execute(status=True)
-

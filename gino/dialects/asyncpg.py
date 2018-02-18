@@ -320,6 +320,9 @@ class AsyncpgDialect(PGDialect):
     async def release_conn(self, conn):
         await self._pool.release(conn)
 
+    async def close_pool(self):
+        await self._pool.close()
+
     def compile(self, elem, *multiparams, **params):
         context = self.execution_ctx_cls.init_clause(
             self, elem, multiparams, params, None)

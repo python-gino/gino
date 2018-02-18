@@ -10,7 +10,7 @@ from .models import db, DB_ARGS
 
 
 @pytest.fixture(scope='module')
-def engine():
+def sa_engine():
     rv = sqlalchemy.create_engine(
         'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
             **DB_ARGS))
@@ -20,9 +20,18 @@ def engine():
     rv.dispose()
 
 
+@pytest.fixture
+async def engine():
+    e = await gino.create_engine(
+        'asyncpg://{user}:{password}@{host}:{port}/{database}'.format(
+            **DB_ARGS))
+    yield e
+    await e.close()
+
+
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-async def pool(engine):
+async def pool(sa_engine):
     async with db.create_pool(**DB_ARGS) as rv:
         yield rv
         await rv.execute('DELETE FROM gino_users')
@@ -30,7 +39,7 @@ async def pool(engine):
 
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-async def asyncpg_pool(engine):
+async def asyncpg_pool(sa_engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         yield rv
         await rv.execute('DELETE FROM gino_users')
