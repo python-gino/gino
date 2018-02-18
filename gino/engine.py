@@ -3,12 +3,17 @@ from sqlalchemy import exc
 
 
 class DBAPIConnection:
+    _reset_agent = None
+
     def __init__(self, dialect, raw_conn):
         self._dialect = dialect
         self._raw_conn = raw_conn
 
     def cursor(self):
         return self._dialect.cursor_cls(self._raw_conn)
+
+    def commit(self):
+        pass
 
 
 class SAConnection(Connection):

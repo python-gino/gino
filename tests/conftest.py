@@ -21,12 +21,13 @@ def sa_engine():
 
 
 @pytest.fixture
-async def engine():
+async def engine(sa_engine):
     e = await gino.create_engine(
         'asyncpg://{user}:{password}@{host}:{port}/{database}'.format(
             **DB_ARGS))
     yield e
     await e.close()
+    sa_engine.execute('DELETE FROM gino_users')
 
 
 # noinspection PyUnusedLocal,PyShadowingNames

@@ -269,8 +269,12 @@ class ResultProxy:
             rv = []
             for args in context.parameters:
                 if one:
-                    rows = [await prepared.fetchrow(*args,
-                                                    timeout=context.timeout)]
+                    row = await prepared.fetchrow(*args,
+                                                   timeout=context.timeout)
+                    if row:
+                        rows = [row]
+                    else:
+                        rows = []
                 else:
                     rows = await prepared.fetch(*args, timeout=context.timeout)
                 item = context.process_rows(rows, return_model=return_model)
