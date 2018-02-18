@@ -1,0 +1,6 @@
+[run]
+source =
+    .
+omit =
+    .tox/*
+    travis_pypi_setup.py

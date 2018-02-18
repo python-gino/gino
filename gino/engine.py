@@ -1,5 +1,3 @@
-import asyncio
-
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy import exc
 
@@ -57,6 +55,22 @@ class GinoEngine:
 
     async def close(self):
         await self._dialect.close_pool()
+
+    async def all(self, clause, *multiparams, **params):
+        async with self.acquire() as conn:
+            return await conn.all(clause, *multiparams, **params)
+
+    async def first(self, clause, *multiparams, **params):
+        async with self.acquire() as conn:
+            return await conn.first(clause, *multiparams, **params)
+
+    async def scalar(self, clause, *multiparams, **params):
+        async with self.acquire() as conn:
+            return await conn.scalar(clause, *multiparams, **params)
+
+    async def status(self, clause, *multiparams, **params):
+        async with self.acquire() as conn:
+            return await conn.status(clause, *multiparams, **params)
 
 
 class GinoConnection:
