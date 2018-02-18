@@ -148,7 +148,7 @@ class Gino(sa.MetaData):
 
     def __init__(self, bind=None, dialect=None, model_classes=None,
                  query_ext=True, **kwargs):
-        self._bind = None
+        self.bind = None
         super().__init__(bind=bind, **kwargs)
         self.dialect = dialect or AsyncpgDialect(None)
         if model_classes is None:
@@ -160,16 +160,6 @@ class Gino(sa.MetaData):
                     setattr(self, key, getattr(mod, key))
         if query_ext:
             Executable.gino = property(self.query_executor)
-
-    @property
-    def bind(self):
-        return getattr(self._bind, 'get_current_connection',
-                       lambda: None)() or self._bind
-
-    # noinspection PyMethodOverriding
-    @bind.setter
-    def bind(self, val):
-        self._bind = val
 
     def create_pool(self, dsn=None, *,
                     min_size=10,
@@ -196,6 +186,17 @@ class Gino(sa.MetaData):
             max_inactive_connection_lifetime=max_inactive_connection_lifetime,
             **connect_kwargs)
         return pool
+
+    async def create_engine(self, name_or_url, loop=None, **kwargs):
+        from .strategies import create_engine
+        e = await create_engine(name_or_url, loop=loop, **kwargs)
+        self.bind = e
+        return e
+
+    async def dispose_engine(self):
+        if self.bind is not None:
+            bind, self.bind = self.bind, None
+            await bind.close()
 
     def compile(self, elem, *multiparams, **params):
         return self.dialect.compile(elem, *multiparams, **params)
