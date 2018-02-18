@@ -97,7 +97,7 @@ class GinoEngine:
         if reuse and stack:
             return None, stack[-1]
         raw_conn = await self._dialect.acquire_conn(timeout=timeout)
-        rv = GinoConnection(raw_conn, SAConnection(
+        rv = GinoConnection(self._dialect, raw_conn, SAConnection(
             self._sa_engine, DBAPIConnection(self._dialect, raw_conn)))
         stack.append(rv)
         return functools.partial(self._release, stack), rv
@@ -124,9 +124,13 @@ class GinoEngine:
         async with self.acquire(reuse=True) as conn:
             return await conn.status(clause, *multiparams, **params)
 
+    def compile(self, clause, *multiparams, **params):
+        return self._dialect.compile(clause, *multiparams, **params)
+
 
 class GinoConnection:
-    def __init__(self, raw_conn, sa_conn):
+    def __init__(self, dialect, raw_conn, sa_conn):
+        self._dialect = dialect
         self._raw_conn = raw_conn
         self._sa_conn = sa_conn
 
@@ -135,13 +139,7 @@ class GinoConnection:
         return self._raw_conn
 
     def _execute(self, clause, multiparams, params):
-        if isinstance(clause, str):
-            return getattr(self._sa_conn, '_execute_text')(clause, multiparams,
-                                                           params)
-        meth = getattr(clause, '_execute_on_connection', None)
-        if meth is None:
-            raise exc.ObjectNotExecutableError(clause)
-        return meth(self._sa_conn, multiparams, params)
+        return self._sa_conn.execute(clause, *multiparams, **params)
 
     async def all(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
@@ -162,5 +160,11 @@ class GinoConnection:
         return rv
 
     async def status(self, clause, *multiparams, **params):
+        """
+        You can parse the return value like this: https://git.io/v7oze
+        """
         result = self._execute(clause, multiparams, params)
         return await result.execute(status=True)
+
+    def compile(self, clause, *multiparams, **params):
+        return self._dialect.compile(clause, *multiparams, **params)

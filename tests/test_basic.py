@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ObjectNotExecutableError
 from asyncpg.exceptions import InvalidCatalogNameError
 
-from .models import User, UserType, Friendship
+from .models import db, User, UserType, Friendship
 
 pytestmark = pytest.mark.asyncio
 
@@ -160,3 +160,8 @@ async def test_reuse(engine):
             assert _qsize(engine) == init_size - 1
         assert _qsize(engine) == init_size - 1
     assert _qsize(engine) == init_size
+
+
+async def test_compile(engine):
+    stmt, params = engine.compile(User.query.where(User.id == 3))
+    assert params[0] == 3

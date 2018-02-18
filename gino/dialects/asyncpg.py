@@ -262,6 +262,10 @@ class ResultProxy:
     def __init__(self, context):
         self._context = context
 
+    @property
+    def context(self):
+        return self._context
+
     async def execute(self, one=False, return_model=True, status=False):
         context = self._context
         cursor = context.cursor
@@ -271,7 +275,7 @@ class ResultProxy:
             for args in context.parameters:
                 if one:
                     row = await prepared.fetchrow(*args,
-                                                   timeout=context.timeout)
+                                                  timeout=context.timeout)
                     if row:
                         rows = [row]
                     else:
@@ -306,6 +310,9 @@ class AsyncpgDialect(PGDialect):
                          **kwargs)
         self._pool = None
         self._loop = loop
+        from ..engine import SAConnection, SAEngine, DBAPIConnection
+        self._sa_conn = SAConnection(SAEngine(self),
+                                     DBAPIConnection(self, None))
 
     async def init_pool(self, url):
         formatters = {}
@@ -340,8 +347,7 @@ class AsyncpgDialect(PGDialect):
         await self._pool.close()
 
     def compile(self, elem, *multiparams, **params):
-        context = self.execution_ctx_cls.init_clause(
-            self, elem, multiparams, params, None)
+        context = self._sa_conn.execute(elem, *multiparams, **params).context
         if context.executemany:
             return context.statement, context.parameters
         else:
@@ -354,9 +360,9 @@ class AsyncpgDialect(PGDialect):
             self, clause, multiparams, params, connection)
         if context.executemany and not many:
             raise ValueError('too many multiparams')
-        # noinspection PyProtectedMember
         if isinstance(connection, LazyConnection):
             await connection.get_connection()
+        # noinspection PyProtectedMember
         with connection._stmt_exclusive_section:
             prepared = await context.prepare(named=False)
             rv = []
