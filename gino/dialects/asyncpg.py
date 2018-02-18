@@ -329,8 +329,8 @@ class AsyncpgDialect(PGDialect):
             **query,
         )
 
-    async def acquire_conn(self):
-        return await self._pool.acquire()
+    async def acquire_conn(self, *, timeout=None):
+        return await self._pool.acquire(timeout=timeout)
 
     async def release_conn(self, conn):
         await self._pool.release(conn)

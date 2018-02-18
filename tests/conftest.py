@@ -48,10 +48,3 @@ async def asyncpg_pool(sa_engine):
 @pytest.fixture
 def random_name(length=8) -> str:
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
-
-
-@pytest.fixture
-def task_local(event_loop):
-    gino.enable_task_local(event_loop)
-    yield
-    gino.disable_task_local(event_loop)

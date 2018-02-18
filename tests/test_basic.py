@@ -5,19 +5,23 @@ import asyncpg
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.exc import ObjectNotExecutableError
+from asyncpg.exceptions import InvalidCatalogNameError
 
 from .models import User, UserType, Friendship
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_basic(engine):
+def _qsize(engine):
     # noinspection PyProtectedMember
-    init_size = engine._dialect._pool._queue.qsize()
+    return engine._dialect._pool._queue.qsize()
+
+
+async def test_basic(engine):
+    init_size = _qsize(engine)
     async with engine.acquire() as conn:
         assert isinstance(conn.raw_connection, asyncpg.Connection)
-    # noinspection PyProtectedMember
-    assert init_size == engine._dialect._pool._queue.qsize()
+    assert init_size == _qsize(engine)
     assert isinstance(await engine.scalar('select now()'), datetime)
     assert isinstance(await engine.scalar(sa.text('select now()')), datetime)
     assert isinstance((await engine.first('select now()'))[0], datetime)
@@ -94,3 +98,65 @@ async def test_delete_multiple_primary_key(engine):
     await f.delete(bind=engine)
     f2 = await Friendship.get((u1.id, u2.id), bind=engine)
     assert not f2
+
+
+async def test_issue_79():
+    import gino
+    db = gino.Gino()
+    e = await db.create_engine('asyncpg:///non_exist?min_size=0')
+    with pytest.raises(InvalidCatalogNameError):
+        async with e.acquire():
+            pass
+    # noinspection PyProtectedMember
+    assert len(e._ctx.get([])) == 0
+
+
+async def test_reuse(engine):
+    init_size = _qsize(engine)
+    async with engine.acquire(reuse=True) as conn1:
+        assert _qsize(engine) == init_size - 1
+        async with engine.acquire(reuse=True) as conn2:
+            assert _qsize(engine) == init_size - 1
+            assert conn1 is conn2
+        assert _qsize(engine) == init_size - 1
+    assert _qsize(engine) == init_size
+
+    async with engine.acquire(reuse=False) as conn1:
+        assert _qsize(engine) == init_size - 1
+        async with engine.acquire(reuse=True) as conn2:
+            assert _qsize(engine) == init_size - 1
+            assert conn1 is conn2
+        assert _qsize(engine) == init_size - 1
+    assert _qsize(engine) == init_size
+
+    async with engine.acquire(reuse=True) as conn1:
+        assert _qsize(engine) == init_size - 1
+        async with engine.acquire(reuse=False) as conn2:
+            assert _qsize(engine) == init_size - 2
+            assert conn1 is not conn2
+        assert _qsize(engine) == init_size - 1
+    assert _qsize(engine) == init_size
+
+    async with engine.acquire(reuse=False) as conn1:
+        assert _qsize(engine) == init_size - 1
+        async with engine.acquire(reuse=False) as conn2:
+            assert _qsize(engine) == init_size - 2
+            assert conn1 is not conn2
+        assert _qsize(engine) == init_size - 1
+    assert _qsize(engine) == init_size
+
+    async with engine.acquire(reuse=False) as conn1:
+        assert _qsize(engine) == init_size - 1
+        async with engine.acquire(reuse=True) as conn2:
+            assert _qsize(engine) == init_size - 1
+            assert conn1 is conn2
+            async with engine.acquire(reuse=False) as conn3:
+                assert _qsize(engine) == init_size - 2
+                assert conn1 is not conn3
+                async with engine.acquire(reuse=True) as conn4:
+                    assert _qsize(engine) == init_size - 2
+                    assert conn3 is conn4
+                assert _qsize(engine) == init_size - 2
+            assert _qsize(engine) == init_size - 1
+        assert _qsize(engine) == init_size - 1
+    assert _qsize(engine) == init_size

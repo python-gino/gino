@@ -8,8 +8,6 @@ from asyncpg.connection import _ConnectionProxy
 from asyncpg.exceptions import InterfaceError
 from asyncpg.pool import Pool
 
-from .local import get_local
-
 
 class LazyConnection(_ConnectionProxy):
     """
@@ -164,7 +162,7 @@ class GinoPool(Pool):
 
     async def _acquire(self, timeout, reuse=False, lazy=False):
         root = None
-        local = get_local()
+        local = None
         if reuse and local:
             stack = local.get('connection_stack')
             if stack:
@@ -189,7 +187,7 @@ class GinoPool(Pool):
                 '{connection!r} is not a member of this pool'.format(
                     connection=connection))
 
-        ctx = get_local()
+        ctx = None
         if ctx is not None:
             stack = ctx.get('connection_stack')
             if not stack or stack[-1] is not connection:
