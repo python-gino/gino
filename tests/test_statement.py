@@ -1,13 +1,16 @@
 import pytest
 
-from .models import db, DB_ARGS, User
+from .models import db, ASYNCPG_URL, User
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_anonymous(sa_engine):
-    async with db.create_pool(**DB_ARGS, statement_cache_size=0) as pool:
-        async with pool.acquire() as conn:
-            await conn.first(User.query.where(User.id == 1))
-            # anonymous statement should not be closed
-            await conn.first(User.query.where(User.id == 1))
+    e = await db.create_engine(ASYNCPG_URL + '?statement_cache_size=0')
+    async with e.acquire() as conn:
+        # noinspection PyProtectedMember
+        assert conn.raw_connection._stmt_cache.get_max_size() == 0
+        await conn.first(User.query.where(User.id == 1))
+        # anonymous statement should not be closed
+        await conn.first(User.query.where(User.id == 1))
+    await e.close()

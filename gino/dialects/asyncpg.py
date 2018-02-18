@@ -1,3 +1,4 @@
+import inspect
 import weakref
 
 import asyncpg
@@ -308,9 +309,9 @@ class AsyncpgDialect(PGDialect):
 
     async def init_pool(self, url):
         formatters = {}
-        import inspect
-        spec = inspect.getfullargspec(asyncpg.create_pool)
-        for key, val in spec.kwonlydefaults.items():
+        kw = inspect.getfullargspec(asyncpg.create_pool).kwonlydefaults.copy()
+        kw.update(inspect.getfullargspec(asyncpg.connect).kwonlydefaults)
+        for key, val in kw.items():
             formatter = type(val)
             if formatter in {int, float}:
                 formatters[key] = formatter

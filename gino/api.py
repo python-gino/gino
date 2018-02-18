@@ -161,32 +161,6 @@ class Gino(sa.MetaData):
         if query_ext:
             Executable.gino = property(self.query_executor)
 
-    def create_pool(self, dsn=None, *,
-                    min_size=10,
-                    max_size=10,
-                    max_queries=50000,
-                    max_inactive_connection_lifetime=300.0,
-                    setup=None,
-                    init=None,
-                    loop=None,
-                    connection_class=None,
-                    **connect_kwargs):
-        if connection_class is None:
-            connection_class = self.connection_cls
-        elif not issubclass(connection_class, self.connection_cls):
-            raise TypeError(
-                'connection_class is expected to be a subclass of '
-                '{!r}, got {!r}'.format(self.connection_cls, connection_class))
-
-        pool = self.pool_cls(
-            self, dsn,
-            connection_class=connection_class,
-            min_size=min_size, max_size=max_size,
-            max_queries=max_queries, loop=loop, setup=setup, init=init,
-            max_inactive_connection_lifetime=max_inactive_connection_lifetime,
-            **connect_kwargs)
-        return pool
-
     async def create_engine(self, name_or_url, loop=None, **kwargs):
         from .strategies import create_engine
         e = await create_engine(name_or_url, loop=loop, **kwargs)
