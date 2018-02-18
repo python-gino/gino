@@ -307,6 +307,17 @@ class AsyncpgDialect(PGDialect):
         self._loop = loop
 
     async def init_pool(self, url):
+        formatters = {}
+        import inspect
+        spec = inspect.getfullargspec(asyncpg.create_pool)
+        for key, val in spec.kwonlydefaults.items():
+            formatter = type(val)
+            if formatter in {int, float}:
+                formatters[key] = formatter
+        query = {}
+        for key, val in url.query.items():
+            formatter = formatters.get(key, lambda x: x)
+            query[key] = formatter(val)
         # noinspection PyAttributeOutsideInit
         self._pool = await asyncpg.create_pool(
             host=url.host,
@@ -315,7 +326,7 @@ class AsyncpgDialect(PGDialect):
             database=url.database,
             password=url.password,
             loop=self._loop,
-            **url.query,
+            **query,
         )
 
     async def acquire_conn(self):
