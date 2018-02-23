@@ -4,37 +4,40 @@ import sys
 
 from sqlalchemy.engine import Engine, Connection
 
-try:
-    # noinspection PyPackageRequirements
-    from contextvars import ContextVar
-except ImportError:
+
+def _get_context_var():
     try:
-        # noinspection PyPackageRequirements,PyUnresolvedReferences
-        from aiocontextvars import ContextVar, enable_inherit
-
-        enable_inherit()
+        # noinspection PyPackageRequirements
+        from contextvars import ContextVar
     except ImportError:
-        class ContextVar:
-            def __init__(self, name, default=None):
-                self._name = name
-                self._default = default
+        try:
+            # noinspection PyPackageRequirements,PyUnresolvedReferences
+            from aiocontextvars import ContextVar, enable_inherit
 
-            @property
-            def name(self):
-                return self._name
+            enable_inherit()
+        except ImportError:
+            class ContextVar:
+                def __init__(self, name, default=None):
+                    self._name = name
+                    self._default = default
 
-            @property
-            def default(self):
-                return self._default
+                @property
+                def name(self):
+                    return self._name
 
-            def get(self, default=None):
-                raise LookupError
+                @property
+                def default(self):
+                    return self._default
 
-            def set(self, val):
-                pass
+                def get(self, default=None):
+                    raise LookupError
 
-            def delete(self):
-                raise LookupError
+                def set(self, val):
+                    pass
+
+                def delete(self):
+                    raise LookupError
+    return ContextVar
 
 
 class DBAPIConnection:
@@ -115,7 +118,7 @@ class GinoEngine:
                                    logging_name=logging_name, echo=echo)
         self._dialect = dialect
         self._loop = loop
-        self._ctx = ContextVar('gino')
+        self._ctx = _get_context_var()('gino')
 
     def acquire(self, *, timeout=None, reuse=False):
         return AcquireContext(functools.partial(self._acquire, timeout, reuse))
@@ -282,9 +285,6 @@ class GinoConnection:
         """
         result = self._execute(clause, multiparams, params)
         return await result.execute(status=True)
-
-    def compile(self, clause, *multiparams, **params):
-        return self._dialect.compile(clause, *multiparams, **params)
 
     def transaction(self, *args, **kwargs):
         return GinoTransaction(self, args, kwargs)
