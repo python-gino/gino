@@ -1,6 +1,6 @@
 import pytest
 
-from .models import User, qsize
+from .models import db, User, qsize
 
 pytestmark = pytest.mark.asyncio
 
@@ -120,19 +120,19 @@ async def test_commit_failed(bind, mocker):
 
 async def test_reuse(bind):
     init_size = qsize(bind)
-    async with bind.acquire() as conn:
-        async with bind.transaction() as tx:
+    async with db.acquire() as conn:
+        async with db.transaction() as tx:
             assert tx.connection is conn
             assert tx.transaction is None
-            async with bind.transaction() as tx2:
+            async with db.transaction() as tx2:
                 assert tx2.connection is conn
-            async with bind.transaction(reuse=False) as tx2:
+            async with db.transaction(reuse=False) as tx2:
                 assert tx2.connection is not conn
-        async with bind.transaction(reuse=False) as tx:
+        async with db.transaction(reuse=False) as tx:
             assert tx.connection is not conn
-            async with bind.transaction() as tx2:
+            async with db.transaction() as tx2:
                 assert tx2.connection is tx.connection
-            async with bind.transaction(reuse=False) as tx2:
+            async with db.transaction(reuse=False) as tx2:
                 assert tx2.connection is not conn
                 assert tx2.connection is not tx.connection
     assert init_size == qsize(bind)

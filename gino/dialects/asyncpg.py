@@ -4,15 +4,12 @@ import weakref
 import asyncpg
 from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util
-# noinspection PyProtectedMember
-from sqlalchemy.engine.util import _distill_params
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
     PGExecutionContext,
 )
-from ..pool import LazyConnection
 
 DEFAULT = object()
 
@@ -33,80 +30,8 @@ class AnonymousPreparedStatement(PreparedStatement):
         self._state.detach()
 
 
-class ConnectionAdaptor:
-    __slots__ = ('_dialect', '_conn', '_opts', '_stmt', '_echo')
-
-    def __init__(self, dialect, connection, compiled_sql):
-        self._dialect = dialect
-        self._conn = connection
-        self._opts = dict(getattr(connection, 'execution_options', {}))
-        for opt in ('return_model', 'model', 'timeout'):
-            if opt in compiled_sql.execution_options:
-                self._opts.pop(opt, None)
-        self._stmt = None
-        self._echo = False
-
-    def cursor(self):
-        return self
-
-    @property
-    def dialect(self):
-        return self._dialect
-
-    @property
-    def _execution_options(self):
-        return self._opts
-
-    @property
-    def description(self):
-        try:
-            return [((a[0], a[1][0]) + (None,) * 5)
-                    for a in self._stmt.get_attributes()]
-        except TypeError:  # asyncpg <= 0.12.0
-            return []
-
-    def _branch(self):
-        return self
-
-    async def prepare(self, statement, named=True):
-        if named:
-            rv = await self._conn.prepare(statement)
-        else:
-            # it may still be a named statement, if cache is not disabled
-            # noinspection PyProtectedMember
-            self._conn._check_open()
-            # noinspection PyProtectedMember
-            state = await self._conn._get_statement(statement, None)
-            if state.name:
-                rv = PreparedStatement(self._conn, statement, state)
-            else:
-                rv = AnonymousPreparedStatement(self._conn, statement, state)
-        self._stmt = rv
-        return rv
-
-
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(PGExecutionContext):
-    @classmethod
-    def init_clause(cls, dialect, elem, multiparams, params, connection):
-        # partially copied from:
-        # sqlalchemy.engine.base.Connection:_execute_clauseelement
-        distilled_params = _distill_params(multiparams, params)
-        if distilled_params:
-            # note this is usually dict but we support RowProxy
-            # as well; but dict.keys() as an iterable is OK
-            keys = distilled_params[0].keys()
-        else:
-            keys = []
-        compiled_sql = elem.compile(
-            dialect=dialect, column_keys=keys,
-            inline=len(distilled_params) > 1,
-        )
-        conn = ConnectionAdaptor(dialect, connection, compiled_sql)
-        rv = cls._init_compiled(
-            dialect, conn, conn, compiled_sql, distilled_params)
-        return rv
-
     @util.memoized_property
     def return_model(self):
         # noinspection PyUnresolvedReferences
@@ -356,48 +281,3 @@ class AsyncpgDialect(PGDialect):
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
         return raw_conn.transaction(*args, **kwargs)
-
-    async def _execute_clauseelement(self, connection, clause, multiparams,
-                                     params, many=False, status=False,
-                                     return_model=True):
-        context = self.execution_ctx_cls.init_clause(
-            self, clause, multiparams, params, connection)
-        if context.executemany and not many:
-            raise ValueError('too many multiparams')
-        if isinstance(connection, LazyConnection):
-            await connection.get_connection()
-        # noinspection PyProtectedMember
-        with connection._stmt_exclusive_section:
-            prepared = await context.prepare(named=False)
-            rv = []
-            for args in context.parameters:
-                rows = await prepared.fetch(*args, timeout=context.timeout)
-                item = context.process_rows(rows, return_model=return_model)
-                if status:
-                    item = prepared.get_statusmsg(), item
-                if not many:
-                    return item
-                rv.append(item)
-            return rv
-
-    async def do_all(self, connection, clause, *multiparams, **params):
-        return await self._execute_clauseelement(
-            connection, clause, multiparams, params)
-
-    async def do_first(self, connection, clause, *multiparams, **params):
-        items = await self._execute_clauseelement(
-            connection, clause, multiparams, params)
-        if not items:
-            return None
-        return items[0]
-
-    async def do_scalar(self, connection, clause, *multiparams, **params):
-        items = await self._execute_clauseelement(
-            connection, clause, multiparams, params, return_model=False)
-        if not items:
-            return None
-        return items[0][0]
-
-    async def do_status(self, connection, clause, *multiparams, **params):
-        return (await self._execute_clauseelement(
-            connection, clause, multiparams, params, status=True))[0]

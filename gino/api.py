@@ -1,88 +1,13 @@
-import sys
 import weakref
 
 import sqlalchemy as sa
-from asyncpg import Connection
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
 
-from .connection import GinoConnection
 from .crud import CRUDModel
 from .declarative import declarative_base
 from .dialects.asyncpg import GinoCursorFactory
-from .pool import GinoPool
 from . import json_support
-
-
-class GinoTransaction:
-    __slots__ = ('_conn_ctx', '_isolation', '_readonly', '_deferrable', '_ctx')
-
-    def __init__(self, conn_ctx, isolation, readonly, deferrable):
-        self._conn_ctx = conn_ctx
-        self._isolation = isolation
-        self._readonly = readonly
-        self._deferrable = deferrable
-        self._ctx = None
-
-    async def __aenter__(self):
-        conn = await self._conn_ctx.__aenter__()
-        try:
-            self._ctx = conn.transaction(isolation=self._isolation,
-                                         readonly=self._readonly,
-                                         deferrable=self._deferrable)
-            return conn, await self._ctx.__aenter__()
-        except Exception:
-            await self._conn_ctx.__aexit__(*sys.exc_info())
-            raise
-
-    async def __aexit__(self, extype, ex, tb):
-        try:
-            await self._ctx.__aexit__(extype, ex, tb)
-        except Exception:
-            await self._conn_ctx.__aexit__(*sys.exc_info())
-            raise
-        else:
-            await self._conn_ctx.__aexit__(extype, ex, tb)
-
-
-class ConnectionAcquireContext:
-    __slots__ = ('_connection',)
-
-    def __init__(self, connection):
-        self._connection = connection
-
-    async def __aenter__(self):
-        return self._connection
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def __await__(self):
-        return self
-
-    def __next__(self):
-        raise StopIteration(self._connection)
-
-
-class BindContext:
-    def __init__(self, bind):
-        self._bind = bind
-        self._ctx = None
-
-    async def __aenter__(self):
-        args = {}
-        if isinstance(self._bind, Connection):
-            return self._bind
-        elif isinstance(self._bind, GinoPool):
-            args = dict(reuse=True)
-        # noinspection PyArgumentList
-        self._ctx = self._bind.acquire(**args)
-        return await self._ctx.__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        ctx, self._ctx = self._ctx, None
-        if ctx is not None:
-            await ctx.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class GinoExecutor:
@@ -137,8 +62,6 @@ class GinoExecutor:
 class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
-    connection_cls = GinoConnection
-    pool_cls = GinoPool
 
     def __init__(self, bind=None, model_classes=None,
                  query_ext=True, **kwargs):
@@ -183,14 +106,8 @@ class Gino(sa.MetaData):
         return GinoCursorFactory(lambda: (connection or self.bind, self),
                                  clause, multiparams, params)
 
-    def acquire(self, *, timeout=None, reuse=True, lazy=False):
-        method = getattr(self._bind, 'acquire', None)
-        if method is None:
-            return ConnectionAcquireContext(self._bind)
-        else:
-            return method(timeout=timeout, reuse=reuse, lazy=lazy)
+    def acquire(self, *args, **kwargs):
+        return self.bind.acquire(*args, **kwargs)
 
-    def transaction(self, *, isolation='read_committed', readonly=False,
-                    deferrable=False, timeout=None, reuse=True):
-        return GinoTransaction(self.acquire(timeout=timeout, reuse=reuse),
-                               isolation, readonly, deferrable)
+    def transaction(self, *args, **kwargs):
+        return self.bind.transaction(*args, **kwargs)
