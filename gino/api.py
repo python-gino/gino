@@ -107,28 +107,25 @@ class GinoExecutor:
         self._query = self._query.execution_options(timeout)
         return self
 
-    def get_bind(self, bind):
-        return BindContext(bind or self._query.bind)
-
     async def all(self, *multiparams, bind=None, **params):
-        async with self.get_bind(bind) as conn:
-            return await conn.metadata.dialect.do_all(
-                conn, self._query, *multiparams, **params)
+        if bind is None:
+            bind = self._query.bind
+        return await bind.all(self._query, *multiparams, **params)
 
     async def first(self, *multiparams, bind=None, **params):
-        async with self.get_bind(bind) as conn:
-            return await conn.metadata.dialect.do_first(
-                conn, self._query, *multiparams, **params)
+        if bind is None:
+            bind = self._query.bind
+        return await bind.first(self._query, *multiparams, **params)
 
     async def scalar(self, *multiparams, bind=None, **params):
-        async with self.get_bind(bind) as conn:
-            return await conn.metadata.dialect.do_scalar(
-                conn, self._query, *multiparams, **params)
+        if bind is None:
+            bind = self._query.bind
+        return await bind.scalar(self._query, *multiparams, **params)
 
     async def status(self, *multiparams, bind=None, **params):
-        async with self.get_bind(bind) as conn:
-            return await conn.metadata.dialect.do_status(
-                conn, self._query, *multiparams, **params)
+        if bind is None:
+            bind = self._query.bind
+        return await bind.status(self._query, *multiparams, **params)
 
     def iterate(self, *multiparams, connection=None, **params):
         def env_factory():

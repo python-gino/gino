@@ -353,6 +353,10 @@ class AsyncpgDialect(PGDialect):
         else:
             return context.statement, context.parameters[0]
 
+    # noinspection PyMethodMayBeStatic
+    def transaction(self, raw_conn, args, kwargs):
+        return raw_conn.transaction(*args, **kwargs)
+
     async def _execute_clauseelement(self, connection, clause, multiparams,
                                      params, many=False, status=False,
                                      return_model=True):

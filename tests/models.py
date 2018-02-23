@@ -42,3 +42,8 @@ class Friendship(db.Model):
 
     def __repr__(self):
         return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)
+
+
+def qsize(engine):
+    # noinspection PyProtectedMember
+    return engine._dialect._pool._queue.qsize()
