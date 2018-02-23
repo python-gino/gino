@@ -3,7 +3,7 @@ import weakref
 
 import asyncpg
 from asyncpg.prepared_stmt import PreparedStatement
-from sqlalchemy import util
+from sqlalchemy import util, exc
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
@@ -229,10 +229,8 @@ class AsyncpgDialect(PGDialect):
         3802: JSONB(),
     }
 
-    def __init__(self, loop, isolation_level=None, json_serializer=None,
-                 json_deserializer=None, **kwargs):
-        super().__init__(isolation_level, json_serializer, json_deserializer,
-                         **kwargs)
+    def __init__(self, loop, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._pool = None
         self._loop = loop
         from ..engine import SAConnection, SAEngine, DBAPIConnection
@@ -259,6 +257,7 @@ class AsyncpgDialect(PGDialect):
             database=url.database,
             password=url.password,
             loop=self._loop,
+            init=self.on_connect(),
             **query,
         )
 
@@ -281,3 +280,28 @@ class AsyncpgDialect(PGDialect):
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
         return raw_conn.transaction(*args, **kwargs)
+
+    def on_connect(self):
+        if self.isolation_level is not None:
+            async def connect(conn):
+                await self.set_isolation_level(conn, self.isolation_level)
+            return connect
+        else:
+            return None
+
+    async def set_isolation_level(self, connection, level):
+        level = level.replace('_', ' ')
+        if level not in self._isolation_lookup:
+            raise exc.ArgumentError(
+                "Invalid value '%s' for isolation_level. "
+                "Valid isolation levels for %s are %s" %
+                (level, self.name, ", ".join(self._isolation_lookup))
+            )
+        await connection.execute(
+            "SET SESSION CHARACTERISTICS AS TRANSACTION "
+            "ISOLATION LEVEL %s" % level)
+        await connection.execute("COMMIT")
+
+    async def get_isolation_level(self, connection):
+        val = await connection.fetchval('show transaction isolation level')
+        return val.upper()

@@ -207,3 +207,23 @@ async def test_logging(mocker):
     await e.close()
     # noinspection PyProtectedMember,PyUnresolvedReferences
     logging.Logger._log.assert_any_call(logging.INFO, sql, ())
+
+
+async def test_set_isolation_level():
+    import gino
+    with pytest.raises(sa.exc.ArgumentError):
+        await gino.create_engine(ASYNCPG_URL, isolation_level='non')
+    e = await gino.create_engine(ASYNCPG_URL,
+                                 isolation_level='READ_UNCOMMITTED')
+    async with e.acquire() as conn:
+        assert await e.dialect.get_isolation_level(
+            conn.raw_connection) == 'READ UNCOMMITTED'
+    async with e.transaction(isolation='serializable') as tx:
+        assert await e.dialect.get_isolation_level(
+            tx.connection.raw_connection) == 'SERIALIZABLE'
+
+
+async def test_too_many_engine_args():
+    import gino
+    with pytest.raises(TypeError):
+        await gino.create_engine(ASYNCPG_URL, non_exist=None)

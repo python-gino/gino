@@ -120,6 +120,10 @@ class GinoEngine:
         self._loop = loop
         self._ctx = _get_context_var()('gino')
 
+    @property
+    def dialect(self):
+        return self._dialect
+
     def acquire(self, *, timeout=None, reuse=False):
         return AcquireContext(functools.partial(self._acquire, timeout, reuse))
 
