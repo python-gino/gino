@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ObjectNotExecutableError
 from asyncpg.exceptions import InvalidCatalogNameError
 
-from .models import db, User, UserType, Friendship
+from .models import db, User, UserType, Friendship, ASYNCPG_URL
 
 pytestmark = pytest.mark.asyncio
 
@@ -102,8 +102,8 @@ async def test_delete_multiple_primary_key(engine):
 
 async def test_issue_79():
     import gino
-    db = gino.Gino()
-    e = await db.create_engine('asyncpg:///non_exist?min_size=0')
+    db_ = gino.Gino()
+    e = await db_.create_engine('asyncpg:///non_exist?min_size=0')
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass
@@ -165,3 +165,22 @@ async def test_reuse(engine):
 async def test_compile(engine):
     stmt, params = engine.compile(User.query.where(User.id == 3))
     assert params[0] == 3
+
+
+async def test_logging(mocker):
+    import logging
+    import gino
+    mocker.patch('logging.Logger._log')
+    sql = 'SELECT NOW() AS test_logging'
+
+    e = await gino.create_engine(ASYNCPG_URL, echo=False)
+    await e.scalar(sql)
+    await e.close()
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    logging.Logger._log.assert_not_called()
+
+    e = await gino.create_engine(ASYNCPG_URL, echo=True)
+    await e.scalar(sql)
+    await e.close()
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    logging.Logger._log.assert_any_call(logging.INFO, sql, ())

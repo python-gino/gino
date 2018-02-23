@@ -59,8 +59,8 @@ class SAConnection(Connection):
 class SAEngine(Engine):
     _connection_cls = SAConnection
 
-    def __init__(self, dialect):
-        super().__init__(None, dialect, None)
+    def __init__(self, dialect, **kwargs):
+        super().__init__(None, dialect, None, **kwargs)
 
 
 class AcquireContext:
@@ -79,8 +79,9 @@ class AcquireContext:
 
 
 class GinoEngine:
-    def __init__(self, dialect, loop):
-        self._sa_engine = SAEngine(dialect)
+    def __init__(self, dialect, loop, logging_name=None, echo=None):
+        self._sa_engine = SAEngine(dialect,
+                                   logging_name=logging_name, echo=echo)
         self._dialect = dialect
         self._loop = loop
         self._ctx = ContextVar('gino')

@@ -17,6 +17,7 @@ def req_file(filename):
         content = f.readlines()
     return [x.strip() for x in content if x.strip()]
 
+
 setup_requirements = [
     'pytest-runner',
 ]
@@ -24,6 +25,7 @@ setup_requirements = [
 test_requirements = [
     'pytest',
     'pytest-asyncio',
+    'pytest-mock',
     'psycopg2-binary',
 ]
 
