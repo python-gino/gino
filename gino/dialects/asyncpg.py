@@ -30,25 +30,38 @@ class AnonymousPreparedStatement(PreparedStatement):
         self._state.detach()
 
 
+_NO_DEFAULT = object()
+
+
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(PGExecutionContext):
+    def _compiled_first_opt(self, key, default=_NO_DEFAULT):
+        rv = _NO_DEFAULT
+        opts = getattr(getattr(self, 'compiled', None), 'execution_options',
+                       None)
+        if opts:
+            rv = opts.get(key, _NO_DEFAULT)
+        if rv is _NO_DEFAULT:
+            # noinspection PyUnresolvedReferences
+            rv = self.execution_options.get(key, default)
+        if rv is _NO_DEFAULT:
+            raise LookupError('No such execution option!')
+        return rv
+
     @util.memoized_property
     def return_model(self):
-        # noinspection PyUnresolvedReferences
-        return self.execution_options.get('return_model', True)
+        return self._compiled_first_opt('return_model', True)
 
     @util.memoized_property
     def model(self):
-        # noinspection PyUnresolvedReferences
-        rv = self.execution_options.get('model', None)
+        rv = self._compiled_first_opt('model', None)
         if isinstance(rv, weakref.ref):
             rv = rv()
         return rv
 
     @util.memoized_property
     def timeout(self):
-        # noinspection PyUnresolvedReferences
-        return self.execution_options.get('timeout', None)
+        return self._compiled_first_opt('timeout', None)
 
     def process_rows(self, rows, return_model=True):
         rv = rows = super().get_result_proxy().process_rows(rows)

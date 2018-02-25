@@ -177,6 +177,9 @@ class GinoEngine:
         return TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
                                   (args, kwargs))
 
+    def update_execution_options(self, **opt):
+        self._sa_engine.update_execution_options(**opt)
+
 
 class _Break(Exception):
     def __init__(self, tx, commit):
@@ -305,3 +308,7 @@ class GinoConnection:
     def iterate(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
         return result.iterate()
+
+    def execution_options(self, **opt):
+        return GinoConnection(self._dialect, self._raw_conn,
+                              self._sa_conn.execution_options(**opt))
