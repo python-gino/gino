@@ -201,6 +201,9 @@ class ResultProxy:
             raise ValueError('too many multiparams')
         return CursorFactory(self._context)
 
+    def _soft_close(self):
+        pass
+
 
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):

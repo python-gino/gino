@@ -280,8 +280,9 @@ class GinoConnection:
         result = self._execute(clause, multiparams, params)
         rv = await result.execute(one=True)
         if rv:
-            rv = rv[0]
-        return rv
+            return rv[0]
+        else:
+            return None
 
     async def scalar(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
