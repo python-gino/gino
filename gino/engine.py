@@ -141,6 +141,13 @@ class GinoEngine:
         stack.append(rv)
         return functools.partial(self._release, stack), rv
 
+    @property
+    def current_connection(self):
+        try:
+            return self._ctx.get()[-1]
+        except (LookupError, IndexError):
+            pass
+
     async def _release(self, stack):
         await self._dialect.release_conn(stack.pop().raw_connection)
 
@@ -280,8 +287,9 @@ class GinoConnection:
         result = self._execute(clause, multiparams, params)
         rv = await result.execute(one=True, return_model=False)
         if rv:
-            rv = rv[0][0]
-        return rv
+            return rv[0][0]
+        else:
+            return None
 
     async def status(self, clause, *multiparams, **params):
         """
@@ -292,3 +300,7 @@ class GinoConnection:
 
     def transaction(self, *args, **kwargs):
         return GinoTransaction(self, args, kwargs)
+
+    def iterate(self, clause, *multiparams, **params):
+        result = self._execute(clause, multiparams, params)
+        return result.iterate()

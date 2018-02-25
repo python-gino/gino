@@ -30,9 +30,8 @@ async def main():
         async with conn.transaction():
             async for u in conn.iterate(User.query.where(User.id > 3)):
                 print(u)
-    await db.create_pool('postgresql://localhost/gino')
-    async with db.transaction() as (conn, tx):
-        async for u in conn.iterate(User.query.where(User.id > 3)):
+    async with db.transaction():
+        async for u in User.query.where(User.id > 3).gino.iterate():
             print(u)
 
 

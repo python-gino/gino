@@ -60,96 +60,77 @@ class AsyncpgExecutionContext(PGExecutionContext):
                 rv.append(obj)
         return rv
 
-    async def prepare(self, named=True):
-        return await self.connection.prepare(self.statement, named)
-
     def get_result_proxy(self):
         return ResultProxy(self)
 
 
-class GinoCursorFactory:
-    def __init__(self, env_factory, clause, multiparams, params):
-        self._env_factory = env_factory
-        self._context = None
-        self._timeout = None
-        self._clause = clause
-        self._multiparams = multiparams
-        self._params = params
-
-    @property
-    def timeout(self):
-        return self._timeout
-
-    async def get_cursor_factory(self):
-        connection, metadata = self._env_factory()
-        self._context = metadata.dialect.execution_ctx_cls.init_clause(
-            metadata.dialect, self._clause, self._multiparams, self._params,
-            connection)
-        if self._context.executemany:
-            raise ValueError('too many multiparams')
-        self._timeout = self._context.timeout
-        ps = await self._context.prepare()
-        return ps.cursor(*self._context.parameters[0], timeout=self._timeout)
+class CursorFactory:
+    def __init__(self, context):
+        self._context = context
 
     @property
     def context(self):
         return self._context
 
+    async def get_raw_cursor(self):
+        prepared = await self._context.cursor.prepare(self._context.statement)
+        return prepared.cursor(*self._context.parameters[0],
+                               timeout=self._context.timeout)
+
     def __aiter__(self):
-        return GinoCursorIterator(self)
+        return CursorIterator(self)
 
     def __await__(self):
-        return GinoCursor(self).async_init().__await__()
+        return Cursor(self).async_init().__await__()
 
 
-class GinoCursorIterator:
+class CursorIterator:
     def __init__(self, factory):
         self._factory = factory
         self._iterator = None
 
-    def __aiter__(self):
-        return self
-
     async def __anext__(self):
         if self._iterator is None:
-            factory = await self._factory.get_cursor_factory()
-            self._iterator = factory.__aiter__()
+            raw = await self._factory.get_raw_cursor()
+            self._iterator = raw.__aiter__()
         row = await self._iterator.__anext__()
         return self._factory.context.process_rows([row])[0]
 
 
-class GinoCursor:
+class Cursor:
     def __init__(self, factory):
         self._factory = factory
         self._cursor = None
 
     async def async_init(self):
-        factory = await self._factory.get_cursor_factory()
-        self._cursor = await factory
+        raw = await self._factory.get_raw_cursor()
+        self._cursor = await raw
         return self
 
     async def many(self, n, *, timeout=DEFAULT):
         if timeout is DEFAULT:
-            timeout = self._factory.timeout
+            timeout = self._factory.context.timeout
         rows = await self._cursor.fetch(n, timeout=timeout)
         return self._factory.context.process_rows(rows)
 
     async def next(self, *, timeout=DEFAULT):
         if timeout is DEFAULT:
-            timeout = self._factory.timeout
+            timeout = self._factory.context.timeout
         row = await self._cursor.fetchrow(timeout=timeout)
+        if not row:
+            return None
         return self._factory.context.process_rows([row])[0]
 
-    def __getattr__(self, item):
-        return getattr(self._cursor, item)
 
-
-class Cursor:
+class DBAPICursor:
     def __init__(self, apg_conn):
         self._conn = apg_conn
         self._stmt = None
 
     def execute(self, statement, parameters):
+        pass
+
+    def executemany(self, statement, parameters):
         pass
 
     @property
@@ -215,6 +196,11 @@ class ResultProxy:
                 rv.append(item)
             return rv
 
+    def iterate(self):
+        if self._context.executemany:
+            raise ValueError('too many multiparams')
+        return CursorFactory(self._context)
+
 
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):
@@ -223,7 +209,7 @@ class AsyncpgDialect(PGDialect):
     default_paramstyle = 'numeric'
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
-    cursor_cls = Cursor
+    cursor_cls = DBAPICursor
     dbapi_type_map = {
         114: JSON(),
         3802: JSONB(),

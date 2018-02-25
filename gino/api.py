@@ -6,7 +6,6 @@ from sqlalchemy.dialects import postgresql as sa_pg
 
 from .crud import CRUDModel
 from .declarative import declarative_base
-from .dialects.asyncpg import GinoCursorFactory
 from . import json_support
 
 
@@ -53,10 +52,13 @@ class GinoExecutor:
         return await bind.status(self._query, *multiparams, **params)
 
     def iterate(self, *multiparams, connection=None, **params):
-        def env_factory():
-            conn = connection or self._query.bind
-            return conn, conn.metadata
-        return GinoCursorFactory(env_factory, self._query, multiparams, params)
+        if connection is None:
+            if self._query.bind:
+                connection = self._query.bind.current_connection
+            if connection is None:
+                raise ValueError(
+                    'No Connection in context, please provide one')
+        return connection.iterate(self._query, *multiparams, **params)
 
 
 class Gino(sa.MetaData):
@@ -102,9 +104,15 @@ class Gino(sa.MetaData):
     async def status(self, clause, *multiparams, **params):
         return await self.bind.status(clause, *multiparams, **params)
 
-    def iterate(self, clause, *multiparams, connection=None, **params):
-        return GinoCursorFactory(lambda: (connection or self.bind, self),
-                                 clause, multiparams, params)
+    def iterate(self, clause, *multiparams, **params):
+        connection = None
+        if self.bind:
+            connection = self.bind.current_connection
+        if connection is None:
+            raise ValueError(
+                'No Connection in context, please provide one')
+        return self.bind.current_connection.iterate(clause, *multiparams,
+                                                    **params)
 
     def acquire(self, *args, **kwargs):
         return self.bind.acquire(*args, **kwargs)

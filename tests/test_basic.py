@@ -227,3 +227,9 @@ async def test_too_many_engine_args():
     import gino
     with pytest.raises(TypeError):
         await gino.create_engine(ASYNCPG_URL, non_exist=None)
+
+
+# noinspection PyUnusedLocal
+async def test_scalar_return_none(bind):
+    assert await User.query.where(
+        User.nickname == 'nonexist').gino.scalar() is None
