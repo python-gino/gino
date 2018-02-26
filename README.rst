@@ -8,10 +8,10 @@ GINO
 .. image:: https://img.shields.io/travis/fantix/gino/master.svg
         :target: https://travis-ci.org/fantix/gino
 
-.. image:: https://coveralls.io/repos/github/fantix/gino/badge.svg?branch=master
+.. image:: https://img.shields.io/coveralls/github/fantix/gino/master.svg
         :target: https://coveralls.io/github/fantix/gino?branch=master
 
-.. image:: https://readthedocs.org/projects/python-gino/badge/?version=latest
+.. image:: https://img.shields.io/readthedocs/python-gino/stable.svg
         :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
