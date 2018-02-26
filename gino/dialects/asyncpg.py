@@ -3,13 +3,14 @@ import weakref
 
 import asyncpg
 from asyncpg.prepared_stmt import PreparedStatement
-from sqlalchemy import util, exc
+from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
     PGExecutionContext,
 )
+from sqlalchemy.sql import sqltypes
 
 DEFAULT = object()
 
@@ -23,6 +24,10 @@ class AsyncpgCompiler(PGCompiler):
     def bindtemplate(self, val):
         # noinspection PyAttributeOutsideInit
         self._bindtemplate = val.replace(':', '$')
+
+    def _apply_numbered_params(self):
+        if hasattr(self, 'string'):
+            return super()._apply_numbered_params()
 
 
 class AnonymousPreparedStatement(PreparedStatement):
@@ -312,3 +317,112 @@ class AsyncpgDialect(PGDialect):
     async def get_isolation_level(self, connection):
         val = await connection.fetchval('show transaction isolation level')
         return val.upper()
+
+    async def has_schema(self, connection, schema):
+        query = ("select nspname from pg_namespace "
+                 "where lower(nspname)=:schema")
+        row = await connection.first(
+            sql.text(
+                query,
+                bindparams=[
+                    sql.bindparam(
+                        'schema', util.text_type(schema.lower()),
+                        type_=sqltypes.Unicode)]
+            )
+        )
+
+        return bool(row)
+
+    async def has_table(self, connection, table_name, schema=None):
+        # seems like case gets folded in pg_class...
+        if schema is None:
+            row = await connection.first(
+                sql.text(
+                    "select relname from pg_class c join pg_namespace n on "
+                    "n.oid=c.relnamespace where "
+                    "pg_catalog.pg_table_is_visible(c.oid) "
+                    "and relname=:name",
+                    bindparams=[
+                        sql.bindparam('name', util.text_type(table_name),
+                                      type_=sqltypes.Unicode)]
+                )
+            )
+        else:
+            row = await connection.first(
+                sql.text(
+                    "select relname from pg_class c join pg_namespace n on "
+                    "n.oid=c.relnamespace where n.nspname=:schema and "
+                    "relname=:name",
+                    bindparams=[
+                        sql.bindparam('name',
+                                      util.text_type(table_name),
+                                      type_=sqltypes.Unicode),
+                        sql.bindparam('schema',
+                                      util.text_type(schema),
+                                      type_=sqltypes.Unicode)]
+                )
+            )
+        return bool(row)
+
+    async def has_sequence(self, connection, sequence_name, schema=None):
+        if schema is None:
+            row = await connection.first(
+                sql.text(
+                    "SELECT relname FROM pg_class c join pg_namespace n on "
+                    "n.oid=c.relnamespace where relkind='S' and "
+                    "n.nspname=current_schema() "
+                    "and relname=:name",
+                    bindparams=[
+                        sql.bindparam('name', util.text_type(sequence_name),
+                                      type_=sqltypes.Unicode)
+                    ]
+                )
+            )
+        else:
+            row = await connection.first(
+                sql.text(
+                    "SELECT relname FROM pg_class c join pg_namespace n on "
+                    "n.oid=c.relnamespace where relkind='S' and "
+                    "n.nspname=:schema and relname=:name",
+                    bindparams=[
+                        sql.bindparam('name', util.text_type(sequence_name),
+                                      type_=sqltypes.Unicode),
+                        sql.bindparam('schema',
+                                      util.text_type(schema),
+                                      type_=sqltypes.Unicode)
+                    ]
+                )
+            )
+
+        return bool(row)
+
+    async def has_type(self, connection, type_name, schema=None):
+        if schema is not None:
+            query = """
+            SELECT EXISTS (
+                SELECT * FROM pg_catalog.pg_type t, pg_catalog.pg_namespace n
+                WHERE t.typnamespace = n.oid
+                AND t.typname = :typname
+                AND n.nspname = :nspname
+                )
+                """
+            query = sql.text(query)
+        else:
+            query = """
+            SELECT EXISTS (
+                SELECT * FROM pg_catalog.pg_type t
+                WHERE t.typname = :typname
+                AND pg_type_is_visible(t.oid)
+                )
+                """
+            query = sql.text(query)
+        query = query.bindparams(
+            sql.bindparam('typname',
+                          util.text_type(type_name), type_=sqltypes.Unicode),
+        )
+        if schema is not None:
+            query = query.bindparams(
+                sql.bindparam('nspname',
+                              util.text_type(schema), type_=sqltypes.Unicode),
+            )
+        return bool(await connection.scalar(query))

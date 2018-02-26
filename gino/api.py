@@ -3,9 +3,11 @@ import weakref
 import sqlalchemy as sa
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.dialects import postgresql as sa_pg
+from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
 from .declarative import declarative_base
+from .schema import GinoSchemaVisitor
 from . import json_support
 
 
@@ -64,6 +66,7 @@ class GinoExecutor:
 class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
+    schema_visitor = GinoSchemaVisitor
 
     def __init__(self, bind=None, model_classes=None,
                  query_ext=True, **kwargs):
@@ -77,6 +80,7 @@ class Gino(sa.MetaData):
                     setattr(self, key, getattr(mod, key))
         if query_ext:
             Executable.gino = property(self.query_executor)
+            SchemaItem.gino = property(self.schema_visitor)
 
     async def create_engine(self, name_or_url, loop=None, **kwargs):
         from .strategies import create_engine

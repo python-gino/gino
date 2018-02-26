@@ -3,6 +3,7 @@ import functools
 import sys
 
 from sqlalchemy.engine import Engine, Connection
+from sqlalchemy.sql import schema
 
 
 def _get_context_var():
@@ -180,6 +181,10 @@ class GinoEngine:
     def update_execution_options(self, **opt):
         self._sa_engine.update_execution_options(**opt)
 
+    async def _run_visitor(self, *args, **kwargs):
+        async with self.acquire(reuse=True) as conn:
+            await getattr(conn, '_run_visitor')(*args, **kwargs)
+
 
 class _Break(Exception):
     def __init__(self, tx, commit):
@@ -259,6 +264,9 @@ class GinoTransaction:
 
 
 class GinoConnection:
+    # noinspection PyProtectedMember
+    schema_for_object = schema._schema_getter(None)
+
     def __init__(self, dialect, raw_conn, sa_conn):
         self._dialect = dialect
         self._raw_conn = raw_conn
@@ -311,3 +319,7 @@ class GinoConnection:
     def execution_options(self, **opt):
         return GinoConnection(self._dialect, self._raw_conn,
                               self._sa_conn.execution_options(**opt))
+
+    async def _run_visitor(self, visitorcallable, element, **kwargs):
+        await visitorcallable(self.dialect, self,
+                              **kwargs).traverse_single(element)
