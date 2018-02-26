@@ -1,0 +1,11 @@
+[run]
+source =
+    .
+omit =
+    .tox/*
+    travis_pypi_setup.py
+[report]
+exclude_lines =
+    pragma: no cover
+    Should not reach here
+    def __repr__

@@ -14,25 +14,24 @@ class User(db.Model):
 
 
 async def main():
-    async with db.create_pool('postgresql://localhost/gino') as pool:
-        # You will need to create the database and table manually
+    e = await db.create_engine('asyncpg://localhost/gino')
+    # You will need to create the database and table manually
 
-        for u in await pool.all(User.query.where(User.id > 3)):
-            print(u)
-        for u in await pool.all(db.select([User.id])):
-            print(u)
-        u = await pool.first(User.query.where(User.id > 1))
+    for u in await e.all(User.query.where(User.id > 3)):
         print(u)
-        nickname = await pool.scalar(
-            User.select('nickname').where(User.id == 1))
-        print(nickname)
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                async for u in conn.iterate(User.query.where(User.id > 3)):
-                    print(u)
-    await db.create_pool('postgresql://localhost/gino')
-    async with db.transaction() as (conn, tx):
-        async for u in conn.iterate(User.query.where(User.id > 3)):
+    for u in await e.all(db.select([User.id])):
+        print(u)
+    u = await e.first(User.query.where(User.id > 1))
+    print(u)
+    nickname = await e.scalar(
+        User.select('nickname').where(User.id == 1))
+    print(nickname)
+    async with e.acquire() as conn:
+        async with conn.transaction():
+            async for u in conn.iterate(User.query.where(User.id > 3)):
+                print(u)
+    async with db.transaction():
+        async for u in User.query.where(User.id > 3).gino.iterate():
             print(u)
 
 

@@ -1,4 +1,3 @@
-import asyncpg
 from gino import Gino
 
 db = Gino()
@@ -16,23 +15,20 @@ class User(db.Model):
 
 
 async def main():
-    # Database endpoint.
-    db_endpoint = 'postgresql://localhost/gino'
-
     # In this example we create the database tables directly using SQLAlchemy
     # and non-async Postgres (uses psycopg2 python module, not asyncpg which
     # GINO uses). For a production application you would probably use a full
     # schema migration solution like Alembic.
     import sqlalchemy as sa
-    db_engine = sa.create_engine(db_endpoint)
+    db_engine = sa.create_engine('postgresql://localhost/gino')
     db.create_all(bind=db_engine)
     db_engine.dispose()
 
     # Here starts the normal async application
-    conn = await asyncpg.connect(db_endpoint)
+    await db.create_engine('asyncpg://localhost/gino')
 
-    print(await User.create(bind=conn, nickname='fantix'))
-    print(await User.get(1, bind=conn))
+    print(await User.create(nickname='fantix'))
+    print(await User.get(1))
 
 
 if __name__ == '__main__':

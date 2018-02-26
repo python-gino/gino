@@ -17,6 +17,7 @@ def req_file(filename):
         content = f.readlines()
     return [x.strip() for x in content if x.strip()]
 
+
 setup_requirements = [
     'pytest-runner',
 ]
@@ -24,6 +25,7 @@ setup_requirements = [
 test_requirements = [
     'pytest',
     'pytest-asyncio',
+    'pytest-mock',
     'psycopg2-binary',
 ]
 
@@ -39,6 +41,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=req_file('requirements.txt'),
+    entry_points="""
+    [sqlalchemy.dialects]
+    postgresql.asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    """,
     license="BSD license",
     zip_safe=False,
     keywords='gino',

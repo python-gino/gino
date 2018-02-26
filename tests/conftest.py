@@ -6,31 +6,42 @@ import pytest
 import sqlalchemy
 
 import gino
-from .models import db, DB_ARGS
+from .models import db, DB_ARGS, ASYNCPG_URL
+
+ECHO = False
 
 
 @pytest.fixture(scope='module')
-def engine():
+def sa_engine():
     rv = sqlalchemy.create_engine(
         'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-            **DB_ARGS))
+            **DB_ARGS), echo=ECHO)
     db.create_all(rv)
     yield rv
     db.drop_all(rv)
     rv.dispose()
 
 
-# noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-async def pool(engine):
-    async with db.create_pool(**DB_ARGS) as rv:
-        yield rv
-        await rv.execute('DELETE FROM gino_users')
+async def engine(sa_engine):
+    e = await gino.create_engine(ASYNCPG_URL, echo=ECHO)
+    yield e
+    await e.close()
+    sa_engine.execute('DELETE FROM gino_users')
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-async def asyncpg_pool(engine):
+async def bind(sa_engine):
+    rv = await db.create_engine(ASYNCPG_URL, echo=ECHO)
+    yield rv
+    await db.dispose_engine()
+    sa_engine.execute('DELETE FROM gino_users')
+
+
+# noinspection PyUnusedLocal,PyShadowingNames
+@pytest.fixture
+async def asyncpg_pool(sa_engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         yield rv
         await rv.execute('DELETE FROM gino_users')
@@ -39,10 +50,3 @@ async def asyncpg_pool(engine):
 @pytest.fixture
 def random_name(length=8) -> str:
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
-
-
-@pytest.fixture
-def task_local(event_loop):
-    gino.enable_task_local(event_loop)
-    yield
-    gino.disable_task_local(event_loop)

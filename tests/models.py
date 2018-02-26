@@ -10,6 +10,8 @@ DB_ARGS = dict(
     password=os.getenv('DB_PASS', ''),
     database=os.getenv('DB_NAME', 'postgres'),
 )
+ASYNCPG_URL = 'asyncpg://{user}:{password}@{host}:{port}/{database}'.format(
+    **DB_ARGS)
 db = Gino()
 
 
@@ -40,3 +42,8 @@ class Friendship(db.Model):
 
     def __repr__(self):
         return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)
+
+
+def qsize(engine):
+    # noinspection PyProtectedMember
+    return engine._dialect._pool._queue.qsize()
