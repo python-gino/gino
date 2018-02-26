@@ -139,6 +139,7 @@ class CRUDModel(Model):
     update = Update()
     delete = Delete()
     select = Select()
+    _update_request_cls = UpdateRequest
 
     def __init__(self, **values):
         super().__init__()
@@ -214,7 +215,7 @@ class CRUDModel(Model):
         return q
 
     def _update(self, **values):
-        return UpdateRequest(self).update(**values)
+        return self._update_request_cls(self).update(**values)
 
     async def _delete(self, bind=None, timeout=DEFAULT):
         cls = type(self)
