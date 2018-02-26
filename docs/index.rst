@@ -1,22 +1,28 @@
-Welcome to GINO's documentation!
-======================================
+.. include:: ../README.rst
 
-Contents:
+========
+Contents
+========
 
 .. toctree::
    :maxdepth: 2
 
-   readme
    installation
    usage
-   modules
+   gino
    contributing
    authors
    history
 
-Indices and tables
-==================
+====================
+Module Documentation
+====================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _SQLAlchemy: https://www.sqlalchemy.org/
+.. _asyncpg: https://github.com/MagicStack/asyncpg
+.. _Sanic: https://github.com/channelcat/sanic
+.. _Tornado: http://www.tornadoweb.org/

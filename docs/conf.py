@@ -112,6 +112,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'default'
+# html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -282,7 +283,11 @@ def run_apidoc(_):
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     mod = os.path.join(cur_dir, '..', 'gino')
-    main(['-e', '-o', cur_dir, mod, '--force'])
+    main(['-o', cur_dir, mod, '--force'])
+    with open(os.path.join(cur_dir, 'gino.rst')) as f:
+        text = f.read()
+    with open(os.path.join(cur_dir, 'gino.rst'), 'w') as f:
+        f.write(text.replace('gino package', 'API Reference'))
 
 
 def setup(app):
