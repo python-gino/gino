@@ -2,6 +2,18 @@
 History
 =======
 
+Migrating to GINO 0.6
+---------------------
+
+TBD
+
+0.6.0 (TBD)
+------------------
+
+This is also version 1.0 beta 2.
+
+* [Breaking] Refactored
+
 0.5.8 (2018-02-14)
 ------------------
 

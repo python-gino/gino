@@ -7,8 +7,9 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   installation
+   tutorial
    usage
+   adv_topics
    gino
    contributing
    authors
@@ -21,8 +22,3 @@ Module Documentation
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. _SQLAlchemy: https://www.sqlalchemy.org/
-.. _asyncpg: https://github.com/MagicStack/asyncpg
-.. _Sanic: https://github.com/channelcat/sanic
-.. _Tornado: http://www.tornadoweb.org/
