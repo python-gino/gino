@@ -235,16 +235,6 @@ async def test_scalar_return_none(bind):
         User.nickname == 'nonexist').gino.scalar() is None
 
 
-async def test_execute_many(bind):
-    statement, params = db.compile(User.insert(),
-                                   [dict(nickname='1'), dict(nickname='2')])
-    assert statement == ('INSERT INTO gino_users (nickname, type) '
-                         'VALUES ($1, $2)')
-    assert params == (('1', 'USER'), ('2', 'USER'))
-    await User.insert().gino.status(dict(nickname='1'), dict(nickname='2'))
-    assert len(await User.query.gino.all()) == 2
-
-
 async def test_asyncpg_0120(bind, mocker):
     assert await bind.first('rollback') is None
     mocker.patch('asyncpg.prepared_stmt.'

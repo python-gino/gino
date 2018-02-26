@@ -202,6 +202,11 @@ class ResultProxy:
                 else:
                     rows = await prepared.fetch(*args, timeout=context.timeout)
                 item = context.process_rows(rows, return_model=return_model)
+                if one:
+                    if item:
+                        item = item[0]
+                    else:
+                        item = None
                 if status:
                     item = prepared.get_statusmsg(), item
                 if not context.executemany:

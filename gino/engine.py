@@ -281,17 +281,16 @@ class GinoConnection:
 
     async def first(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
-        rv = await result.execute(one=True)
-        if rv:
-            return rv[0]
-        else:
-            return None
+        return await result.execute(one=True)
 
     async def scalar(self, clause, *multiparams, **params):
         result = self._execute(clause, multiparams, params)
         rv = await result.execute(one=True, return_model=False)
         if rv:
-            return rv[0][0]
+            if result.context.executemany:
+                return [row[0] if row else None for row in rv]
+            else:
+                return rv[0]
         else:
             return None
 
