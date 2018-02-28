@@ -10,6 +10,8 @@ async def create_engine(name_or_url, loop=None, **kwargs):
     u = url.make_url(name_or_url)
     if loop is None:
         loop = asyncio.get_event_loop()
+    if u.drivername in {'postgresql', 'postgres'}:
+        u.drivername = 'postgresql+asyncpg'
 
     dialect_cls = u.get_dialect()
 

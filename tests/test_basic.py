@@ -8,7 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ObjectNotExecutableError
 from asyncpg.exceptions import InvalidCatalogNameError
 
-from .models import db, User, UserType, Friendship, ASYNCPG_URL, qsize
+from .models import db, User, UserType, Friendship, PG_URL, qsize
 
 pytestmark = pytest.mark.asyncio
 
@@ -99,7 +99,7 @@ async def test_delete_multiple_primary_key(engine):
 async def test_issue_79():
     import gino
     db_ = gino.Gino()
-    e = await db_.create_engine('asyncpg:///non_exist?min_size=0')
+    e = await db_.create_engine('postgresql:///non_exist?min_size=0')
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
@@ -169,7 +169,7 @@ async def test_no_reuse(mocker):
                                       'aiocontextvars': NotExist()})
 
     import gino
-    engine = await gino.create_engine(ASYNCPG_URL)
+    engine = await gino.create_engine(PG_URL)
     ctx = getattr(engine, '_ctx')
     assert ctx.name == 'gino'
     assert ctx.default is None
@@ -196,13 +196,13 @@ async def test_logging(mocker):
     mocker.patch('logging.Logger._log')
     sql = 'SELECT NOW() AS test_logging'
 
-    e = await gino.create_engine(ASYNCPG_URL, echo=False)
+    e = await gino.create_engine(PG_URL, echo=False)
     await e.scalar(sql)
     await e.close()
     # noinspection PyProtectedMember,PyUnresolvedReferences
     logging.Logger._log.assert_not_called()
 
-    e = await gino.create_engine(ASYNCPG_URL, echo=True)
+    e = await gino.create_engine(PG_URL, echo=True)
     await e.scalar(sql)
     await e.close()
     # noinspection PyProtectedMember,PyUnresolvedReferences
@@ -212,8 +212,8 @@ async def test_logging(mocker):
 async def test_set_isolation_level():
     import gino
     with pytest.raises(sa.exc.ArgumentError):
-        await gino.create_engine(ASYNCPG_URL, isolation_level='non')
-    e = await gino.create_engine(ASYNCPG_URL,
+        await gino.create_engine(PG_URL, isolation_level='non')
+    e = await gino.create_engine(PG_URL,
                                  isolation_level='READ_UNCOMMITTED')
     async with e.acquire() as conn:
         assert await e.dialect.get_isolation_level(
@@ -226,7 +226,7 @@ async def test_set_isolation_level():
 async def test_too_many_engine_args():
     import gino
     with pytest.raises(TypeError):
-        await gino.create_engine(ASYNCPG_URL, non_exist=None)
+        await gino.create_engine(PG_URL, non_exist=None)
 
 
 # noinspection PyUnusedLocal

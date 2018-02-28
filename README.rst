@@ -64,7 +64,7 @@ A piece of code is worth a thousand words:
 
 
    async def main():
-       await db.create_engine('asyncpg://localhost/gino')
+       await db.create_engine('postgresql://localhost/gino')
 
        # Create tables
        await db.gino.create_all()

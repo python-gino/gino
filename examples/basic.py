@@ -15,7 +15,7 @@ class User(db.Model):
 
 
 async def main():
-    await db.create_engine('asyncpg://localhost/gino')
+    await db.create_engine('postgresql://localhost/gino')
 
     await db.gino.create_all()
 

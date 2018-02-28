@@ -6,16 +6,14 @@ import pytest
 import sqlalchemy
 
 import gino
-from .models import db, DB_ARGS, ASYNCPG_URL
+from .models import db, DB_ARGS, PG_URL
 
 ECHO = False
 
 
 @pytest.fixture(scope='module')
 def sa_engine():
-    rv = sqlalchemy.create_engine(
-        'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-            **DB_ARGS), echo=ECHO)
+    rv = sqlalchemy.create_engine(PG_URL, echo=ECHO)
     db.create_all(rv)
     yield rv
     db.drop_all(rv)
@@ -24,7 +22,7 @@ def sa_engine():
 
 @pytest.fixture
 async def engine(sa_engine):
-    e = await gino.create_engine(ASYNCPG_URL, echo=ECHO)
+    e = await gino.create_engine(PG_URL, echo=ECHO)
     yield e
     await e.close()
     sa_engine.execute('DELETE FROM gino_users')
@@ -33,7 +31,7 @@ async def engine(sa_engine):
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
 async def bind(sa_engine):
-    rv = await db.create_engine(ASYNCPG_URL, echo=ECHO)
+    rv = await db.create_engine(PG_URL, echo=ECHO)
     yield rv
     await db.dispose_engine()
     sa_engine.execute('DELETE FROM gino_users')

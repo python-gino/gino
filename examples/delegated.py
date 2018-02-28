@@ -14,7 +14,7 @@ class User(db.Model):
 
 
 async def main():
-    e = await db.create_engine('asyncpg://localhost/gino')
+    e = await db.create_engine('postgresql://localhost/gino')
     # You will need to create the database and table manually
 
     for u in await e.all(User.query.where(User.id > 3)):

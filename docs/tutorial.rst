@@ -152,7 +152,7 @@ Then we create a ``Engine`` to manage database connections:
     import asyncio
 
     async def main():
-        await db.create_engine('asyncpg://localhost/gino')
+        await db.create_engine('postgresql://localhost/gino')
 
     asyncio.get_event_loop().run_until_complete(main())
 
@@ -210,7 +210,7 @@ Let's review the code we have so far together in one piece before moving on:
 
 
     async def main():
-        await db.create_engine('asyncpg://localhost/gino')
+        await db.create_engine('postgresql://localhost/gino')
         await db.gino.create_all()
 
         # further code goes here
