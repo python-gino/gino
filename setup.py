@@ -33,7 +33,7 @@ setup(
     name='gino',
     version='0.5.8',
     description="GINO Is Not ORM - "
-                "a Python ORM on asyncpg and SQLAlchemy core.",
+                "a Python asyncio ORM on SQLAlchemy core.",
     long_description=readme + '\n\n' + history,
     author="Fantix King",
     author_email='fantix.king@gmail.com',
