@@ -3,7 +3,6 @@ import itertools
 import weakref
 
 import asyncpg
-from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.postgresql import *
 from sqlalchemy.dialects.postgresql.base import (
@@ -31,11 +30,6 @@ class AsyncpgCompiler(PGCompiler):
     def _apply_numbered_params(self):
         if hasattr(self, 'string'):
             return super()._apply_numbered_params()
-
-
-class AnonymousPreparedStatement(PreparedStatement):
-    def __del__(self):
-        self._state.detach()
 
 
 _NO_DEFAULT = object()
@@ -94,7 +88,8 @@ class CursorFactory:
         return self._context
 
     async def get_raw_cursor(self):
-        prepared = await self._context.cursor.prepare(self._context.statement)
+        prepared = await self._context.cursor.prepare(self._context.statement,
+                                                      self._context.timeout)
         return prepared.cursor(*self._context.parameters[0],
                                timeout=self._context.timeout)
 
@@ -146,7 +141,8 @@ class Cursor:
 class DBAPICursor:
     def __init__(self, apg_conn):
         self._conn = apg_conn
-        self._stmt = None
+        self._attributes = None
+        self._status = None
 
     def execute(self, statement, parameters):
         pass
@@ -154,33 +150,42 @@ class DBAPICursor:
     def executemany(self, statement, parameters):
         pass
 
-    @property
-    def stmt_exclusive_section(self):
-        return getattr(self._conn, '_stmt_exclusive_section')
+    async def prepare(self, query, timeout):
+        prepared = await self._conn.prepare(query, timeout=timeout)
+        try:
+            self._attributes = prepared.get_attributes()
+        except TypeError:  # asyncpg <= 0.12.0
+            self._attributes = []
+        return prepared
 
-    async def prepare(self, statement, named=True):
-        if named:
-            rv = await self._conn.prepare(statement)
-        else:
-            # it may still be a named statement, if cache is not disabled
-            # noinspection PyProtectedMember
-            self._conn._check_open()
-            # noinspection PyProtectedMember
-            state = await self._conn._get_statement(statement, None)
-            if state.name:
-                rv = PreparedStatement(self._conn, statement, state)
+    async def async_execute(self, query, timeout, args, limit=0, many=False):
+        _protocol = getattr(self._conn, '_protocol')
+        timeout = getattr(_protocol, '_get_timeout')(timeout)
+
+        def executor(state, timeout_):
+            if many:
+                return _protocol.bind_execute_many(state, args, '', timeout_)
             else:
-                rv = AnonymousPreparedStatement(self._conn, statement, state)
-        self._stmt = rv
-        return rv
+                return _protocol.bind_execute(state, args, '', limit, True,
+                                              timeout_)
+
+        with getattr(self._conn, '_stmt_exclusive_section'):
+            result, stmt = await getattr(self._conn, '_do_execute')(
+                query, executor, timeout)
+            try:
+                self._attributes = getattr(stmt, '_get_attributes')()
+            except TypeError:  # asyncpg <= 0.12.0
+                self._attributes = []
+            if not many:
+                result, self._status = result[:2]
+            return result
 
     @property
     def description(self):
-        try:
-            return [((a[0], a[1][0]) + (None,) * 5)
-                    for a in self._stmt.get_attributes()]
-        except TypeError:  # asyncpg <= 0.12.0
-            return []
+        return [((a[0], a[1][0]) + (None,) * 5) for a in self._attributes]
+
+    def get_statusmsg(self):
+        return self._status.decode()
 
 
 class ResultProxy:
@@ -196,31 +201,23 @@ class ResultProxy:
     async def execute(self, one=False, return_model=True, status=False):
         context = self._context
         cursor = context.cursor
-        with cursor.stmt_exclusive_section:
-            prepared = await cursor.prepare(context.statement, named=False)
-            rv = []
-            for args in context.parameters:
-                if one:
-                    row = await prepared.fetchrow(*args,
-                                                  timeout=context.timeout)
-                    if row:
-                        rows = [row]
-                    else:
-                        rows = []
+        if context.executemany:
+            return await cursor.async_execute(
+                context.statement, context.timeout, context.parameters,
+                many=True)
+        else:
+            args = context.parameters[0]
+            rows = await cursor.async_execute(
+                context.statement, context.timeout, args, 1 if one else 0)
+            item = context.process_rows(rows, return_model=return_model)
+            if one:
+                if item:
+                    item = item[0]
                 else:
-                    rows = await prepared.fetch(*args, timeout=context.timeout)
-                item = context.process_rows(rows, return_model=return_model)
-                if one:
-                    if item:
-                        item = item[0]
-                    else:
-                        item = None
-                if status:
-                    item = prepared.get_statusmsg(), item
-                if not context.executemany:
-                    return item
-                rv.append(item)
-            return rv
+                    item = None
+            if status:
+                item = cursor.get_statusmsg(), item
+            return item
 
     def iterate(self):
         if self._context.executemany:

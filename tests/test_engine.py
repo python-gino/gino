@@ -168,9 +168,36 @@ async def test_scalar_return_none(bind):
 
 async def test_asyncpg_0120(bind, mocker):
     assert await bind.first('rollback') is None
+
+    orig = getattr(asyncpg.Connection, '_do_execute')
+
+    class Stmt:
+        def __init__(self, stmt):
+            self._stmt = stmt
+
+        def _get_attributes(self):
+            raise TypeError
+
+    async def new(*args, **kwargs):
+        result, stmt = await orig(*args, **kwargs)
+        return result, Stmt(stmt)
+
+    mocker.patch('asyncpg.Connection._do_execute', new=new)
+
+    assert await bind.first('rollback') is None
+
+
+async def test_asyncpg_0120_iterate(bind, mocker):
+    async with bind.transaction():
+        gen = await db.iterate('rollback')
+        assert await gen.next() is None
+
     mocker.patch('asyncpg.prepared_stmt.'
                  'PreparedStatement.get_attributes').side_effect = TypeError
-    assert await bind.first('rollback') is None
+
+    async with bind.transaction():
+        gen = await db.iterate('rollback')
+        assert await gen.next() is None
 
 
 async def test_async_metadata():

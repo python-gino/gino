@@ -22,7 +22,9 @@ class GinoExecutor:
         return self._query
 
     def model(self, model):
-        self._query = self._query.execution_options(model=weakref.ref(model))
+        if model is not None:
+            model = weakref.ref(model)
+        self._query = self._query.execution_options(model=model)
         return self
 
     def return_model(self, switch):
@@ -30,7 +32,7 @@ class GinoExecutor:
         return self
 
     def timeout(self, timeout):
-        self._query = self._query.execution_options(timeout)
+        self._query = self._query.execution_options(timeout=timeout)
         return self
 
     async def all(self, *multiparams, **params):

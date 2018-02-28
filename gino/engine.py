@@ -295,10 +295,7 @@ class GinoConnection:
         result = self._execute(clause, multiparams, params)
         rv = await result.execute(one=True, return_model=False)
         if rv:
-            if result.context.executemany:
-                return [row[0] if row else None for row in rv]
-            else:
-                return rv[0]
+            return rv[0]
         else:
             return None
 
