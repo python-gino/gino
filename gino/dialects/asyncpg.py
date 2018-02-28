@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import weakref
 
 import asyncpg
@@ -11,6 +12,8 @@ from sqlalchemy.dialects.postgresql.base import (
     PGExecutionContext,
 )
 from sqlalchemy.sql import sqltypes
+
+from ..engine import SAConnection, SAEngine, DBAPIConnection
 
 DEFAULT = object()
 
@@ -240,38 +243,31 @@ class AsyncpgDialect(PGDialect):
         114: JSON(),
         3802: JSONB(),
     }
+    init_kwargs = set(itertools.chain(
+        *[inspect.getfullargspec(f).kwonlydefaults.keys() for f in
+          [asyncpg.create_pool, asyncpg.connect]]))
 
     def __init__(self, loop, *args, **kwargs):
+        self._pool_kwargs = dict(loop=loop)
+        for k in self.init_kwargs:
+            if k in kwargs:
+                self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
         self._pool = None
-        self._loop = loop
-        from ..engine import SAConnection, SAEngine, DBAPIConnection
         self._sa_conn = SAConnection(SAEngine(self),
                                      DBAPIConnection(self, None))
 
     async def init_pool(self, url):
-        formatters = {}
-        kw = inspect.getfullargspec(asyncpg.create_pool).kwonlydefaults.copy()
-        kw.update(inspect.getfullargspec(asyncpg.connect).kwonlydefaults)
-        for key, val in kw.items():
-            formatter = type(val)
-            if formatter in {int, float}:
-                formatters[key] = formatter
-        query = {}
-        for key, val in url.query.items():
-            formatter = formatters.get(key, lambda x: x)
-            query[key] = formatter(val)
-        # noinspection PyAttributeOutsideInit
-        self._pool = await asyncpg.create_pool(
+        args = self._pool_kwargs.copy()
+        args.update(
             host=url.host,
             port=url.port,
             user=url.username,
             database=url.database,
             password=url.password,
-            loop=self._loop,
             init=self.on_connect(),
-            **query,
         )
+        self._pool = await asyncpg.create_pool(**args)
 
     async def acquire_conn(self, *, timeout=None):
         return await self._pool.acquire(timeout=timeout)

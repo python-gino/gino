@@ -99,7 +99,7 @@ async def test_delete_multiple_primary_key(engine):
 async def test_issue_79():
     import gino
     db_ = gino.Gino()
-    e = await db_.create_engine('postgresql:///non_exist?min_size=0')
+    e = await db_.create_engine('postgresql:///non_exist', min_size=0)
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
