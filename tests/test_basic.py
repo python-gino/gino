@@ -98,8 +98,7 @@ async def test_delete_multiple_primary_key(engine):
 
 async def test_issue_79():
     import gino
-    db_ = gino.Gino()
-    e = await db_.create_engine('postgresql:///non_exist', min_size=0)
+    e = await gino.create_engine('postgresql:///non_exist', min_size=0)
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
@@ -240,3 +239,11 @@ async def test_asyncpg_0120(bind, mocker):
     mocker.patch('asyncpg.prepared_stmt.'
                  'PreparedStatement.get_attributes').side_effect = TypeError
     assert await bind.first('rollback') is None
+
+
+async def test_async_metadata():
+    import gino
+    db_ = await gino.Gino(PG_URL)
+    assert isinstance((await db_.scalar('select now()')), datetime)
+    await db_.pop_bind().close()
+    assert db.bind is None

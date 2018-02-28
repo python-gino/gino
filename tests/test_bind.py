@@ -1,6 +1,7 @@
 import random
 
 import pytest
+
 from .models import db, PG_URL, User
 
 pytestmark = pytest.mark.asyncio
@@ -25,9 +26,10 @@ async def test_get(bind):
 
 # noinspection PyUnusedLocal
 async def test_unbind(asyncpg_pool):
-    await db.create_engine(PG_URL)
+    await db.set_bind(PG_URL)
     await test_create(None)
-    await db.dispose_engine()
+    await db.pop_bind().close()
+    db.bind = None
     with pytest.raises(AttributeError):
         await test_create(None)
 

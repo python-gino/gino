@@ -145,34 +145,29 @@ PostgreSQL database for this tutorial:
 
     $ createdb gino
 
-Then we create a ``Engine`` to manage database connections:
+Then we tell our ``db`` object to connect to this database:
 
 .. code-block:: python
 
     import asyncio
 
     async def main():
-        await db.create_engine('postgresql://localhost/gino')
+        await db.set_bind('postgresql://localhost/gino')
 
     asyncio.get_event_loop().run_until_complete(main())
 
 If this runs successfully, then you are connected to the newly created database.
 Here ``asyncpg`` indicates the database dialect and driver to use, ``localhost``
 is where the server is, and ``gino`` is the name of the database. Check
-`here <http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ for more
+`here <https://docs.sqlalchemy.org/en/latest/core/engines.html>`_ for more
 information about how to compose this database URL.
-
-.. tip::
-
-    ``create_engine`` method returns an ``Engine`` object, which is bound to
-    the ``db`` object, so in most cases the ``Engine`` object won't be used
-    directly, and instead the ``db`` object is often used for convenience.
 
 .. note::
 
-    GINO engine is similar to SQLAlchemy engine, but not identical, Because
-    GINO engine is asynchronous, while the other is not. Please refer to the
-    API reference of GINO for more information.
+    Under the hood ``set_bind()`` calls ``gino.create_engine()`` and bind the
+    engine to this ``db`` object. GINO engine is similar to SQLAlchemy engine,
+    but not identical, Because GINO engine is asynchronous, while the other is
+    not. Please refer to the API reference of GINO for more information.
 
 Now that we are connected, let's create the table in database (in the same
 ``main()`` method):
@@ -192,6 +187,12 @@ Now that we are connected, let's create the table in database (in the same
     In practice ``create_all`` is usually not an ideal solution. To manage
     database schema, tool like Alembic_ is recommended.
 
+If you want to explicitly disconnect from the database, you can do this:
+
+.. code-block:: python
+
+    await db.pop_bind().close()
+
 Let's review the code we have so far together in one piece before moving on:
 
 .. code-block:: python
@@ -210,10 +211,12 @@ Let's review the code we have so far together in one piece before moving on:
 
 
     async def main():
-        await db.create_engine('postgresql://localhost/gino')
+        await db.set_bind('postgresql://localhost/gino')
         await db.gino.create_all()
 
         # further code goes here
+
+        await db.pop_bind().close()
 
 
     asyncio.get_event_loop().run_until_complete(main())

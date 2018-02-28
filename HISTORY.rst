@@ -24,6 +24,9 @@ This is also version 1.0 beta 2.
 * Added tests to cover 80% of code
 * [Breaking] Fixed query API with ``multiparams`` (executemany) to return correctly (#20)
 * Added ``gino`` extension on ``SchemaItem`` for ``create_all`` and so on (#76 #106)
+* [Breaking] The ``gino`` extension on both ``Executable`` and ``SchemaItem`` is
+  only present when ``Gino`` has a bind, and the extension methods no longer
+  accept the parameter ``bind``
 * Added ``_update_request_cls`` on ``CRUDModel`` (#147)
 * Rewrote the documentation (#146)
 

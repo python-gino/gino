@@ -63,17 +63,14 @@ async def test_basic(engine, names):
     result = set()
     async with engine.transaction() as tx:
         with pytest.raises(ValueError, match='No Connection in context'):
-            async for u in User.query.gino.iterate():
-                assert False, 'Should not reach here'
-        with pytest.raises(ValueError, match='No Connection in context'):
             await db.iterate(User.query)
         result = set()
-        async for u in User.query.gino.iterate(connection=tx.connection):
+        async for u in tx.connection.iterate(User.query):
             result.add(u.nickname)
         assert names == result
 
         result = set()
-        cursor = await User.query.gino.iterate(connection=tx.connection)
+        cursor = await tx.connection.iterate(User.query)
         result.update([u.nickname for u in await cursor.many(2)])
         assert names != result
         result.update([u.nickname for u in await cursor.many(2)])

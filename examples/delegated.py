@@ -1,4 +1,4 @@
-from gino import Gino
+from gino import Gino, create_engine
 
 db = Gino()
 
@@ -14,7 +14,7 @@ class User(db.Model):
 
 
 async def main():
-    e = await db.create_engine('postgresql://localhost/gino')
+    e = await create_engine('postgresql://localhost/gino')
     # You will need to create the database and table manually
 
     for u in await e.all(User.query.where(User.id > 3)):
@@ -30,8 +30,8 @@ async def main():
         async with conn.transaction():
             async for u in conn.iterate(User.query.where(User.id > 3)):
                 print(u)
-    async with db.transaction():
-        async for u in User.query.where(User.id > 3).gino.iterate():
+    async with e.transaction() as tx:
+        async for u in tx.connection.iterate(User.query.where(User.id > 3)):
             print(u)
 
 

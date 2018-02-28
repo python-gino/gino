@@ -6,7 +6,8 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_anonymous(sa_engine):
-    e = await db.create_engine(PG_URL, statement_cache_size=0)
+    import gino
+    e = await gino.create_engine(PG_URL, statement_cache_size=0)
     async with e.acquire() as conn:
         # noinspection PyProtectedMember
         assert conn.raw_connection._stmt_cache.get_max_size() == 0
