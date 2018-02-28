@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from gino import Gino
+from gino.dialects.asyncpg import JSONB
 
 db = Gino()
 
@@ -10,7 +11,7 @@ class User(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column(db.Unicode(), default='noname')
-    profile = db.Column(db.JSONB())
+    profile = db.Column(JSONB())
     name = db.StringProperty(default='noname')
     age = db.IntegerProperty(default=18)
     birthday = db.DateTimeProperty()

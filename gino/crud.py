@@ -3,7 +3,6 @@ import weakref
 
 import sqlalchemy as sa
 from sqlalchemy.sql import ClauseElement
-from sqlalchemy.dialects import postgresql as sa_pg
 
 from . import json_support
 from .declarative import Model
@@ -90,10 +89,13 @@ class UpdateRequest:
             if self._literal:
                 values[column_name] = column.concat(updates)
             else:
-                if isinstance(column.type, sa_pg.JSONB):
+                from .dialects.asyncpg import JSON, JSONB
+                if isinstance(column.type, JSONB):
                     func = sa.func.jsonb_build_object
-                else:
+                elif isinstance(column.type, JSON):
                     func = sa.func.json_build_object
+                else:
+                    raise TypeError(f'{column.type} is not supported.')
                 values[column_name] = column.concat(
                     func(*itertools.chain(*updates.items())))
 

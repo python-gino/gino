@@ -5,7 +5,7 @@ import weakref
 import asyncpg
 from asyncpg.prepared_stmt import PreparedStatement
 from sqlalchemy import util, exc, sql
-from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.dialects.postgresql import *
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,

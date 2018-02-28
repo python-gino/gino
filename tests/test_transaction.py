@@ -6,7 +6,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def _init(bind):
-    from .test_basic import test_create
+    from .test_crud import test_create
     u = await test_create(bind)
 
     def get_name():

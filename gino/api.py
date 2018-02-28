@@ -3,7 +3,6 @@ import weakref
 import sqlalchemy as sa
 from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.sql.base import Executable
-from sqlalchemy.dialects import postgresql as sa_pg
 from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
@@ -61,15 +60,16 @@ class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
     schema_visitor = GinoSchemaVisitor
+    no_delegate = {'create_engine', 'engine_from_config'}
 
     def __init__(self, bind=None, model_classes=None, **kwargs):
         super().__init__(bind=bind, **kwargs)
         if model_classes is None:
             model_classes = self.model_base_classes
         self.Model = declarative_base(self, model_classes)
-        for mod in json_support, sa_pg, sa:
+        for mod in json_support, sa:
             for key in mod.__all__:
-                if not hasattr(self, key):
+                if not hasattr(self, key) and key not in self.no_delegate:
                     setattr(self, key, getattr(mod, key))
 
     @property
