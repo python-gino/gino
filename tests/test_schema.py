@@ -62,6 +62,8 @@ async def test(engine, define=True):
         await engine.status('drop schema schema_test cascade')
 
 
-async def test_no_alter(engine):
+async def test_no_alter(engine, mocker):
     engine.dialect.supports_alter = False
+    warn = mocker.patch('warnings.warn')
     await test(engine, define=False)
+    warn.assert_called()
