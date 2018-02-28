@@ -13,13 +13,10 @@ class ColumnAttribute:
             return instance.__values__.get(self.name)
 
     def __set__(self, instance, value):
-        if instance is None:
-            raise AttributeError('Cannot change columns.')
-        else:
-            instance.__values__[self.name] = value
+        instance.__values__[self.name] = value
 
     def __delete__(self, instance):
-        raise AttributeError('Cannot delete column or value.')
+        raise AttributeError('Cannot delete value.')
 
 
 class ModelType(type):
@@ -86,6 +83,7 @@ def declarative_base(metadata, model_classes=(Model,), name='Model'):
     return ModelType(name, model_classes, {'__metadata__': metadata})
 
 
+# noinspection PyProtectedMember
 @sa.inspection._inspects(ModelType)
 def inspect_model_type(target):
     return sa.inspection.inspect(target.__table__)

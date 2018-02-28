@@ -180,9 +180,9 @@ class CRUDModel(Model):
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
+        # noinspection PyArgumentList
         q = cls.__table__.insert().values(**rv.__values__).returning(
-            *cls.__table__.columns
-        ).execution_options(**opts)
+            *cls).execution_options(**opts)
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(q)
