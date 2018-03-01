@@ -31,9 +31,8 @@ async def engine(sa_engine):
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
 async def bind(sa_engine):
-    e = await db.set_bind(PG_URL, echo=ECHO)
-    yield e
-    await db.pop_bind().close()
+    async with db.with_bind(PG_URL, echo=ECHO) as e:
+        yield e
     sa_engine.execute('DELETE FROM gino_users')
 
 

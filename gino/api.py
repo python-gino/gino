@@ -58,13 +58,26 @@ class GinoExecutor:
         return connection.iterate(self._query, *multiparams, **params)
 
 
+class BindContext:
+    def __init__(self, *args):
+        self._args = args
+
+    async def __aenter__(self):
+        api, bind, loop, kwargs = self._args
+        return await api.set_bind(bind, loop, **kwargs)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._args[0].pop_bind().close()
+
+
 class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     query_executor = GinoExecutor
     schema_visitor = GinoSchemaVisitor
     no_delegate = {'create_engine', 'engine_from_config'}
 
-    def __init__(self, bind=None, model_classes=None, **kwargs):
+    def __init__(self, bind=None, model_classes=None, query_ext=True,
+                 schema_ext=True, ext=True, **kwargs):
         super().__init__(bind=bind, **kwargs)
         if model_classes is None:
             model_classes = self.model_base_classes
@@ -73,6 +86,11 @@ class Gino(sa.MetaData):
             for key in mod.__all__:
                 if not hasattr(self, key) and key not in self.no_delegate:
                     setattr(self, key, getattr(mod, key))
+        if ext:
+            if query_ext:
+                Executable.gino = property(self.query_executor)
+            if schema_ext:
+                SchemaItem.gino = property(self.schema_visitor)
 
     @property
     def bind(self):
@@ -82,13 +100,6 @@ class Gino(sa.MetaData):
     @bind.setter
     def bind(self, bind):
         self._bind = bind
-        if bind is None:
-            for ext in Executable, SchemaItem:
-                if hasattr(ext, 'gino'):
-                    delattr(ext, 'gino')
-        else:
-            Executable.gino = property(self.query_executor)
-            SchemaItem.gino = property(self.schema_visitor)
 
     async def set_bind(self, bind, loop=None, **kwargs):
         if isinstance(bind, str):
@@ -102,6 +113,9 @@ class Gino(sa.MetaData):
     def pop_bind(self):
         bind, self.bind = self.bind, None
         return bind
+
+    def with_bind(self, bind, loop=None, **kwargs):
+        return BindContext(self, bind, loop, kwargs)
 
     def __await__(self):
         async def init():

@@ -8,7 +8,158 @@ GINO 0.6
 Migrating to GINO 0.6
 ^^^^^^^^^^^^^^^^^^^^^
 
-TBD
+1. Task Local
+"""""""""""""
+
+We created a new Python package aiocontextvars_ from previous ``local.py``. If
+you made use of the task local features, you should install this package.
+
+Previous ``gino.enable_task_local`` and ``gino.disable_task_local`` are
+replaced by ``aiocontextvars.enable_inherit`` and
+``aiocontextvars.disable_inherit``. However in GINO 0.5 they controls the whole
+task local feature switch, while aiocontextvars_ by default offers task local
+even without ``enable_inherit``, which controls whether the local storage
+should be passed between chained tasks. When enabled, it behaves the same as
+enabled in 0.5, but you cannot completely turn off the task local feature while
+aiocontextvars_ is installed.
+
+There is no ``gino.get_local`` and ``gino.reset_local`` relevant in
+aiocontextvars_. The similar thing is ``aiocontextvars.ContextVar`` instance
+through its ``get``, ``set`` and ``delete`` methods.
+
+Previous ``gino.is_local_root`` is now
+``not aiocontextvars.Context.current().inherited``.
+
+2. Engine
+"""""""""
+
+GINO 0.6 hides ``asyncpg.Pool`` behind the new SQLAlchemy-alike
+``gino.Engine``. Instead of doing this in 0.5:
+
+.. code-block:: python
+
+    async with db.create_pool('postgresql://...') as pool:
+        # your code here
+
+You should change it to this in 0.6:
+
+.. code-block:: python
+
+    async with db.with_bind('postgresql://...') as engine:
+        # your code here
+
+This equals to:
+
+.. code-block:: python
+
+    engine = await gino.create_engine('postgresql://...')
+    db.bind = engine
+    try:
+        # your code here
+    finally:
+        db.bind = None
+        await engine.close()
+
+Or:
+
+.. code-block:: python
+
+    engine = await db.set_bind('postgresql://...')
+    try:
+        # your code here
+    finally:
+        await db.pop_bind().close()
+
+Or even this:
+
+.. code-block:: python
+
+    db = await gino.Gino('postgresql://...')
+    try:
+        # your code here
+    finally:
+        await db.pop_bind().close()
+
+Choose whichever suits you the best.
+
+Obviously ``Engine`` doesn't provide ``asyncpg.Pool`` methods directly any
+longer, but you can get the underlying ``asyncpg.Pool`` object through
+``engine.raw_pool`` property.
+
+``Engine`` provides similar ``acquire`` method for borrowing a connection from
+the pool, but it can be used only through ``async with`` grammar. Therefore,
+there is no ``release`` method.
+
+``GinoPool.get_current_connection`` is now changed to ``current_connection``
+property on ``Engine`` instances to support multiple engines.
+
+``GinoPool().execution_option`` is gone, instead ``update_execution_options``
+on ``Engine`` instance is available.
+
+``GinoPool().metadata`` is gone, ``dialect`` is still available.
+
+These methods exist both in 0.5 ``GinoPool`` and 0.6 ``Engine``: ``close``,
+``all``, ``first``, ``scalar``, ``status``.
+
+3. GinoConnection
+"""""""""""""""""
+
+Similarly, ``GinoConnection`` in 0.6 is no longer a subclass of
+``asyncpg.Connection``, instead it has a ``asyncpg.Connection`` instance,
+accessable through ``GinoConnection().raw_connection`` property.
+
+``GinoConnection().metadata`` is deleted in 0.6, while ``dialect`` remained.
+
+``GinoConnection().execution_options`` is changed from a mutable dict in 0.5 to
+a method returning a copy of current connection with the new options, the same
+as SQLAlchemy behavior.
+
+And ``all``, ``first``, ``scalar``, ``status``, ``iterate``, ``transaction``
+remained in 0.6.
+
+4. Query API
+""""""""""""
+
+All five query APIs ``all``, ``first``, ``scalar``, ``status``, ``iterate`` now
+accept the same parameters as SQLAlchemy ``execute``, meaning they accept raw
+SQL text, or multiple sets of parameters for "executemany". Please note, if the
+parameters are recognized as "executemany", none of the methods will return
+anything. Meanwhile, they no longer accept the parameter ``bind`` if they did.
+Just use the API on the ``Engine`` or ``GinoConnection`` object instead.
+
+5. Transaction
+""""""""""""""
+
+Transaction interface is rewritten. Now in 0.6, a ``GinoTransaction`` object is
+provided consistently from all 3 methods:
+
+.. code-block:: python
+
+    async with db.transaction() as tx:
+        # within transaction
+
+    async with engine.transaction() as tx:
+        # within transaction
+
+    async with engine.acquire() as conn:
+        async with conn.transaction() as tx:
+            # within transaction
+
+And different usage with ``await``:
+
+.. code-block:: python
+
+    tx = await db.transaction()
+    try:
+        # within transaction
+        await tx.commit()
+    except:
+        await tx.rollback()
+        raise
+
+The ``GinoConnection`` object is available at ``tx.connection``, while
+underlying transaction object from database driver is available at
+``tx.transaction`` - in the case of asyncpg, ``tx.transaction`` is ``None``.
 
 0.6.0 (TBD)
 ^^^^^^^^^^^^^^^^^^
@@ -21,9 +172,7 @@ This is also version 1.0 beta 2.
   * Supported different dialects, theoretically
   * Used aiocontextvars_ instead of builtin task local (#89)
 * [Breaking] Fixed query API with ``multiparams`` (executemany) to return correctly (#20)
-* [Breaking] The ``gino`` extension on both ``Executable`` and ``SchemaItem`` is
-  only present when ``Gino`` has a bind, and the extension methods no longer
-  accept the parameter ``bind``
+* [Breaking] The query methods no longer accept the parameter ``bind``
 * [Breaking] ``Gino`` no longer exposes ``postgresql`` types
 * Added ``echo`` on engine (#142)
 * Added tests to cover 80% of code
