@@ -204,13 +204,12 @@ class GinoTransaction:
         self._args = args
         self._kwargs = kwargs
         self._tx = None
-        self._ctx = None
         self._managed = None
 
     async def _begin(self):
-        self._ctx = self._conn.dialect.transaction(self._conn.raw_connection,
-                                                   self._args, self._kwargs)
-        self._tx = await self._ctx.__aenter__()
+        self._tx = self._conn.dialect.transaction(self._conn.raw_connection,
+                                                  self._args, self._kwargs)
+        await self._tx.begin()
         return self
 
     @property
@@ -218,8 +217,8 @@ class GinoTransaction:
         return self._conn
 
     @property
-    def transaction(self):
-        return self._tx
+    def raw_transaction(self):
+        return self._tx.raw_transaction
 
     def raise_commit(self):
         raise _Break(self, True)
@@ -228,7 +227,7 @@ class GinoTransaction:
         if self._managed:
             self.raise_commit()
         else:
-            await self._ctx.__aexit__(None, None, None)
+            await self._tx.commit()
 
     def raise_rollback(self):
         raise _Break(self, False)
@@ -237,10 +236,7 @@ class GinoTransaction:
         if self._managed:
             self.raise_rollback()
         else:
-            try:
-                raise _Break(self, False)
-            except _Break:
-                await self._ctx.__aexit__(*sys.exc_info())
+            await self._tx.rollback()
 
     def __await__(self):
         assert self._managed is None
@@ -253,17 +249,18 @@ class GinoTransaction:
         await self._begin()
         return self
 
-    async def __aexit__(self, *exc_info):
+    async def __aexit__(self, ex_type, ex, ex_tb):
         try:
-            is_break = exc_info[0] is _Break
-            ex = exc_info[1]
+            is_break = ex_type is _Break
             if is_break and ex.commit:
-                exc_info = None, None, None
+                ex_type = None
+            if ex_type is None:
+                await self._tx.commit()
+            else:
+                await self._tx.rollback()
         except Exception:
-            exc_info = sys.exc_info()
+            await self._tx.rollback()
             raise
-        finally:
-            await self._ctx.__aexit__(*exc_info)
         if is_break and ex.tx is self:
             return True
 

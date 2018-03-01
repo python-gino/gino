@@ -159,7 +159,8 @@ And different usage with ``await``:
 
 The ``GinoConnection`` object is available at ``tx.connection``, while
 underlying transaction object from database driver is available at
-``tx.transaction`` - in the case of asyncpg, ``tx.transaction`` is ``None``.
+``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
+object.
 
 0.6.0 (TBD)
 ^^^^^^^^^^^^^^^^^^

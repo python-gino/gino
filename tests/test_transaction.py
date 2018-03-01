@@ -11,10 +11,11 @@ async def _init(bind):
 
     def get_name():
         return User.select('nickname').where(User.id == u.id).gino.scalar()
+
     return u, get_name
 
 
-async def test_connection_ctx(bind):
+async def test_connection_ctx(bind, mocker):
     init_size = qsize(bind)
     u, get_name = await _init(bind)
 
@@ -38,8 +39,10 @@ async def test_connection_ctx(bind):
         tx = await conn.transaction().__aenter__()
         await u.update(nickname='rollback').apply()
         assert await get_name() == 'rollback'
+        mocker.patch(
+            'asyncpg.transaction.Transaction.commit').side_effect = IndexError
         with pytest.raises(IndexError):
-            await tx.__aexit__()
+            await tx.__aexit__(None, None, None)
         assert await get_name() == 'commit'
     assert await get_name() == 'commit'
 
@@ -119,11 +122,12 @@ async def test_commit_failed(bind, mocker):
 
 
 async def test_reuse(bind):
+    from asyncpg.transaction import Transaction
     init_size = qsize(bind)
     async with db.acquire() as conn:
         async with db.transaction() as tx:
             assert tx.connection is conn
-            assert tx.transaction is None
+            assert isinstance(tx.raw_transaction, Transaction)
             async with db.transaction() as tx2:
                 assert tx2.connection is conn
             async with db.transaction(reuse=False) as tx2:

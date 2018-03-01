@@ -263,6 +263,24 @@ class Pool:
         await self._pool.close()
 
 
+class Transaction:
+    def __init__(self, tx):
+        self._tx = tx
+
+    @property
+    def raw_transaction(self):
+        return self._tx
+
+    async def begin(self):
+        await self._tx.start()
+
+    async def commit(self):
+        await self._tx.commit()
+
+    async def rollback(self):
+        await self._tx.rollback()
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):
     driver = 'asyncpg'
@@ -300,7 +318,7 @@ class AsyncpgDialect(PGDialect):
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
-        return raw_conn.transaction(*args, **kwargs)
+        return Transaction(raw_conn.transaction(*args, **kwargs))
 
     def on_connect(self):
         if self.isolation_level is not None:
