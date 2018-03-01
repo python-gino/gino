@@ -86,18 +86,16 @@ class UpdateRequest:
                 updates[sa.cast(prop.name, sa.Unicode)] = value
         for column_name, updates in json_updates.items():
             column = getattr(cls, column_name)
-            if self._literal:
-                values[column_name] = column.concat(updates)
-            else:
-                from .dialects.asyncpg import JSON, JSONB
-                if isinstance(column.type, JSONB):
-                    func = sa.func.jsonb_build_object
-                elif isinstance(column.type, JSON):
-                    func = sa.func.json_build_object
+            from .dialects.asyncpg import JSONB
+            if isinstance(column.type, JSONB):
+                if self._literal:
+                    values[column_name] = column.concat(updates)
                 else:
-                    raise TypeError(f'{column.type} is not supported.')
-                values[column_name] = column.concat(
-                    func(*itertools.chain(*updates.items())))
+                    values[column_name] = column.concat(
+                        sa.func.jsonb_build_object(
+                            *itertools.chain(*updates.items())))
+            else:
+                raise TypeError(f'{column.type} is not supported.')
 
         opts = dict(return_model=False)
         if timeout is not DEFAULT:

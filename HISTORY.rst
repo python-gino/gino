@@ -28,6 +28,7 @@ This is also version 1.0 beta 2.
 * Added ``echo`` on engine (#142)
 * Added tests to cover 80% of code
 * Added ``gino`` extension on ``SchemaItem`` for ``create_all`` and so on (#76 #106)
+* Added ``gino`` on model classes for ``create`` or ``drop``
 * Added ``_update_request_cls`` on ``CRUDModel`` (#147)
 * Rewrote the documentation (#146)
 

@@ -26,7 +26,7 @@ class ModelType(type):
 
     def __getattr__(self, item):
         try:
-            if item in {'insert', 'join', 'outerjoin'}:
+            if item in {'insert', 'join', 'outerjoin', 'gino'}:
                 return getattr(self.__table__, item)
             raise AttributeError
         except AttributeError:

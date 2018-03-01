@@ -43,11 +43,15 @@ async def test_query_ext(bind):
 
     row = await User.query.gino.return_model(False).first()
     assert not isinstance(row, User)
-    assert row == (u.id, 'test', UserType.USER)
+    assert row == (
+        u.id, 'test', {'age': 18, 'birthday': '1970-01-01T00:00:00.000000'},
+        UserType.USER)
 
     row = await User.query.gino.model(None).first()
     assert not isinstance(row, User)
-    assert row == (u.id, 'test', UserType.USER)
+    assert row == (
+        u.id, 'test', {'age': 18, 'birthday': '1970-01-01T00:00:00.000000'},
+        UserType.USER)
 
     row = await db.select([User.id, User.nickname, User.type]).gino.first()
     assert not isinstance(row, User)

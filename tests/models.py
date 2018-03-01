@@ -1,7 +1,9 @@
 import os
 import enum
+from datetime import datetime
 
 from gino import Gino
+from gino.dialects.asyncpg import JSONB
 
 DB_ARGS = dict(
     host=os.getenv('DB_HOST', 'localhost'),
@@ -24,11 +26,23 @@ class User(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column(db.Unicode(), default='noname')
+    profile = db.Column(JSONB(), nullable=False, server_default='{}')
     type = db.Column(
         db.Enum(UserType),
         nullable=False,
         default=UserType.USER,
     )
+    name = db.StringProperty()
+    age = db.IntegerProperty(default=18)
+    balance = db.IntegerProperty(default=0)
+    birthday = db.DateTimeProperty(
+        default=lambda i: datetime.utcfromtimestamp(0))
+
+    @balance.after_get
+    def balance(self, val):
+        if val is None:
+            return 0.0
+        return float(val)
 
     def __repr__(self):
         return '{}<{}>'.format(self.nickname, self.id)
