@@ -122,6 +122,10 @@ SQLAlchemy_ as the dependencies did most of the heavy lifting. This package was
 created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project
 template.
 
+Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
+for offering me the opportunity to build this project. We are open for global
+software project outsourcing on Python, iOS and Android development.
+
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 .. _SQLAlchemy: https://www.sqlalchemy.org/
@@ -135,3 +139,4 @@ template.
 .. _asyncorm: https://github.com/monobot/asyncorm
 .. _Tornado: http://www.tornadoweb.org/
 .. _documentation: https://python-gino.readthedocs.io/
+.. _DecentFoX Studio: https://decentfox.com/
