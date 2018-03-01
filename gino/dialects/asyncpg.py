@@ -228,6 +228,41 @@ class ResultProxy:
         pass
 
 
+class Pool:
+    def __init__(self, url, **kwargs):
+        self._url = url
+        self._kwargs = kwargs
+        self._pool = None
+
+    async def _init(self):
+        args = self._kwargs.copy()
+        args.update(
+            host=self._url.host,
+            port=self._url.port,
+            user=self._url.username,
+            database=self._url.database,
+            password=self._url.password,
+        )
+        self._pool = await asyncpg.create_pool(**args)
+        return self
+
+    def __await__(self):
+        return self._init().__await__()
+
+    @property
+    def raw_pool(self):
+        return self._pool
+
+    async def acquire(self, *, timeout=None):
+        return await self._pool.acquire(timeout=timeout)
+
+    async def release(self, conn):
+        await self._pool.release(conn)
+
+    async def close(self):
+        await self._pool.close()
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect):
     driver = 'asyncpg'
@@ -250,30 +285,11 @@ class AsyncpgDialect(PGDialect):
             if k in kwargs:
                 self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._pool = None
         self._sa_conn = SAConnection(SAEngine(self),
                                      DBAPIConnection(self, None))
 
     async def init_pool(self, url):
-        args = self._pool_kwargs.copy()
-        args.update(
-            host=url.host,
-            port=url.port,
-            user=url.username,
-            database=url.database,
-            password=url.password,
-            init=self.on_connect(),
-        )
-        self._pool = await asyncpg.create_pool(**args)
-
-    async def acquire_conn(self, *, timeout=None):
-        return await self._pool.acquire(timeout=timeout)
-
-    async def release_conn(self, conn):
-        await self._pool.release(conn)
-
-    async def close_pool(self):
-        await self._pool.close()
+        return await Pool(url, init=self.on_connect(), **self._pool_kwargs)
 
     def compile(self, elem, *multiparams, **params):
         context = self._sa_conn.execute(elem, *multiparams, **params).context

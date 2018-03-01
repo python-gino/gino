@@ -24,7 +24,7 @@ async def create_engine(name_or_url, loop=None, **kwargs):
         if k in kwargs:
             dialect_args[k] = pop_kwarg(k)
     dialect = dialect_cls(**dialect_args)
-    await dialect.init_pool(u)
+    pool = await dialect.init_pool(u)
 
     engine_args = dict(loop=loop)
     for k in util.get_cls_kwargs(GinoEngine):
@@ -41,7 +41,7 @@ async def create_engine(name_or_url, loop=None, **kwargs):
                                 dialect_cls.__name__,
                                 GinoEngine.__name__))
 
-    engine = GinoEngine(dialect, **engine_args)
+    engine = GinoEngine(dialect, pool, **engine_args)
 
     dialect_cls.engine_created(engine)
 

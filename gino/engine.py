@@ -114,16 +114,21 @@ class TransactionContext:
 
 
 class GinoEngine:
-    def __init__(self, dialect, loop, logging_name=None, echo=None):
+    def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
         self._sa_engine = SAEngine(dialect,
                                    logging_name=logging_name, echo=echo)
         self._dialect = dialect
+        self._pool = pool
         self._loop = loop
         self._ctx = _get_context_var()('gino')
 
     @property
     def dialect(self):
         return self._dialect
+
+    @property
+    def raw_pool(self):
+        return self._pool.raw_pool
 
     def acquire(self, *, timeout=None, reuse=False):
         return AcquireContext(functools.partial(self._acquire, timeout, reuse))
@@ -136,7 +141,7 @@ class GinoEngine:
             self._ctx.set(stack)
         if reuse and stack:
             return None, stack[-1]
-        raw_conn = await self._dialect.acquire_conn(timeout=timeout)
+        raw_conn = await self._pool.acquire(timeout=timeout)
         rv = GinoConnection(self._dialect, raw_conn, SAConnection(
             self._sa_engine, DBAPIConnection(self._dialect, raw_conn)))
         stack.append(rv)
@@ -150,10 +155,10 @@ class GinoEngine:
             pass
 
     async def _release(self, stack):
-        await self._dialect.release_conn(stack.pop().raw_connection)
+        await self._pool.release(stack.pop().raw_connection)
 
     async def close(self):
-        await self._dialect.close_pool()
+        await self._pool.close()
 
     async def all(self, clause, *multiparams, **params):
         async with self.acquire(reuse=True) as conn:

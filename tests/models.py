@@ -60,4 +60,4 @@ class Friendship(db.Model):
 
 def qsize(engine):
     # noinspection PyProtectedMember
-    return engine._dialect._pool._queue.qsize()
+    return engine.raw_pool._queue.qsize()
