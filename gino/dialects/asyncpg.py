@@ -1,5 +1,6 @@
 import inspect
 import itertools
+import time
 import weakref
 
 import asyncpg
@@ -139,8 +140,8 @@ class Cursor:
 
 
 class DBAPICursor:
-    def __init__(self, apg_conn):
-        self._conn = apg_conn
+    def __init__(self, dbapi_conn):
+        self._conn = dbapi_conn
         self._attributes = None
         self._status = None
 
@@ -151,7 +152,14 @@ class DBAPICursor:
         pass
 
     async def prepare(self, query, timeout):
-        prepared = await self._conn.prepare(query, timeout=timeout)
+        if timeout is None:
+            conn = await self._conn.acquire(timeout=timeout)
+        else:
+            before = time.monotonic()
+            conn = await self._conn.acquire(timeout=timeout)
+            after = time.monotonic()
+            timeout -= after - before
+        prepared = await conn.prepare(query, timeout=timeout)
         try:
             self._attributes = prepared.get_attributes()
         except TypeError:  # asyncpg <= 0.12.0
@@ -159,7 +167,14 @@ class DBAPICursor:
         return prepared
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
-        _protocol = getattr(self._conn, '_protocol')
+        if timeout is None:
+            conn = await self._conn.acquire(timeout=timeout)
+        else:
+            before = time.monotonic()
+            conn = await self._conn.acquire(timeout=timeout)
+            after = time.monotonic()
+            timeout -= after - before
+        _protocol = getattr(conn, '_protocol')
         timeout = getattr(_protocol, '_get_timeout')(timeout)
 
         def executor(state, timeout_):
@@ -169,8 +184,8 @@ class DBAPICursor:
                 return _protocol.bind_execute(state, args, '', limit, True,
                                               timeout_)
 
-        with getattr(self._conn, '_stmt_exclusive_section'):
-            result, stmt = await getattr(self._conn, '_do_execute')(
+        with getattr(conn, '_stmt_exclusive_section'):
+            result, stmt = await getattr(conn, '_do_execute')(
                 query, executor, timeout)
             try:
                 self._attributes = getattr(stmt, '_get_attributes')()
@@ -229,14 +244,16 @@ class ResultProxy:
 
 
 class Pool:
-    def __init__(self, url, **kwargs):
+    def __init__(self, url, loop, **kwargs):
         self._url = url
+        self._loop = loop
         self._kwargs = kwargs
         self._pool = None
 
     async def _init(self):
         args = self._kwargs.copy()
         args.update(
+            loop=self._loop,
             host=self._url.host,
             port=self._url.port,
             user=self._url.username,
@@ -297,17 +314,18 @@ class AsyncpgDialect(PGDialect):
         *[inspect.getfullargspec(f).kwonlydefaults.keys() for f in
           [asyncpg.create_pool, asyncpg.connect]]))
 
-    def __init__(self, loop, *args, **kwargs):
-        self._pool_kwargs = dict(loop=loop)
+    def __init__(self, *args, **kwargs):
+        self._pool_kwargs = {}
         for k in self.init_kwargs:
             if k in kwargs:
                 self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._sa_conn = SAConnection(SAEngine(self),
-                                     DBAPIConnection(self, None))
+        self._sa_conn = SAConnection(
+            SAEngine(self), DBAPIConnection(self.cursor_cls))
 
-    async def init_pool(self, url):
-        return await Pool(url, init=self.on_connect(), **self._pool_kwargs)
+    async def init_pool(self, url, loop):
+        return await Pool(url, loop, init=self.on_connect(),
+                          **self._pool_kwargs)
 
     def compile(self, elem, *multiparams, **params):
         context = self._sa_conn.execute(elem, *multiparams, **params).context

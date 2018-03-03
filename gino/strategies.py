@@ -17,14 +17,14 @@ async def create_engine(name_or_url, loop=None, **kwargs):
 
     pop_kwarg = kwargs.pop
 
-    dialect_args = dict(loop=loop)
+    dialect_args = {}
     # consume dialect arguments from kwargs
     for k in util.get_cls_kwargs(dialect_cls).union(
             getattr(dialect_cls, 'init_kwargs', set())):
         if k in kwargs:
             dialect_args[k] = pop_kwarg(k)
     dialect = dialect_cls(**dialect_args)
-    pool = await dialect.init_pool(u)
+    pool = await dialect.init_pool(u, loop)
 
     engine_args = dict(loop=loop)
     for k in util.get_cls_kwargs(GinoEngine):

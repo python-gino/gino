@@ -1,9 +1,13 @@
+import asyncio
 import collections
 import functools
 import sys
+import time
 
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
+
+from .transaction import GinoTransaction
 
 
 def _get_context_var():
@@ -41,18 +45,112 @@ def _get_context_var():
     return ContextVar
 
 
-class DBAPIConnection:
+class BaseDBAPIConnection:
     _reset_agent = None
 
-    def __init__(self, dialect, raw_conn):
-        self._dialect = dialect
-        self._raw_conn = raw_conn
-
-    def cursor(self):
-        return self._dialect.cursor_cls(self._raw_conn)
+    def __init__(self, stack):
+        self._stack = [] if stack is None else stack
+        self._in_stack = False
+        self.gino_conn = None
 
     def commit(self):
         pass
+
+    def cursor(self):
+        raise NotImplementedError
+
+    @property
+    def root(self):
+        raise NotImplementedError
+
+    @property
+    def raw_connection(self):
+        raise NotImplementedError
+
+    async def acquire(self, *, timeout=None):
+        raise NotImplementedError
+
+    async def release(self):
+        raise NotImplementedError
+
+    def push(self):
+        self._stack.append(self)
+        self._in_stack = True
+
+    def pop(self):
+        if self._in_stack:
+            assert self._stack[-1] is self
+            self._stack.pop()
+            self._in_stack = False
+            return True
+        return False
+
+
+class DBAPIConnection(BaseDBAPIConnection):
+    def __init__(self, cursor_cls, stack=None, pool=None):
+        super().__init__(stack)
+        self._cursor_cls = cursor_cls
+        self._pool = pool
+        self._conn = None
+        self._lock = asyncio.Lock()
+
+    def cursor(self):
+        return self._cursor_cls(self)
+
+    @property
+    def root(self):
+        return self
+
+    @property
+    def raw_connection(self):
+        return self._conn
+
+    async def acquire(self, *, timeout=None):
+        try:
+            if timeout is None:
+                await self._lock.acquire()
+            else:
+                before = time.monotonic()
+                await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
+                after = time.monotonic()
+                timeout -= after - before
+            if self._conn is None:
+                self._conn = await self._pool.acquire(timeout=timeout)
+            return self._conn
+        finally:
+            self._lock.release()
+
+    async def release(self):
+        if not self.pop():
+            return False
+        conn, self._conn = self._conn, None
+        if conn is None:
+            return False
+        await self._pool.release(conn)
+        return True
+
+
+class ReusingDBAPIConnection(BaseDBAPIConnection):
+    def __init__(self, stack):
+        super().__init__(stack)
+        self._root = stack[-1].root
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def raw_connection(self):
+        return self._root.raw_connection
+
+    def cursor(self):
+        return self._root.cursor()
+
+    async def acquire(self, *, timeout=None):
+        return await self._root.acquire(timeout=timeout)
+
+    async def release(self):
+        self.pop()
 
 
 # noinspection PyAbstractClass
@@ -130,32 +228,35 @@ class GinoEngine:
     def raw_pool(self):
         return self._pool.raw_pool
 
-    def acquire(self, *, timeout=None, reuse=False):
-        return AcquireContext(functools.partial(self._acquire, timeout, reuse))
+    def acquire(self, *, timeout=None, reuse=False, lazy=False):
+        return AcquireContext(
+            functools.partial(self._acquire, timeout, reuse, lazy))
 
-    async def _acquire(self, timeout, reuse):
+    async def _acquire(self, timeout, reuse, lazy):
         try:
             stack = self._ctx.get()
         except LookupError:
             stack = collections.deque()
             self._ctx.set(stack)
         if reuse and stack:
-            return None, stack[-1]
-        raw_conn = await self._pool.acquire(timeout=timeout)
-        rv = GinoConnection(self._dialect, raw_conn, SAConnection(
-            self._sa_engine, DBAPIConnection(self._dialect, raw_conn)))
-        stack.append(rv)
-        return functools.partial(self._release, stack), rv
+            dbapi_conn = ReusingDBAPIConnection(stack)
+        else:
+            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls,
+                                         stack, self._pool)
+        rv = GinoConnection(self._dialect,
+                            SAConnection(self._sa_engine, dbapi_conn))
+        dbapi_conn.gino_conn = rv
+        if not lazy:
+            await dbapi_conn.acquire(timeout=timeout)
+        dbapi_conn.push()
+        return dbapi_conn.release, rv
 
     @property
     def current_connection(self):
         try:
-            return self._ctx.get()[-1]
+            return self._ctx.get()[-1].gino_conn
         except (LookupError, IndexError):
             pass
-
-    async def _release(self, stack):
-        await self._pool.release(stack.pop().raw_connection)
 
     async def close(self):
         await self._pool.close()
@@ -191,92 +292,27 @@ class GinoEngine:
             await getattr(conn, '_run_visitor')(*args, **kwargs)
 
 
-class _Break(Exception):
-    def __init__(self, tx, commit):
-        super().__init__()
-        self.tx = tx
-        self.commit = commit
-
-
-class GinoTransaction:
-    def __init__(self, conn, args, kwargs):
-        self._conn = conn
-        self._args = args
-        self._kwargs = kwargs
-        self._tx = None
-        self._managed = None
-
-    async def _begin(self):
-        self._tx = self._conn.dialect.transaction(self._conn.raw_connection,
-                                                  self._args, self._kwargs)
-        await self._tx.begin()
-        return self
-
-    @property
-    def connection(self):
-        return self._conn
-
-    @property
-    def raw_transaction(self):
-        return self._tx.raw_transaction
-
-    def raise_commit(self):
-        raise _Break(self, True)
-
-    async def commit(self):
-        if self._managed:
-            self.raise_commit()
-        else:
-            await self._tx.commit()
-
-    def raise_rollback(self):
-        raise _Break(self, False)
-
-    async def rollback(self):
-        if self._managed:
-            self.raise_rollback()
-        else:
-            await self._tx.rollback()
-
-    def __await__(self):
-        assert self._managed is None
-        self._managed = False
-        return self._begin().__await__()
-
-    async def __aenter__(self):
-        assert self._managed is None
-        self._managed = True
-        await self._begin()
-        return self
-
-    async def __aexit__(self, ex_type, ex, ex_tb):
-        try:
-            is_break = ex_type is _Break
-            if is_break and ex.commit:
-                ex_type = None
-            if ex_type is None:
-                await self._tx.commit()
-            else:
-                await self._tx.rollback()
-        except Exception:
-            await self._tx.rollback()
-            raise
-        if is_break and ex.tx is self:
-            return True
-
-
 class GinoConnection:
     # noinspection PyProtectedMember
     schema_for_object = schema._schema_getter(None)
 
-    def __init__(self, dialect, raw_conn, sa_conn):
+    def __init__(self, dialect, sa_conn):
         self._dialect = dialect
-        self._raw_conn = raw_conn
         self._sa_conn = sa_conn
 
     @property
+    def _dbapi_conn(self):
+        return self._sa_conn.connection
+
+    @property
     def raw_connection(self):
-        return self._raw_conn
+        return self._dbapi_conn.raw_connection
+
+    async def get_raw_connection(self, *, timeout=None):
+        return await self._dbapi_conn.acquire(timeout=timeout)
+
+    async def release(self):
+        await self._dbapi_conn.release()
 
     @property
     def dialect(self):
@@ -316,7 +352,7 @@ class GinoConnection:
         return result.iterate()
 
     def execution_options(self, **opt):
-        return GinoConnection(self._dialect, self._raw_conn,
+        return GinoConnection(self._dialect,
                               self._sa_conn.execution_options(**opt))
 
     async def _run_visitor(self, visitorcallable, element, **kwargs):

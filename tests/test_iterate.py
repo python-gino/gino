@@ -67,6 +67,9 @@ async def test_basic(engine, names):
         result = set()
         async for u in tx.connection.iterate(User.query):
             result.add(u.nickname)
+        async for u in tx.connection.execution_options(
+                timeout=1).iterate(User.query):
+            result.add(u.nickname)
         assert names == result
 
         result = set()

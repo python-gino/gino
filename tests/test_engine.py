@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -44,7 +45,9 @@ async def test_reuse(engine):
         assert qsize(engine) == init_size - 1
         async with engine.acquire(reuse=True) as conn2:
             assert qsize(engine) == init_size - 1
-            assert conn1 is conn2
+            assert conn1.raw_connection is conn2.raw_connection
+            assert await engine.scalar('select now()')
+            assert qsize(engine) == init_size - 1
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
 
@@ -52,7 +55,7 @@ async def test_reuse(engine):
         assert qsize(engine) == init_size - 1
         async with engine.acquire(reuse=True) as conn2:
             assert qsize(engine) == init_size - 1
-            assert conn1 is conn2
+            assert conn1.raw_connection is conn2.raw_connection
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
 
@@ -60,7 +63,7 @@ async def test_reuse(engine):
         assert qsize(engine) == init_size - 1
         async with engine.acquire(reuse=False) as conn2:
             assert qsize(engine) == init_size - 2
-            assert conn1 is not conn2
+            assert conn1.raw_connection is not conn2.raw_connection
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
 
@@ -68,7 +71,7 @@ async def test_reuse(engine):
         assert qsize(engine) == init_size - 1
         async with engine.acquire(reuse=False) as conn2:
             assert qsize(engine) == init_size - 2
-            assert conn1 is not conn2
+            assert conn1.raw_connection is not conn2.raw_connection
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
 
@@ -76,13 +79,13 @@ async def test_reuse(engine):
         assert qsize(engine) == init_size - 1
         async with engine.acquire(reuse=True) as conn2:
             assert qsize(engine) == init_size - 1
-            assert conn1 is conn2
+            assert conn1.raw_connection is conn2.raw_connection
             async with engine.acquire(reuse=False) as conn3:
                 assert qsize(engine) == init_size - 2
-                assert conn1 is not conn3
+                assert conn1.raw_connection is not conn3.raw_connection
                 async with engine.acquire(reuse=True) as conn4:
                     assert qsize(engine) == init_size - 2
-                    assert conn3 is conn4
+                    assert conn3.raw_connection is conn4.raw_connection
                 assert qsize(engine) == init_size - 2
             assert qsize(engine) == init_size - 1
         assert qsize(engine) == init_size - 1
@@ -206,3 +209,108 @@ async def test_async_metadata():
     assert isinstance((await db_.scalar('select now()')), datetime)
     await db_.pop_bind().close()
     assert db.bind is None
+
+
+# noinspection PyUnreachableCode
+async def test_acquire_timeout():
+    import gino
+    e = await gino.create_engine(PG_URL, min_size=1, max_size=1)
+    async with e.acquire():
+        with pytest.raises(asyncio.TimeoutError):
+            async with e.acquire(timeout=0.1):
+                assert False, 'Should not reach here'
+
+    loop = asyncio.get_event_loop()
+    f1 = loop.create_future()
+
+    async def first():
+        async with e.acquire() as conn:
+            f1.set_result(None)
+            await asyncio.sleep(0.2)
+            # noinspection PyProtectedMember
+            return conn.raw_connection._con
+
+    async def second():
+        async with e.acquire(lazy=True) as conn:
+            conn = conn.execution_options(timeout=0.1)
+            with pytest.raises(asyncio.TimeoutError):
+                assert await conn.scalar('select 1')
+
+    async def third():
+        async with e.acquire(reuse=True, timeout=0.4) as conn:
+            # noinspection PyProtectedMember
+            return conn.raw_connection._con
+
+    t1 = loop.create_task(first())
+    await f1
+    loop.create_task(second())
+    t3 = loop.create_task(third())
+    assert await t1 is await t3
+
+
+# noinspection PyProtectedMember
+async def test_lazy(mocker):
+    import gino
+    engine = await gino.create_engine(PG_URL, min_size=1, max_size=1)
+    init_size = qsize(engine)
+    async with engine.acquire(lazy=True):
+        assert qsize(engine) == init_size
+        assert len(engine._ctx.get()) == 1
+    assert len(engine._ctx.get()) == 0
+    assert qsize(engine) == init_size
+    async with engine.acquire(lazy=True):
+        assert qsize(engine) == init_size
+        assert len(engine._ctx.get()) == 1
+        assert await engine.scalar('select 1')
+        assert qsize(engine) == init_size - 1
+        assert len(engine._ctx.get()) == 1
+    assert len(engine._ctx.get()) == 0
+    assert qsize(engine) == init_size
+
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+
+    async def block():
+        async with engine.acquire():
+            fut.set_result(None)
+            await asyncio.sleep(0.3)
+
+    blocker = loop.create_task(block())
+    await fut
+    init_size_2 = qsize(engine)
+    ctx = engine.acquire(lazy=True)
+    conn = await ctx.__aenter__()
+    t1 = loop.create_task(
+        conn.execution_options(timeout=0.1).scalar('select 1'))
+    t2 = loop.create_task(ctx.__aexit__(None, None, None))
+    with pytest.raises(asyncio.TimeoutError):
+        await t1
+    assert not await t2
+    assert qsize(engine) == init_size_2
+    await blocker
+    assert qsize(engine) == init_size
+
+    fut = loop.create_future()
+    blocker = loop.create_task(block())
+    await fut
+    init_size_2 = qsize(engine)
+
+    async def acquire_failed(*args, **kwargs):
+        await asyncio.sleep(0.1)
+        raise ValueError()
+
+    mocker.patch('asyncpg.pool.Pool.acquire', new=acquire_failed)
+    ctx = engine.acquire(lazy=True)
+    conn = await ctx.__aenter__()
+    t1 = loop.create_task(conn.scalar('select 1'))
+    t2 = loop.create_task(conn.release())
+    with pytest.raises(ValueError):
+        await t1
+    assert not await t2
+    assert qsize(engine) == init_size_2
+
+    await conn.release()
+    assert qsize(engine) == init_size_2
+
+    await blocker
+    assert qsize(engine) == init_size
