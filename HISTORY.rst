@@ -86,10 +86,6 @@ Obviously ``Engine`` doesn't provide ``asyncpg.Pool`` methods directly any
 longer, but you can get the underlying ``asyncpg.Pool`` object through
 ``engine.raw_pool`` property.
 
-``Engine`` provides similar ``acquire`` method for borrowing a connection from
-the pool, but it can be used only through ``async with`` grammar. Therefore,
-there is no ``release`` method.
-
 ``GinoPool.get_current_connection`` is now changed to ``current_connection``
 property on ``Engine`` instances to support multiple engines.
 
@@ -99,7 +95,7 @@ on ``Engine`` instance is available.
 ``GinoPool().metadata`` is gone, ``dialect`` is still available.
 
 These methods exist both in 0.5 ``GinoPool`` and 0.6 ``Engine``: ``close``,
-``all``, ``first``, ``scalar``, ``status``.
+``acquire``, ``release``, ``all``, ``first``, ``scalar``, ``status``.
 
 3. GinoConnection
 """""""""""""""""

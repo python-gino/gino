@@ -16,10 +16,8 @@ def _get_context_var():
         from contextvars import ContextVar
     except ImportError:
         try:
-            # noinspection PyPackageRequirements,PyUnresolvedReferences
-            from aiocontextvars import ContextVar, enable_inherit
-
-            enable_inherit()
+            # noinspection PyPackageRequirements
+            from aiocontextvars import ContextVar
         except ImportError:
             class ContextVar:
                 def __init__(self, name, default=None):
@@ -47,65 +45,52 @@ def _get_context_var():
 
 class BaseDBAPIConnection:
     _reset_agent = None
+    gino_conn = None
 
-    def __init__(self, stack):
-        self._stack = [] if stack is None else stack
-        self._in_stack = False
-        self.gino_conn = None
+    def __init__(self, cursor_cls):
+        self._cursor_cls = cursor_cls
+        self._closed = False
 
     def commit(self):
         pass
 
     def cursor(self):
-        raise NotImplementedError
-
-    @property
-    def root(self):
-        raise NotImplementedError
+        return self._cursor_cls(self)
 
     @property
     def raw_connection(self):
         raise NotImplementedError
 
     async def acquire(self, *, timeout=None):
+        if self._closed:
+            raise ValueError(
+                'This connection is already released permanently.')
+        return await self._acquire(timeout)
+
+    async def _acquire(self, timeout):
         raise NotImplementedError
 
-    async def release(self):
+    async def release(self, permanent):
+        if permanent:
+            self._closed = True
+        return await self._release()
+
+    async def _release(self):
         raise NotImplementedError
-
-    def push(self):
-        self._stack.append(self)
-        self._in_stack = True
-
-    def pop(self):
-        if self._in_stack:
-            assert self._stack[-1] is self
-            self._stack.pop()
-            self._in_stack = False
-            return True
-        return False
 
 
 class DBAPIConnection(BaseDBAPIConnection):
-    def __init__(self, cursor_cls, stack=None, pool=None):
-        super().__init__(stack)
-        self._cursor_cls = cursor_cls
+    def __init__(self, cursor_cls, pool=None):
+        super().__init__(cursor_cls)
         self._pool = pool
         self._conn = None
         self._lock = asyncio.Lock()
-
-    def cursor(self):
-        return self._cursor_cls(self)
-
-    @property
-    def root(self):
-        return self
 
     @property
     def raw_connection(self):
         return self._conn
 
-    async def acquire(self, *, timeout=None):
+    async def _acquire(self, timeout):
         try:
             if timeout is None:
                 await self._lock.acquire()
@@ -120,9 +105,7 @@ class DBAPIConnection(BaseDBAPIConnection):
         finally:
             self._lock.release()
 
-    async def release(self):
-        if not self.pop():
-            return False
+    async def _release(self):
         conn, self._conn = self._conn, None
         if conn is None:
             return False
@@ -131,26 +114,19 @@ class DBAPIConnection(BaseDBAPIConnection):
 
 
 class ReusingDBAPIConnection(BaseDBAPIConnection):
-    def __init__(self, stack):
-        super().__init__(stack)
-        self._root = stack[-1].root
-
-    @property
-    def root(self):
-        return self._root
+    def __init__(self, cursor_cls, root):
+        super().__init__(cursor_cls)
+        self._root = root
 
     @property
     def raw_connection(self):
         return self._root.raw_connection
 
-    def cursor(self):
-        return self._root.cursor()
-
-    async def acquire(self, *, timeout=None):
+    async def _acquire(self, timeout):
         return await self._root.acquire(timeout=timeout)
 
-    async def release(self):
-        self.pop()
+    async def _release(self):
+        pass
 
 
 # noinspection PyAbstractClass
@@ -167,20 +143,22 @@ class SAEngine(Engine):
 
 
 class AcquireContext:
-    __slots__ = ['_method']
+    __slots__ = ['_acquire', '_release']
 
-    def __init__(self, acquire):
-        self._method = acquire
+    def __init__(self, acquire, release):
+        self._acquire = acquire
+        self._release = release
 
     async def __aenter__(self):
-        method, self._method = self._method, None
-        self._method, rv = await method()
+        rv = await self._acquire()
+        self._release = functools.partial(self._release, rv)
         return rv
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        method, self._method = self._method, None
-        if method is not None:
-            await method()
+        await self._release()
+
+    def __await__(self):
+        return self._acquire().__await__()
 
 
 class TransactionContext:
@@ -228,28 +206,34 @@ class GinoEngine:
     def raw_pool(self):
         return self._pool.raw_pool
 
-    def acquire(self, *, timeout=None, reuse=False, lazy=False):
-        return AcquireContext(
-            functools.partial(self._acquire, timeout, reuse, lazy))
+    def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
+        return AcquireContext(functools.partial(
+            self._acquire, timeout, reuse, lazy, reusable), self.release)
 
-    async def _acquire(self, timeout, reuse, lazy):
+    async def _acquire(self, timeout, reuse, lazy, reusable):
         try:
             stack = self._ctx.get()
         except LookupError:
             stack = collections.deque()
             self._ctx.set(stack)
         if reuse and stack:
-            dbapi_conn = ReusingDBAPIConnection(stack)
+            dbapi_conn = ReusingDBAPIConnection(self._dialect.cursor_cls,
+                                                stack[-1])
+            reusable = False
         else:
-            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls,
-                                         stack, self._pool)
+            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls, self._pool)
         rv = GinoConnection(self._dialect,
-                            SAConnection(self._sa_engine, dbapi_conn))
+                            SAConnection(self._sa_engine, dbapi_conn),
+                            stack if reusable else None)
         dbapi_conn.gino_conn = rv
         if not lazy:
             await dbapi_conn.acquire(timeout=timeout)
-        dbapi_conn.push()
-        return dbapi_conn.release, rv
+        if reusable:
+            stack.append(dbapi_conn)
+        return rv
+
+    async def release(self, connection):
+        await connection.release(permanent=True)
 
     @property
     def current_connection(self):
@@ -296,9 +280,10 @@ class GinoConnection:
     # noinspection PyProtectedMember
     schema_for_object = schema._schema_getter(None)
 
-    def __init__(self, dialect, sa_conn):
+    def __init__(self, dialect, sa_conn, stack=None):
         self._dialect = dialect
         self._sa_conn = sa_conn
+        self._stack = stack
 
     @property
     def _dbapi_conn(self):
@@ -311,8 +296,20 @@ class GinoConnection:
     async def get_raw_connection(self, *, timeout=None):
         return await self._dbapi_conn.acquire(timeout=timeout)
 
-    async def release(self):
-        await self._dbapi_conn.release()
+    async def release(self, *, permanent=False):
+        if permanent and self._stack is not None:
+            for i in range(len(self._stack)):
+                if self._stack[-1].gino_conn is self:
+                    dbapi_conn = self._stack.pop()
+                    self._stack.rotate(-i)
+                    await dbapi_conn.release(True)
+                    break
+                else:
+                    self._stack.rotate()
+            else:
+                raise ValueError('This connection is already released.')
+        else:
+            await self._dbapi_conn.release(permanent)
 
     @property
     def dialect(self):

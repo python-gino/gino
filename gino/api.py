@@ -148,5 +148,8 @@ class Gino(sa.MetaData):
     def acquire(self, *args, **kwargs):
         return self.bind.acquire(*args, **kwargs)
 
+    async def release(self, connection):
+        return await self.bind.release(connection)
+
     def transaction(self, *args, **kwargs):
         return self.bind.transaction(*args, **kwargs)

@@ -314,3 +314,69 @@ async def test_lazy(mocker):
 
     await blocker
     assert qsize(engine) == init_size
+
+
+async def test_release(engine):
+    init_size = qsize(engine)
+    async with engine.acquire() as conn:
+        assert await conn.scalar('select 8') == 8
+        await conn.release()
+        assert await conn.scalar('select 8') == 8
+        await conn.release()
+    with pytest.raises(ValueError, match='released permanently'):
+        await conn.scalar('select 8')
+    with pytest.raises(ValueError, match='already released'):
+        await conn.release(permanent=True)
+
+    conn = await engine.acquire()
+    assert await conn.scalar('select 8') == 8
+    await conn.release()
+    assert await conn.scalar('select 8') == 8
+    await conn.release(permanent=True)
+    with pytest.raises(ValueError, match='released permanently'):
+        await conn.scalar('select 8')
+
+    conn1 = await engine.acquire()
+    conn2 = await engine.acquire(reuse=True)
+    conn3 = await engine.acquire()
+    conn4 = await engine.acquire(reuse=True)
+    assert await conn1.scalar('select 8') == 8
+    assert await conn2.scalar('select 8') == 8
+    assert await conn3.scalar('select 8') == 8
+    assert await conn4.scalar('select 8') == 8
+
+    await conn1.release()
+    assert await conn2.scalar('select 8') == 8
+
+    await conn2.release()
+    assert await conn2.scalar('select 8') == 8
+
+    await conn1.release(permanent=True)
+    with pytest.raises(ValueError, match='released permanently'):
+        await conn2.scalar('select 8')
+    assert await conn4.scalar('select 8') == 8
+
+    await conn4.release(permanent=True)
+    with pytest.raises(ValueError, match='released permanently'):
+        await conn4.scalar('select 8')
+
+    assert await conn3.scalar('select 8') == 8
+    await conn3.release()
+    assert await conn3.scalar('select 8') == 8
+    assert init_size - 1 == qsize(engine)
+    await conn3.release()
+    assert init_size == qsize(engine)
+    await conn3.release(permanent=True)
+    assert init_size == qsize(engine)
+
+    conn1 = await engine.acquire()
+    conn2 = await engine.acquire()
+    conn3 = await engine.acquire()
+    assert engine.current_connection is conn3
+    await conn2.release(permanent=True)
+    assert engine.current_connection is conn3
+    await conn1.release(permanent=True)
+    assert engine.current_connection is conn3
+    await conn3.release(permanent=True)
+    assert engine.current_connection is None
+    assert init_size == qsize(engine)
