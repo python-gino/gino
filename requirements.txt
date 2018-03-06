@@ -1,2 +1,2 @@
 asyncpg==0.15.0
-SQLAlchemy==1.2.4
+SQLAlchemy==1.2.5
