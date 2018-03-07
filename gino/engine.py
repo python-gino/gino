@@ -351,6 +351,13 @@ class GinoEngine:
         return TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
                                   (args, kwargs))
 
+    def iterate(self, clause, *multiparams, **params):
+        connection = self.current_connection
+        if connection is None:
+            raise ValueError(
+                'No Connection in context, please provide one')
+        return connection.iterate(clause, *multiparams, **params)
+
     def update_execution_options(self, **opt):
         self._sa_engine.update_execution_options(**opt)
 

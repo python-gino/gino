@@ -15,42 +15,43 @@ We created a new Python package aiocontextvars_ from previous ``local.py``. If
 you made use of the task local features, you should install this package.
 
 Previous ``gino.enable_task_local`` and ``gino.disable_task_local`` are
-replaced by ``aiocontextvars.enable_inherit`` and
-``aiocontextvars.disable_inherit``. However in GINO 0.5 they controls the whole
-task local feature switch, while aiocontextvars_ by default offers task local
-even without ``enable_inherit``, which controls whether the local storage
-should be passed between chained tasks. When enabled, it behaves the same as
-enabled in 0.5, but you cannot completely turn off the task local feature while
-aiocontextvars_ is installed.
+replaced by :meth:`aiocontextvars.enable_inherit
+<aiocontextvars.inherit.enable_inherit>` and
+:meth:`aiocontextvars.disable_inherit <aiocontextvars.inherit.disable_inherit>`.
+However in GINO 0.5 they controls the whole task local feature switch, while
+aiocontextvars_ by default offers task local even without
+:meth:`~aiocontextvars.inherit.enable_inherit`, which controls whether the
+local storage should be passed between chained tasks. When enabled, it behaves
+the same as enabled in 0.5, but you cannot completely turn off the task local
+feature while aiocontextvars_ is installed.
 
 There is no ``gino.get_local`` and ``gino.reset_local`` relevant in
-aiocontextvars_. The similar thing is ``aiocontextvars.ContextVar`` instance
-through its ``get``, ``set`` and ``delete`` methods.
+aiocontextvars_. The similar thing is :class:`aiocontextvars.ContextVar
+<aiocontextvars.var.ContextVar>` instance through its
+:meth:`~aiocontextvars.var.ContextVar.get`,
+:meth:`~aiocontextvars.var.ContextVar.set` and
+:meth:`~aiocontextvars.var.ContextVar.delete` methods.
 
-Previous ``gino.is_local_root`` is now
-``not aiocontextvars.Context.current().inherited``.
+Previous ``gino.is_local_root`` is now :attr:`not
+aiocontextvars.Context.current().inherited
+<aiocontextvars.context.Context.inherited>`.
 
-2. Engine
-"""""""""
+2. GinoEngine
+"""""""""""""
 
-GINO 0.6 hides ``asyncpg.Pool`` behind the new SQLAlchemy-alike
-``gino.Engine``. Instead of doing this in 0.5:
-
-.. code-block:: python
+GINO 0.6 hides :class:`asyncpg.Pool <asyncpg.pool.Pool>` behind the new
+SQLAlchemy-alike :class:`gino.GinoEngine <gino.engine.GinoEngine>`. Instead of
+doing this in 0.5::
 
     async with db.create_pool('postgresql://...') as pool:
         # your code here
 
-You should change it to this in 0.6:
-
-.. code-block:: python
+You should change it to this in 0.6::
 
     async with db.with_bind('postgresql://...') as engine:
         # your code here
 
-This equals to:
-
-.. code-block:: python
+This equals to::
 
     engine = await gino.create_engine('postgresql://...')
     db.bind = engine
@@ -60,9 +61,7 @@ This equals to:
         db.bind = None
         await engine.close()
 
-Or:
-
-.. code-block:: python
+Or::
 
     engine = await db.set_bind('postgresql://...')
     try:
@@ -70,9 +69,7 @@ Or:
     finally:
         await db.pop_bind().close()
 
-Or even this:
-
-.. code-block:: python
+Or even this::
 
     db = await gino.Gino('postgresql://...')
     try:
@@ -82,54 +79,77 @@ Or even this:
 
 Choose whichever suits you the best.
 
-Obviously ``Engine`` doesn't provide ``asyncpg.Pool`` methods directly any
-longer, but you can get the underlying ``asyncpg.Pool`` object through
-``engine.raw_pool`` property.
+Obviously :class:`~gino.engine.GinoEngine` doesn't provide :class:`asyncpg.Pool
+<asyncpg.pool.Pool>` methods directly any longer, but you can get the
+underlying :class:`asyncpg.Pool <asyncpg.pool.Pool>` object through
+:attr:`engine.raw_pool <gino.engine.GinoEngine.raw_pool>` property.
 
-``GinoPool.get_current_connection`` is now changed to ``current_connection``
-property on ``Engine`` instances to support multiple engines.
+``GinoPool.get_current_connection`` is now changed to
+:attr:`~gino.engine.GinoEngine.current_connection` property on
+:class:`~gino.engine.GinoEngine` instances to support multiple engines.
 
-``GinoPool().execution_option`` is gone, instead ``update_execution_options``
-on ``Engine`` instance is available.
+``GinoPool().execution_option`` is gone, instead
+:meth:`~gino.engine.GinoEngine.update_execution_options` on
+:class:`~gino.engine.GinoEngine` instance is available.
 
-``GinoPool().metadata`` is gone, ``dialect`` is still available.
+``GinoPool().metadata`` is gone, :attr:`~gino.engine.GinoEngine.dialect` is
+still available.
 
-These methods exist both in 0.5 ``GinoPool`` and 0.6 ``Engine``: ``close``,
-``acquire``, ``release``, ``all``, ``first``, ``scalar``, ``status``.
+These methods exist both in 0.5 ``GinoPool`` and 0.6
+:class:`~gino.engine.GinoEngine`:
+:meth:`~gino.engine.GinoEngine.close`,
+:meth:`~gino.engine.GinoEngine.acquire`,
+:meth:`~gino.engine.GinoEngine.release`,
+:meth:`~gino.engine.GinoEngine.all`,
+:meth:`~gino.engine.GinoEngine.first`,
+:meth:`~gino.engine.GinoEngine.scalar`,
+:meth:`~gino.engine.GinoEngine.status`.
 
 3. GinoConnection
 """""""""""""""""
 
-Similarly, ``GinoConnection`` in 0.6 is no longer a subclass of
-``asyncpg.Connection``, instead it has a ``asyncpg.Connection`` instance,
-accessable through ``GinoConnection().raw_connection`` property.
+Similarly, :class:`~gino.engine.GinoConnection` in 0.6 is no longer a subclass
+of :class:`asyncpg.Connection <asyncpg.connection.Connection>`, instead it has
+a :class:`asyncpg.Connection <asyncpg.connection.Connection>` instance,
+accessible through :attr:`GinoConnection().raw_connection
+<gino.engine.GinoConnection.raw_connection>` property.
 
-``GinoConnection().metadata`` is deleted in 0.6, while ``dialect`` remained.
+``GinoConnection().metadata`` is deleted in 0.6, while
+:attr:`gino.engine.GinoConnection.dialect` remained.
 
-``GinoConnection().execution_options`` is changed from a mutable dict in 0.5 to
-a method returning a copy of current connection with the new options, the same
-as SQLAlchemy behavior.
+:meth:`GinoConnection().execution_options
+<gino.engine.GinoConnection.execution_options>` is changed from a mutable dict
+in 0.5 to a method returning a copy of current connection with the new options,
+the same as SQLAlchemy behavior.
 
-And ``all``, ``first``, ``scalar``, ``status``, ``iterate``, ``transaction``
-remained in 0.6.
+And :meth:`~gino.engine.GinoConnection.all`,
+:meth:`~gino.engine.GinoConnection.first`,
+:meth:`~gino.engine.GinoConnection.scalar`,
+:meth:`~gino.engine.GinoConnection.status`,
+:meth:`~gino.engine.GinoConnection.iterate`,
+:meth:`~gino.engine.GinoConnection.transaction` remained in 0.6.
 
 4. Query API
 """"""""""""
 
-All five query APIs ``all``, ``first``, ``scalar``, ``status``, ``iterate`` now
-accept the same parameters as SQLAlchemy ``execute``, meaning they accept raw
-SQL text, or multiple sets of parameters for "executemany". Please note, if the
-parameters are recognized as "executemany", none of the methods will return
-anything. Meanwhile, they no longer accept the parameter ``bind`` if they did.
-Just use the API on the ``Engine`` or ``GinoConnection`` object instead.
+All five query APIs :meth:`~gino.api.GinoExecutor.all`,
+:meth:`~gino.api.GinoExecutor.first`,
+:meth:`~gino.api.GinoExecutor.scalar`,
+:meth:`~gino.api.GinoExecutor.status`,
+:meth:`~gino.api.GinoExecutor.iterate` now accept the same parameters
+as SQLAlchemy :meth:`~sqlalchemy.engine.Connectable.execute`, meaning they
+accept raw SQL text, or multiple sets of parameters for "executemany". Please
+note, if the parameters are recognized as "executemany", none of the methods
+will return anything. Meanwhile, they no longer accept the parameter ``bind``
+if they did. Just use the API on the :class:`~gino.engine.GinoEngine` or
+:class:`~gino.engine.GinoConnection` object instead.
 
 5. Transaction
 """"""""""""""
 
-Transaction interface is rewritten. Now in 0.6, a ``GinoTransaction`` object is
-provided consistently from all 3 methods:
-
-.. code-block:: python
+Transaction interface is rewritten. Now in 0.6, a
+:class:`~gino.transaction.GinoTransaction` object is provided consistently from
+all 3 methods::
 
     async with db.transaction() as tx:
         # within transaction
@@ -141,9 +161,7 @@ provided consistently from all 3 methods:
         async with conn.transaction() as tx:
             # within transaction
 
-And different usage with ``await``:
-
-.. code-block:: python
+And different usage with ``await``::
 
     tx = await db.transaction()
     try:
@@ -153,10 +171,11 @@ And different usage with ``await``:
         await tx.rollback()
         raise
 
-The ``GinoConnection`` object is available at ``tx.connection``, while
+The :class:`~gino.engine.GinoConnection` object is available at
+:attr:`tx.connection <gino.transaction.GinoTransaction.connection>`, while
 underlying transaction object from database driver is available at
-``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
-object.
+:attr:`tx.raw_transaction <gino.transaction.GinoTransaction.raw_transaction>` -
+for asyncpg it is an :class:`asyncpg.transaction.Transaction` object.
 
 0.6.0 (TBD)
 ^^^^^^^^^^^^^^^^^^

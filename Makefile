@@ -66,8 +66,8 @@ coverage: ## check code coverage quickly with the default Python
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/gino.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -fo docs/ gino
-	sed -i.bak 's/gino package/API Reference/g' docs/gino.rst
+	sphinx-apidoc -efo docs/ gino
+	rm docs/modules.rst
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html

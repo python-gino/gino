@@ -87,10 +87,8 @@ Once you have a copy of the source, you can install it with:
 Declare Models
 --------------
 
-First of all, we'll need a ``Gino`` object, usually named as ``db`` as a global
-variable:
-
-.. code-block:: python
+First of all, we'll need a :class:`~gino.api.Gino` object, usually under the
+name of ``db`` as a global variable::
 
     from gino import Gino
 
@@ -100,11 +98,10 @@ variable:
 go through it.
 
 "Model" is a basic concept in GINO, it is a Python class inherited from
-``db.Model``. Each ``Model`` subclass maps to one table in the database, while
-each object of the class represents one row in the table. This must feel
-familiar if ORM is not a strange word to you. Now let's declare a model:
-
-.. code-block:: python
+:attr:`db.Model <gino.api.Gino.Model>`. Each :class:`~gino.declarative.Model`
+subclass maps to one table in the database, while each object of the class
+represents one row in the table. This must feel familiar if ORM is not a
+strange word to you. Now let's declare a model::
 
     class User(db.Model):
         __tablename__ = 'users'
@@ -114,12 +111,14 @@ familiar if ORM is not a strange word to you. Now let's declare a model:
 
 By declaring this ``User`` class, we are actually defining a database table
 named ``users``, with two columns ``id`` and ``nickname``. Note that the fixed
-``__tablename__`` property is required. GINO suggests singular for model
-names, and plural for table names. Each ``db.Column`` property defines one
-column for the table, where its first parameter indicates the column type in
-database, while the rest is for other column attributes or constraints. You can
-find a mapping of database types to ``db`` types `here <http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_
-in SQLAlchemy document.
+:attr:`~gino.declarative.Model.__tablename__` property is required. GINO
+suggests singular for model names, and plural for table names. Each
+:class:`db.Column <sqlalchemy.schema.Column>` property defines one column for
+the table, where its first parameter indicates the column type in database,
+while the rest is for other column attributes or constraints. You can find a
+mapping of database types to ``db`` types `here
+<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in SQLAlchemy
+document.
 
 .. note::
 
@@ -141,13 +140,11 @@ The declaration only defined the mapping, it does not create the actual table
 in the database. To do that, we need to get connected first. Let's create a
 PostgreSQL database for this tutorial:
 
-.. code-block:: shell
+.. code-block:: console
 
     $ createdb gino
 
-Then we tell our ``db`` object to connect to this database:
-
-.. code-block:: python
+Then we tell our ``db`` object to connect to this database::
 
     import asyncio
 
@@ -164,38 +161,35 @@ information about how to compose this database URL.
 
 .. note::
 
-    Under the hood ``set_bind()`` calls ``gino.create_engine()`` and bind the
-    engine to this ``db`` object. GINO engine is similar to SQLAlchemy engine,
-    but not identical, Because GINO engine is asynchronous, while the other is
-    not. Please refer to the API reference of GINO for more information.
+    Under the hood :meth:`~gino.api.Gino.set_bind` calls
+    :meth:`~gino.strategies.create_engine` and bind the engine to this ``db``
+    object. GINO engine is similar to SQLAlchemy engine, but not identical.
+    Because GINO engine is asynchronous, while the other is not. Please refer
+    to the API reference of GINO for more information.
 
 Now that we are connected, let's create the table in database (in the same
-``main()`` method):
-
-.. code-block:: python
+``main()`` method)::
 
     await db.gino.create_all()
 
-
 .. warning::
 
-    It is ``db.gino.create_all``, not ``db.create_all``, because ``db`` is
-    inherited from SQLAlchemy ``MetaData``, and ``db.create_all`` is from
+    It is :meth:`db.gino.create_all <gino.schema.GinoSchemaVisitor.create_all>`,
+    not :meth:`db.create_all <sqlalchemy.schema.MetaData.create_all>`, because
+    ``db`` is inherited from SQLAlchemy :class:`~sqlalchemy.schema.MetaData`,
+    and :meth:`db.create_all <sqlalchemy.schema.MetaData.create_all>` is from
     SQLAlchemy using non-asynchronous methods, which doesn't work with the
     bound GINO engine.
 
-    In practice ``create_all`` is usually not an ideal solution. To manage
-    database schema, tool like Alembic_ is recommended.
+    In practice :meth:`~gino.schema.GinoSchemaVisitor.create_all` is usually
+    not an ideal solution. To manage database schema, tool like Alembic_ is
+    recommended.
 
-If you want to explicitly disconnect from the database, you can do this:
-
-.. code-block:: python
+If you want to explicitly disconnect from the database, you can do this::
 
     await db.pop_bind().close()
 
-Let's review the code we have so far together in one piece before moving on:
-
-.. code-block:: python
+Let's review the code we have so far together in one piece before moving on::
 
     import asyncio
     from gino import Gino
@@ -234,9 +228,7 @@ Retrieve, Update or Delete model objects, also known as the CRUD operations.
 Create
 ^^^^^^
 
-Let's start by creating a ``User``:
-
-.. code-block:: python
+Let's start by creating a ``User``::
 
     user = await User.create(nickname='fantix')
     # This will cause GINO to execute this SQL with parameter 'fantix':
@@ -244,9 +236,7 @@ Let's start by creating a ``User``:
 
 As mentioned previously, ``user`` object represents the newly created row in
 the database. You can get the value of each columns by the declared column
-properties on the object:
-
-.. code-block:: python
+properties on the object::
 
     print(f'ID:       {user.id}')           # 1
     print(f'Nickname: {user.nickname}')     # fantix
@@ -256,27 +246,23 @@ Retrieve
 ^^^^^^^^
 
 To retrieve a model object from database by primary key, you can use the class
-method ``get`` on the model class. Now let's retrieve the same row:
-
-.. code-block:: python
+method :meth:`~gino.crud.CRUDModel.get` on the model class. Now let's retrieve
+the same row::
 
     user = await User.get(1)
     # SQL (parameter: 1):
     # SELECT users.id, users.nickname FROM users WHERE users.id = $1
 
-Normal SQL queries are done through a class property ``query``. For example,
-let's retrieve all ``User`` objects from database as a list:
-
-.. code-block:: python
+Normal SQL queries are done through a class property
+:attr:`~gino.crud.CRUDModel.query`. For example, let's retrieve all ``User``
+objects from database as a list::
 
     all_users = await db.all(User.query)
     # SQL:
     # SELECT users.id, users.nickname FROM users
 
-Alternatively, you can use the ``gino`` extension on ``query``. This has
-exactly the same effect as above:
-
-.. code-block:: python
+Alternatively, you can use the ``gino`` extension on
+:attr:`~gino.crud.CRUDModel.query. This has exactly the same effect as above::
 
     all_users = await User.query.gino.all()
     # SQL:
@@ -290,9 +276,7 @@ exactly the same effect as above:
     the asynchronous way, so that it is even not needed to import the ``db``
     reference for execution.
 
-Now let's add some filters. For example, find all users with ID lower than 10:
-
-.. code-block:: python
+Now let's add some filters. For example, find all users with ID lower than 10::
 
     founding_users = await User.query.where(User.id < 10).gino.all()
     # SQL (parameter: 10):
@@ -318,9 +302,7 @@ about writing queries, because the query object is exactly from SQLAlchemy core.
     also why GINO Is Not ORM.
 
 Sometimes we want to get only one object, for example getting the user by name
-when logging in. There's a shortcut for this scenario:
-
-.. code-block:: python
+when logging in. There's a shortcut for this scenario::
 
     user = await User.query.where(User.nickname == 'fantix').gino.first()
     # SQL (parameter: 'fantix'):
@@ -329,18 +311,15 @@ when logging in. There's a shortcut for this scenario:
 If there is no user named "fantix" in database, ``user`` will be ``None``.
 
 And sometimes we may want to get a single value from database, getting the name
-of user with ID 1 for example. Then we can use the ``select`` class method:
-
-.. code-block:: python
+of user with ID 1 for example. Then we can use the
+:meth:`~gino.crud.CRUDModel.select` class method::
 
     name = await User.select('nickname').where(User.id == 1).gino.scalar()
     # SQL (parameter: 1):
     # SELECT users.nickname FROM users WHERE users.id = $1
     print(name)  # fantix
 
-Or get the count of all users:
-
-.. code-block:: python
+Or get the count of all users::
 
     population = await db.func.count(User.id).gino.scalar()
     # SQL:
@@ -352,9 +331,7 @@ Update
 ^^^^^^
 
 Then let's try to make some modifications. In this example we'll mixin some
-retrieve operations we just tried.
-
-.. code-block:: python
+retrieve operations we just tried. ::
 
     # create a new user
     user = await User.create(nickname='fantix')
@@ -376,34 +353,38 @@ retrieve operations we just tried.
     print(name)  # daisy
     assert name == user.nickname  # they are both 'daisy' after the update
 
-So ``update`` is the first GINO method we met so far on model object level. It
-accepts multiple keyword arguments, whose keys are column names while values
-are the new value to update to. The following ``apply()`` call makes the update
-happen in database.
+So :meth:`~gino.crud.CRUDModel.update` is the first GINO method we met so far
+on model instance level. It accepts multiple keyword arguments, whose keys are
+column names while values are the new value to update to. The following
+:meth:`~gino.crud.UpdateRequest.apply` call makes the update happen in database.
 
 .. note::
 
     GINO explicitly split the in-memory update and SQL update into two methods:
-    ``update()`` and ``apply()``. ``update()`` will update the in-memory model
-    object and return an ``UpdateRequest`` object which contains all the
-    modifications. A following ``apply()`` on ``UpdateRequest`` object will
-    apply these recorded modifications to database by executing a compiled SQL.
+    :meth:`~gino.crud.CRUDModel.update` and
+    :meth:`~gino.crud.UpdateRequest.apply`. :meth:`~gino.crud.CRUDModel.update`
+    will update the in-memory model object and return an
+    :class:`~gino.crud.UpdateRequest` object which contains all the
+    modifications. A following :meth:`~gino.crud.UpdateRequest.apply` on
+    :class:`~gino.crud.UpdateRequest` object will apply these recorded
+    modifications to database by executing a compiled SQL.
 
 .. tip::
 
-    ``UpdateRequest`` object has another method named ``update`` which works
-    the same as the one on model object, just that it combines the new
-    modifications together with the ones already recorded in current
-    ``UpdateRequest`` object, and it returns the same ``UpdateRequest`` object.
-    That means, you can chain the updates and end up with one ``apply``, or
-    make use of the ``UpdateRequest`` object to combine several updates in a
+    :class:`~gino.crud.UpdateRequest` object has another method named
+    :meth:`~gino.crud.UpdateRequest.update` which works the same as the one
+    on model object, just that it combines the new modifications together with
+    the ones already recorded in current :class:`~gino.crud.UpdateRequest`
+    object, and it returns the same :class:`~gino.crud.UpdateRequest` object.
+    That means, you can chain the updates and end up with one
+    :meth:`~gino.crud.UpdateRequest.apply`, or make use of the
+    :class:`~gino.crud.UpdateRequest` object to combine several updates in a
     batch.
 
-``update`` on model object affects only the row represented by the object. If
-you want to do update with wider condition, you can use the ``update`` on model
-class level, with a bit difference:
-
-.. code-block:: python
+:meth:`~gino.crud.CRUDModel.update` on model object affects only the row
+represented by the object. If you want to do update with wider condition, you
+can use the :meth:`~gino.crud.CRUDModel.update` on model class level, with a
+bit difference::
 
     await User.update.values(nickname='Founding Member ' + User.nickname).where(
         User.id < 10).gino.status()
@@ -414,7 +395,8 @@ class level, with a bit difference:
         User.id == 1).gino.scalar()
     print(name)  # Founding Member fantix
 
-There is no ``UpdateRequest`` here, everything is again SQLAlchemy clause, its
+There is no :class:`~gino.crud.UpdateRequest` here, everything is again
+SQLAlchemy clause, its
 `documentation <https://docs.sqlalchemy.org/en/latest/core/dml.html>`_ here for
 your reference.
 
@@ -422,9 +404,8 @@ your reference.
 Delete
 ^^^^^^
 
-At last. Deleting is similar to updating, but way simpler.
+At last. Deleting is similar to updating, but way simpler. ::
 
-.. code-block:: python
 
     user = await User.create(nickname='fantix')
     await user.delete()
@@ -434,20 +415,18 @@ At last. Deleting is similar to updating, but way simpler.
 
 .. hint::
 
-    Remember the model object is in memory? In the last ``print`` statement,
-    even though the row is already deleted in database, the object ``user``
-    still exists with its values untouched.
+    Remember the model object is in memory? In the last :meth:`print`
+    statement, even though the row is already deleted in database, the object
+    ``user`` still exists with its values untouched.
 
 Or mass deletion (never forget the where clause, unless you want to truncate
-the whole table!!):
-
-.. code-block:: python
+the whole table!!)::
 
     await User.delete.where(User.id > 10).gino.status()
     # SQL (parameter: 10):
     # DELETE FROM users WHERE users.id > $1
 
 
-With basic CRUD, you can already make some amazing stuff with GINO. This
+With basic :doc:`crud`, you can already make some amazing stuff with GINO. This
 tutorial ends here, please find out more in detail from the rest of this
 documentation, and have fun hacking!

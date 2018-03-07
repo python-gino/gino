@@ -40,7 +40,8 @@ import gino
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+              'sphinx.ext.intersphinx', 'sphinxcontrib.asyncio']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -98,6 +99,8 @@ exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+
+highlight_language = 'python3'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -275,6 +278,14 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
+intersphinx_mapping = dict(
+    sqlalchemy=('https://docs.sqlalchemy.org/en/latest/', None),
+    asyncpg=('https://magicstack.github.io/asyncpg/current/', None),
+    python=('https://docs.python.org/3', None),
+)
+
+autoclass_content = 'both'
+
 
 def run_apidoc(_):
     from sphinx.apidoc import main
@@ -284,11 +295,8 @@ def run_apidoc(_):
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     mod = os.path.join(cur_dir, '..', 'gino')
     # https://github.com/sphinx-doc/sphinx/issues/4615
-    main(None, ['-o', cur_dir, mod, '--force'])
-    with open(os.path.join(cur_dir, 'gino.rst')) as f:
-        text = f.read()
-    with open(os.path.join(cur_dir, 'gino.rst'), 'w') as f:
-        f.write(text.replace('gino package', 'API Reference'))
+    main(None, ['-e', '-o', cur_dir, mod, '--force'])
+    os.remove(os.path.join(cur_dir, 'modules.rst'))
 
 
 def setup(app):

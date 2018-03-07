@@ -62,7 +62,7 @@ async def test_bind(bind, names):
 async def test_basic(engine, names):
     result = set()
     async with engine.transaction() as tx:
-        with pytest.raises(ValueError, match='No Connection in context'):
+        with pytest.raises(AttributeError, match='iterate'):
             await db.iterate(User.query)
         result = set()
         async for u in tx.connection.iterate(User.query):

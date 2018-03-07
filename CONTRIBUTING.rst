@@ -1,4 +1,4 @@
-.. highlight:: shell
+.. highlight:: console
 
 ============
 Contributing

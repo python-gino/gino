@@ -18,3 +18,5 @@ sanic==0.7.0
 aiohttp==3.0.6
 tornado==4.5.3
 pytest-tornado==0.4.5
+Pygments==2.2.0
+sphinxcontrib-asyncio==0.2.0

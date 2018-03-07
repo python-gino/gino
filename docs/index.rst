@@ -15,7 +15,7 @@ Contents
    sanic
    tornado
    adv_topics
-   gino
+   api
    contributing
    authors
    history
