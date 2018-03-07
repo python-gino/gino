@@ -31,7 +31,7 @@ SQLAlchemy_ core. Now (early 2018) GINO supports asyncpg_, Sanic_ and Tornado_.
 * Free software: BSD license
 * Documentation: https://python-gino.readthedocs.io.
 
-GINO is built on top of SQLAlchemy core, your code will be 100% compatible with
+GINO is built on top of SQLAlchemy core, your tables are 100% compatible with
 vanilla SQLAlchemy, using Alembic_ for example. GINO defined its own ``Engine``
 and ``Connection`` API for asynchronous programming, as well as an asynchronous
 dialect API for adapting non-DB-API asynchronous database connectors, asyncpg_
