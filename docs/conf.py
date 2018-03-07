@@ -283,7 +283,8 @@ def run_apidoc(_):
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     mod = os.path.join(cur_dir, '..', 'gino')
-    main(['-o', cur_dir, mod, '--force'])
+    # https://github.com/sphinx-doc/sphinx/issues/4615
+    main(None, ['-o', cur_dir, mod, '--force'])
     with open(os.path.join(cur_dir, 'gino.rst')) as f:
         text = f.read()
     with open(os.path.join(cur_dir, 'gino.rst'), 'w') as f:
