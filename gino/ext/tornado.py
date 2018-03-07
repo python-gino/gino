@@ -55,6 +55,7 @@ Settings defined by this extension
 GINO would define some options for database configuration. Use them with
 the standard ``tornado.options`` module:
 
+- ``'db_driver'`` -- if not set, ``asyncpg``;
 - ``'db_host'`` -- if not set, ``localhost``;
 - ``'db_port'`` -- if not set, ``5432``;
 - ``'db_user'`` -- if not set, ``postgres``;
@@ -156,12 +157,16 @@ import tornado.log
 import tornado.platform.asyncio
 import tornado.web
 
+from sqlalchemy.engine.url import URL
 from tornado.options import options as _options, define as _define
+try:
+    # noinspection PyPackageRequirements
+    from aiocontextvars import enable_inherit as _enable_inherit
+except ImportError:
+    _enable_inherit = lambda: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
-from ..local import enable_task_local as _enable_task_local
-from ..connection import GinoConnection as _Connection
-from ..pool import GinoPool as _Pool
+from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
 
 
 def _assert_not_negative(name):
@@ -171,6 +176,7 @@ def _assert_not_negative(name):
     return inner
 
 
+_define('db_driver', 'asyncpg', str, group='database')
 _define('db_host', 'localhost', str, group='database')
 _define('db_port', 5432, int, group='database')
 _define('db_user', 'postgres', str, group='database')
@@ -215,7 +221,9 @@ class GinoConnection(_Connection):
 
 
 # noinspection PyClassHasNoInit
-class GinoPool(_Pool):
+class GinoEngine(_Engine):
+    connection_cls = GinoConnection
+
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
@@ -234,8 +242,6 @@ class Gino(_Gino):
 
     model_base_classes = _Gino.model_base_classes + (TornadoModelMixin,)
     query_executor = GinoExecutor
-    connection_cls = GinoConnection
-    pool_cls = GinoPool
 
     if typing.TYPE_CHECKING:
         # Typehints to enable autocompletion on all Gino.Model-derived classes
@@ -251,6 +257,10 @@ class Gino(_Gino):
         if rv is None:
             raise tornado.web.HTTPError(404)
         return rv
+
+    async def set_bind(self, bind, loop=None, **kwargs):
+        kwargs.setdefault('engine_cls', GinoEngine)
+        return await super().set_bind(bind, loop=loop, **kwargs)
 
 
 class Application(tornado.web.Application):
@@ -300,15 +310,18 @@ class Application(tornado.web.Application):
         else:
             raise RuntimeError('AsyncIOLoop is required to run GINO')
 
-        _enable_task_local(asyncio_loop)
+        _enable_inherit(asyncio_loop)
 
         self.db: Gino = db
-        await db.create_pool(
-            host=options['db_host'],
-            port=options['db_port'],
-            user=options['db_user'],
-            password=options['db_password'],
-            database=options['db_database'],
+        await db.set_bind(
+            URL(
+                drivername=options['db_driver'],
+                host=options['db_host'],
+                port=options['db_port'],
+                username=options['db_user'],
+                password=options['db_password'],
+                database=options['db_database'],
+            ),
             min_size=options['db_pool_min_size'],
             max_size=options['db_pool_max_size'],
             max_inactive_connection_lifetime=(
