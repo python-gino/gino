@@ -6,7 +6,9 @@ from sqlalchemy import util
 from .engine import GinoEngine
 
 
-async def create_engine(name_or_url, loop=None, **kwargs):
+async def create_engine(name_or_url, loop=None, engine_cls=None, **kwargs):
+    if engine_cls is None:
+        engine_cls = GinoEngine
     u = url.make_url(name_or_url)
     if loop is None:
         loop = asyncio.get_event_loop()
@@ -27,7 +29,7 @@ async def create_engine(name_or_url, loop=None, **kwargs):
     pool = await dialect.init_pool(u, loop)
 
     engine_args = dict(loop=loop)
-    for k in util.get_cls_kwargs(GinoEngine):
+    for k in util.get_cls_kwargs(engine_cls):
         if k in kwargs:
             engine_args[k] = pop_kwarg(k)
 
@@ -39,9 +41,9 @@ async def create_engine(name_or_url, loop=None, **kwargs):
             "keyword arguments are appropriate for this combination "
             "of components." % (','.join("'%s'" % k for k in kwargs),
                                 dialect_cls.__name__,
-                                GinoEngine.__name__))
+                                engine_cls.__name__))
 
-    engine = GinoEngine(dialect, pool, **engine_args)
+    engine = engine_cls(dialect, pool, **engine_args)
 
     dialect_cls.engine_created(engine)
 

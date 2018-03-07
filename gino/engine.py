@@ -189,93 +189,6 @@ class TransactionContext:
             await self._conn_ctx.__aexit__(*exc_info)
 
 
-class GinoEngine:
-    def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
-        self._sa_engine = SAEngine(dialect,
-                                   logging_name=logging_name, echo=echo)
-        self._dialect = dialect
-        self._pool = pool
-        self._loop = loop
-        self._ctx = _get_context_var()('gino')
-
-    @property
-    def dialect(self):
-        return self._dialect
-
-    @property
-    def raw_pool(self):
-        return self._pool.raw_pool
-
-    def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
-        return AcquireContext(functools.partial(
-            self._acquire, timeout, reuse, lazy, reusable), self.release)
-
-    async def _acquire(self, timeout, reuse, lazy, reusable):
-        try:
-            stack = self._ctx.get()
-        except LookupError:
-            stack = collections.deque()
-            self._ctx.set(stack)
-        if reuse and stack:
-            dbapi_conn = ReusingDBAPIConnection(self._dialect.cursor_cls,
-                                                stack[-1])
-            reusable = False
-        else:
-            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls, self._pool)
-        rv = GinoConnection(self._dialect,
-                            SAConnection(self._sa_engine, dbapi_conn),
-                            stack if reusable else None)
-        dbapi_conn.gino_conn = rv
-        if not lazy:
-            await dbapi_conn.acquire(timeout=timeout)
-        if reusable:
-            stack.append(dbapi_conn)
-        return rv
-
-    async def release(self, connection):
-        await connection.release(permanent=True)
-
-    @property
-    def current_connection(self):
-        try:
-            return self._ctx.get()[-1].gino_conn
-        except (LookupError, IndexError):
-            pass
-
-    async def close(self):
-        await self._pool.close()
-
-    async def all(self, clause, *multiparams, **params):
-        async with self.acquire(reuse=True) as conn:
-            return await conn.all(clause, *multiparams, **params)
-
-    async def first(self, clause, *multiparams, **params):
-        async with self.acquire(reuse=True) as conn:
-            return await conn.first(clause, *multiparams, **params)
-
-    async def scalar(self, clause, *multiparams, **params):
-        async with self.acquire(reuse=True) as conn:
-            return await conn.scalar(clause, *multiparams, **params)
-
-    async def status(self, clause, *multiparams, **params):
-        async with self.acquire(reuse=True) as conn:
-            return await conn.status(clause, *multiparams, **params)
-
-    def compile(self, clause, *multiparams, **params):
-        return self._dialect.compile(clause, *multiparams, **params)
-
-    def transaction(self, *args, timeout=None, reuse=True, **kwargs):
-        return TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
-                                  (args, kwargs))
-
-    def update_execution_options(self, **opt):
-        self._sa_engine.update_execution_options(**opt)
-
-    async def _run_visitor(self, *args, **kwargs):
-        async with self.acquire(reuse=True) as conn:
-            await getattr(conn, '_run_visitor')(*args, **kwargs)
-
-
 class GinoConnection:
     # noinspection PyProtectedMember
     schema_for_object = schema._schema_getter(None)
@@ -349,9 +262,98 @@ class GinoConnection:
         return result.iterate()
 
     def execution_options(self, **opt):
-        return GinoConnection(self._dialect,
-                              self._sa_conn.execution_options(**opt))
+        return type(self)(self._dialect,
+                          self._sa_conn.execution_options(**opt))
 
     async def _run_visitor(self, visitorcallable, element, **kwargs):
         await visitorcallable(self.dialect, self,
                               **kwargs).traverse_single(element)
+
+
+class GinoEngine:
+    connection_cls = GinoConnection
+
+    def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
+        self._sa_engine = SAEngine(dialect,
+                                   logging_name=logging_name, echo=echo)
+        self._dialect = dialect
+        self._pool = pool
+        self._loop = loop
+        self._ctx = _get_context_var()('gino')
+
+    @property
+    def dialect(self):
+        return self._dialect
+
+    @property
+    def raw_pool(self):
+        return self._pool.raw_pool
+
+    def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
+        return AcquireContext(functools.partial(
+            self._acquire, timeout, reuse, lazy, reusable), self.release)
+
+    async def _acquire(self, timeout, reuse, lazy, reusable):
+        try:
+            stack = self._ctx.get()
+        except LookupError:
+            stack = collections.deque()
+            self._ctx.set(stack)
+        if reuse and stack:
+            dbapi_conn = ReusingDBAPIConnection(self._dialect.cursor_cls,
+                                                stack[-1])
+            reusable = False
+        else:
+            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls, self._pool)
+        rv = self.connection_cls(self._dialect,
+                                 SAConnection(self._sa_engine, dbapi_conn),
+                                 stack if reusable else None)
+        dbapi_conn.gino_conn = rv
+        if not lazy:
+            await dbapi_conn.acquire(timeout=timeout)
+        if reusable:
+            stack.append(dbapi_conn)
+        return rv
+
+    async def release(self, connection):
+        await connection.release(permanent=True)
+
+    @property
+    def current_connection(self):
+        try:
+            return self._ctx.get()[-1].gino_conn
+        except (LookupError, IndexError):
+            pass
+
+    async def close(self):
+        await self._pool.close()
+
+    async def all(self, clause, *multiparams, **params):
+        async with self.acquire(reuse=True) as conn:
+            return await conn.all(clause, *multiparams, **params)
+
+    async def first(self, clause, *multiparams, **params):
+        async with self.acquire(reuse=True) as conn:
+            return await conn.first(clause, *multiparams, **params)
+
+    async def scalar(self, clause, *multiparams, **params):
+        async with self.acquire(reuse=True) as conn:
+            return await conn.scalar(clause, *multiparams, **params)
+
+    async def status(self, clause, *multiparams, **params):
+        async with self.acquire(reuse=True) as conn:
+            return await conn.status(clause, *multiparams, **params)
+
+    def compile(self, clause, *multiparams, **params):
+        return self._dialect.compile(clause, *multiparams, **params)
+
+    def transaction(self, *args, timeout=None, reuse=True, **kwargs):
+        return TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
+                                  (args, kwargs))
+
+    def update_execution_options(self, **opt):
+        self._sa_engine.update_execution_options(**opt)
+
+    async def _run_visitor(self, *args, **kwargs):
+        async with self.acquire(reuse=True) as conn:
+            await getattr(conn, '_run_visitor')(*args, **kwargs)

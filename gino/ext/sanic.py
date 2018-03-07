@@ -1,10 +1,14 @@
 # noinspection PyPackageRequirements
 from sanic.exceptions import NotFound
+from sqlalchemy.engine.url import URL
+try:
+    # noinspection PyPackageRequirements
+    from aiocontextvars import enable_inherit, disable_inherit
+except ImportError:
+    enable_inherit = disable_inherit = lambda: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
-from ..local import enable_task_local, disable_task_local
-from ..connection import GinoConnection as _Connection
-from ..pool import GinoPool as _Pool
+from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
 
 
 class SanicModelMixin:
@@ -36,7 +40,9 @@ class GinoConnection(_Connection):
 
 
 # noinspection PyClassHasNoInit
-class GinoPool(_Pool):
+class GinoEngine(_Engine):
+    connection_cls = GinoConnection
+
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
@@ -65,37 +71,41 @@ class Gino(_Gino):
     """
     model_base_classes = _Gino.model_base_classes + (SanicModelMixin,)
     query_executor = GinoExecutor
-    connection_cls = GinoConnection
-    pool_cls = GinoPool
+
+    def __init__(self, app=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if app is not None:
+            self.init_app(app)
 
     def init_app(self, app):
-        task_local_enabled = [False]
+        inherit_enabled = [False]
 
         if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
             @app.middleware('request')
             async def on_request(request):
-                request['connection_ctx'] = ctx = self.acquire(lazy=True)
-                request['connection'] = await ctx.__aenter__()
+                request['connection'] = await self.acquire(lazy=True)
 
             @app.middleware('response')
             async def on_response(request, _):
-                ctx = request.pop('connection_ctx', None)
-                request.pop('connection', None)
-                if ctx is not None:
-                    await ctx.__aexit__(None, None, None)
+                conn = request.pop('connection', None)
+                if conn is not None:
+                    await self.release(conn)
 
         @app.listener('before_server_start')
         async def before_server_start(_, loop):
             if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
-                enable_task_local(loop)
-                task_local_enabled[0] = True
+                enable_inherit(loop)
+                inherit_enabled[0] = True
 
-            await self.create_pool(
-                host=app.config.setdefault('DB_HOST', 'localhost'),
-                port=app.config.setdefault('DB_PORT', 5432),
-                user=app.config.setdefault('DB_USER', 'postgres'),
-                password=app.config.setdefault('DB_PASSWORD', ''),
-                database=app.config.setdefault('DB_DATABASE', 'postgres'),
+            await self.set_bind(
+                URL(
+                    drivername=app.config.setdefault('DB_DRIVER', 'asyncpg'),
+                    host=app.config.setdefault('DB_HOST', 'localhost'),
+                    port=app.config.setdefault('DB_PORT', 5432),
+                    username=app.config.setdefault('DB_USER', 'postgres'),
+                    password=app.config.setdefault('DB_PASSWORD', ''),
+                    database=app.config.setdefault('DB_DATABASE', 'postgres'),
+                ),
                 min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
                 loop=loop,
@@ -103,13 +113,17 @@ class Gino(_Gino):
 
         @app.listener('after_server_stop')
         async def after_server_stop(_, loop):
-            await self._bind.close()
-            if task_local_enabled[0]:
-                disable_task_local(loop)
-                task_local_enabled[0] = False
+            await self.pop_bind().close()
+            if inherit_enabled[0]:
+                disable_inherit(loop)
+                inherit_enabled[0] = False
 
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
             raise NotFound('No such data')
         return rv
+
+    async def set_bind(self, bind, loop=None, **kwargs):
+        kwargs.setdefault('engine_cls', GinoEngine)
+        return await super().set_bind(bind, loop=loop, **kwargs)
