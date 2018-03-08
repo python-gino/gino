@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../sanic.rst:3
+msgid "Sanic Support"
+msgstr ""
+
+#: ../../sanic.rst:5
+msgid "**THIS IS A WIP**"
+msgstr ""
+
+#: ../../sanic.rst:7
+msgid "Check examples directory for general usage."
+msgstr ""
+
+#: ../../sanic.rst:11
+msgid "Work with Sanic"
+msgstr ""
+
+#: ../../sanic.rst:13
+msgid ""
+"Using the Sanic extension, the request handler acquires a lazy connection on"
+" each request, and return the connection when the response finishes by "
+"default."
+msgstr ""
+
+#: ../../sanic.rst:16
+msgid ""
+"The lazy connection is actually established if necessary, i.e. just before "
+"first access to db."
+msgstr ""
+
+#: ../../sanic.rst:18
+msgid ""
+"This behavior is controlled by app.config.DB_USE_CONNECTION_FOR_REQUEST, "
+"which is True by default."
+msgstr ""
+
+#: ../../sanic.rst:20
+msgid "Supported configurations:"
+msgstr ""
+
+#: ../../sanic.rst:22
+msgid "DB_HOST"
+msgstr ""
+
+#: ../../sanic.rst:23
+msgid "DB_PORT"
+msgstr ""
+
+#: ../../sanic.rst:24
+msgid "DB_USER"
+msgstr ""
+
+#: ../../sanic.rst:25
+msgid "DB_PASSWORD"
+msgstr ""
+
+#: ../../sanic.rst:26
+msgid "DB_DATABASE"
+msgstr ""
+
+#: ../../sanic.rst:27
+msgid "DB_POOL_MIN_SIZE"
+msgstr ""
+
+#: ../../sanic.rst:28
+msgid "DB_POOL_MAX_SIZE"
+msgstr ""
+
+#: ../../sanic.rst:29
+msgid "DB_USE_CONNECTION_FOR_REQUEST"
+msgstr ""
+
+#: ../../sanic.rst:31
+msgid "An example server:"
+msgstr ""

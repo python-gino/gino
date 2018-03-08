@@ -1,0 +1,435 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../tutorial.rst:2
+msgid "Get Started"
+msgstr ""
+
+#: ../../tutorial.rst:4
+msgid ""
+"This tutorial helps beginners to get started with the basic part of GINO. "
+"Target audiences of this tutorial should have basic knowledge of:"
+msgstr ""
+
+#: ../../tutorial.rst:7
+msgid "RDBMS, especially PostgreSQL_"
+msgstr ""
+
+#: ../../tutorial.rst:8
+msgid "Asynchronous programming in Python"
+msgstr ""
+
+#: ../../tutorial.rst:10
+msgid "Knowledge of SQLAlchemy_ is not required."
+msgstr ""
+
+#: ../../tutorial.rst:16
+msgid "Introduction"
+msgstr ""
+
+#: ../../tutorial.rst:18
+msgid ""
+"Simply speaking, GINO helps you write and execute raw SQL in your "
+"asynchronous application. Instead of interacting RDBMS directly with raw "
+"SQL, you can access your data through friendly objective API."
+msgstr ""
+
+#: ../../tutorial.rst:22
+msgid ""
+"You may not need GINO, or else to say asynchronous database connection, "
+"because it adds quite some complexity and risk to your stack, and it won't "
+"make your code run faster, if not slower. Please read :doc:`why` for more "
+"information."
+msgstr ""
+
+#: ../../tutorial.rst:28
+msgid "Installation"
+msgstr ""
+
+#: ../../tutorial.rst:32
+msgid ""
+"GINO optionally depends on aiocontextvars_ for sharing connection between "
+"method calls or chained coroutines without passing the connection object "
+"over and over again. It is highly recommended for most projects, unless you "
+"truly need a bare environment and handle connections manually."
+msgstr ""
+
+#: ../../tutorial.rst:41
+msgid "Stable release"
+msgstr ""
+
+#: ../../tutorial.rst:43
+msgid "To install GINO, run this command in your terminal:"
+msgstr ""
+
+#: ../../tutorial.rst:49
+msgid ""
+"This is the preferred method to install GINO, as it will always install the "
+"most recent stable release."
+msgstr ""
+
+#: ../../tutorial.rst:52
+msgid ""
+"If you don't have `pip`_ installed, this `Python installation guide`_ can "
+"guide you through the process."
+msgstr ""
+
+#: ../../tutorial.rst:60
+msgid "From sources"
+msgstr ""
+
+#: ../../tutorial.rst:62
+msgid "The sources for GINO can be downloaded from the `Github repo`_."
+msgstr ""
+
+#: ../../tutorial.rst:64
+msgid "You can either clone the public repository:"
+msgstr ""
+
+#: ../../tutorial.rst:70
+msgid "Or download the `tarball`_:"
+msgstr ""
+
+#: ../../tutorial.rst:76
+msgid "Once you have a copy of the source, you can install it with:"
+msgstr ""
+
+#: ../../tutorial.rst:88
+msgid "Declare Models"
+msgstr ""
+
+#: ../../tutorial.rst:90
+msgid ""
+"First of all, we'll need a :class:`~gino.api.Gino` object, usually under the"
+" name of ``db`` as a global variable::"
+msgstr ""
+
+#: ../../tutorial.rst:97
+msgid ""
+"``db`` acts like a reference to the database, most database interactions "
+"will go through it."
+msgstr ""
+
+#: ../../tutorial.rst:100
+msgid ""
+"\"Model\" is a basic concept in GINO, it is a Python class inherited from "
+":attr:`db.Model <gino.api.Gino.Model>`. Each "
+":class:`~gino.declarative.Model` subclass maps to one table in the database,"
+" while each object of the class represents one row in the table. This must "
+"feel familiar if ORM is not a strange word to you. Now let's declare a "
+"model::"
+msgstr ""
+
+#: ../../tutorial.rst:112
+msgid ""
+"By declaring this ``User`` class, we are actually defining a database table "
+"named ``users``, with two columns ``id`` and ``nickname``. Note that the "
+"fixed :attr:`~gino.declarative.Model.__tablename__` property is required. "
+"GINO suggests singular for model names, and plural for table names. Each "
+":class:`db.Column <sqlalchemy.schema.Column>` property defines one column "
+"for the table, where its first parameter indicates the column type in "
+"database, while the rest is for other column attributes or constraints. You "
+"can find a mapping of database types to ``db`` types `here "
+"<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in SQLAlchemy"
+" document."
+msgstr ""
+
+#: ../../tutorial.rst:125
+msgid ""
+"SQLAlchemy_ is a powerful ORM library for non-asynchronous programming in "
+"Python, on top of which GINO is built. SQLAlchemy supports many popular "
+"RDBMS including PostgreSQL and MySQL through different dialect "
+"implementation, so that the same Python code can be compiled into different "
+"SQL depending on the dialect you choose. GINO inherited this support too, "
+"but for now there is only one dialect for PostgreSQL through asyncpg_."
+msgstr ""
+
+#: ../../tutorial.rst:137
+msgid "Get Connected"
+msgstr ""
+
+#: ../../tutorial.rst:139
+msgid ""
+"The declaration only defined the mapping, it does not create the actual "
+"table in the database. To do that, we need to get connected first. Let's "
+"create a PostgreSQL database for this tutorial:"
+msgstr ""
+
+#: ../../tutorial.rst:147
+msgid "Then we tell our ``db`` object to connect to this database::"
+msgstr ""
+
+#: ../../tutorial.rst:156
+msgid ""
+"If this runs successfully, then you are connected to the newly created "
+"database. Here ``asyncpg`` indicates the database dialect and driver to use,"
+" ``localhost`` is where the server is, and ``gino`` is the name of the "
+"database. Check `here "
+"<https://docs.sqlalchemy.org/en/latest/core/engines.html>`_ for more "
+"information about how to compose this database URL."
+msgstr ""
+
+#: ../../tutorial.rst:164
+msgid ""
+"Under the hood :meth:`~gino.api.Gino.set_bind` calls "
+":meth:`~gino.strategies.create_engine` and bind the engine to this ``db`` "
+"object. GINO engine is similar to SQLAlchemy engine, but not identical. "
+"Because GINO engine is asynchronous, while the other is not. Please refer to"
+" the API reference of GINO for more information."
+msgstr ""
+
+#: ../../tutorial.rst:170
+msgid ""
+"Now that we are connected, let's create the table in database (in the same "
+"``main()`` method)::"
+msgstr ""
+
+#: ../../tutorial.rst:177
+msgid ""
+"It is :meth:`db.gino.create_all <gino.schema.GinoSchemaVisitor.create_all>`,"
+" not :meth:`db.create_all <sqlalchemy.schema.MetaData.create_all>`, because "
+"``db`` is inherited from SQLAlchemy :class:`~sqlalchemy.schema.MetaData`, "
+"and :meth:`db.create_all <sqlalchemy.schema.MetaData.create_all>` is from "
+"SQLAlchemy using non-asynchronous methods, which doesn't work with the bound"
+" GINO engine."
+msgstr ""
+
+#: ../../tutorial.rst:184
+msgid ""
+"In practice :meth:`~gino.schema.GinoSchemaVisitor.create_all` is usually not"
+" an ideal solution. To manage database schema, tool like Alembic_ is "
+"recommended."
+msgstr ""
+
+#: ../../tutorial.rst:188
+msgid ""
+"If you want to explicitly disconnect from the database, you can do this::"
+msgstr ""
+
+#: ../../tutorial.rst:192
+msgid ""
+"Let's review the code we have so far together in one piece before moving "
+"on::"
+msgstr ""
+
+#: ../../tutorial.rst:222
+msgid "CRUD Operations"
+msgstr ""
+
+#: ../../tutorial.rst:224
+msgid ""
+"In order to operate on the database, one of GINO's core features is to "
+"Create, Retrieve, Update or Delete model objects, also known as the CRUD "
+"operations."
+msgstr ""
+
+#: ../../tutorial.rst:229
+msgid "Create"
+msgstr ""
+
+#: ../../tutorial.rst:231
+msgid "Let's start by creating a ``User``::"
+msgstr ""
+
+#: ../../tutorial.rst:237
+msgid ""
+"As mentioned previously, ``user`` object represents the newly created row in"
+" the database. You can get the value of each columns by the declared column "
+"properties on the object::"
+msgstr ""
+
+#: ../../tutorial.rst:246
+msgid "Retrieve"
+msgstr ""
+
+#: ../../tutorial.rst:248
+msgid ""
+"To retrieve a model object from database by primary key, you can use the "
+"class method :meth:`~gino.crud.CRUDModel.get` on the model class. Now let's "
+"retrieve the same row::"
+msgstr ""
+
+#: ../../tutorial.rst:256
+msgid ""
+"Normal SQL queries are done through a class property "
+":attr:`~gino.crud.CRUDModel.query`. For example, let's retrieve all ``User``"
+" objects from database as a list::"
+msgstr ""
+
+#: ../../tutorial.rst:264
+msgid ""
+"Alternatively, you can use the ``gino`` extension on "
+":attr:`~gino.crud.CRUDModel.query. This has exactly the same effect as "
+"above::"
+msgstr ""
+
+#: ../../tutorial.rst:273
+msgid ""
+"``User.query`` is actually a SQLAlchemy query, with its own non-asynchronous"
+" execution methods. GINO added this ``gino`` extension on all executable "
+"SQLAlchemy clause objects to conveniently execute them in the asynchronous "
+"way, so that it is even not needed to import the ``db`` reference for "
+"execution."
+msgstr ""
+
+#: ../../tutorial.rst:279
+msgid ""
+"Now let's add some filters. For example, find all users with ID lower than "
+"10::"
+msgstr ""
+
+#: ../../tutorial.rst:285
+msgid ""
+"Read more `here "
+"<https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`_ about "
+"writing queries, because the query object is exactly from SQLAlchemy core."
+msgstr ""
+
+#: ../../tutorial.rst:290
+msgid ""
+"Once you get a model object, it is purely in memory and fully detached from "
+"the database. That means, if the row is externally updated, the object "
+"values remain unchanged. Likewise, changes made to the object won't affect "
+"the database values."
+msgstr ""
+
+#: ../../tutorial.rst:295
+msgid ""
+"Also, GINO keeps no track of model objects, therefore getting the same row "
+"twice returns two different object with identical values. Modifying one does"
+" not magically affect the other one."
+msgstr ""
+
+#: ../../tutorial.rst:299
+msgid ""
+"Different than traditional ORMs, the GINO model objects are more like "
+"objective SQL results, rather than stateful ORM objects. In order to adapt "
+"for asynchronous programming, GINO is designed to be that simple. That's "
+"also why GINO Is Not ORM."
+msgstr ""
+
+#: ../../tutorial.rst:304
+msgid ""
+"Sometimes we want to get only one object, for example getting the user by "
+"name when logging in. There's a shortcut for this scenario::"
+msgstr ""
+
+#: ../../tutorial.rst:311
+msgid ""
+"If there is no user named \"fantix\" in database, ``user`` will be ``None``."
+msgstr ""
+
+#: ../../tutorial.rst:313
+msgid ""
+"And sometimes we may want to get a single value from database, getting the "
+"name of user with ID 1 for example. Then we can use the "
+":meth:`~gino.crud.CRUDModel.select` class method::"
+msgstr ""
+
+#: ../../tutorial.rst:322
+msgid "Or get the count of all users::"
+msgstr ""
+
+#: ../../tutorial.rst:331
+msgid "Update"
+msgstr ""
+
+#: ../../tutorial.rst:333
+msgid ""
+"Then let's try to make some modifications. In this example we'll mixin some "
+"retrieve operations we just tried. ::"
+msgstr ""
+
+#: ../../tutorial.rst:356
+msgid ""
+"So :meth:`~gino.crud.CRUDModel.update` is the first GINO method we met so "
+"far on model instance level. It accepts multiple keyword arguments, whose "
+"keys are column names while values are the new value to update to. The "
+"following :meth:`~gino.crud.UpdateRequest.apply` call makes the update "
+"happen in database."
+msgstr ""
+
+#: ../../tutorial.rst:363
+msgid ""
+"GINO explicitly split the in-memory update and SQL update into two methods: "
+":meth:`~gino.crud.CRUDModel.update` and "
+":meth:`~gino.crud.UpdateRequest.apply`. :meth:`~gino.crud.CRUDModel.update` "
+"will update the in-memory model object and return an "
+":class:`~gino.crud.UpdateRequest` object which contains all the "
+"modifications. A following :meth:`~gino.crud.UpdateRequest.apply` on "
+":class:`~gino.crud.UpdateRequest` object will apply these recorded "
+"modifications to database by executing a compiled SQL."
+msgstr ""
+
+#: ../../tutorial.rst:374
+msgid ""
+":class:`~gino.crud.UpdateRequest` object has another method named "
+":meth:`~gino.crud.UpdateRequest.update` which works the same as the one on "
+"model object, just that it combines the new modifications together with the "
+"ones already recorded in current :class:`~gino.crud.UpdateRequest` object, "
+"and it returns the same :class:`~gino.crud.UpdateRequest` object. That "
+"means, you can chain the updates and end up with one "
+":meth:`~gino.crud.UpdateRequest.apply`, or make use of the "
+":class:`~gino.crud.UpdateRequest` object to combine several updates in a "
+"batch."
+msgstr ""
+
+#: ../../tutorial.rst:384
+msgid ""
+":meth:`~gino.crud.CRUDModel.update` on model object affects only the row "
+"represented by the object. If you want to do update with wider condition, "
+"you can use the :meth:`~gino.crud.CRUDModel.update` on model class level, "
+"with a bit difference::"
+msgstr ""
+
+#: ../../tutorial.rst:398
+msgid ""
+"There is no :class:`~gino.crud.UpdateRequest` here, everything is again "
+"SQLAlchemy clause, its `documentation "
+"<https://docs.sqlalchemy.org/en/latest/core/dml.html>`_ here for your "
+"reference."
+msgstr ""
+
+#: ../../tutorial.rst:405
+msgid "Delete"
+msgstr ""
+
+#: ../../tutorial.rst:407
+msgid "At last. Deleting is similar to updating, but way simpler. ::"
+msgstr ""
+
+#: ../../tutorial.rst:418
+msgid ""
+"Remember the model object is in memory? In the last :meth:`print` statement,"
+" even though the row is already deleted in database, the object ``user`` "
+"still exists with its values untouched."
+msgstr ""
+
+#: ../../tutorial.rst:422
+msgid ""
+"Or mass deletion (never forget the where clause, unless you want to truncate"
+" the whole table!!)::"
+msgstr ""
+
+#: ../../tutorial.rst:430
+msgid ""
+"With basic :doc:`crud`, you can already make some amazing stuff with GINO. "
+"This tutorial ends here, please find out more in detail from the rest of "
+"this documentation, and have fun hacking!"
+msgstr ""

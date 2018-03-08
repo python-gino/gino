@@ -1,0 +1,646 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../../HISTORY.rst:3
+msgid "History"
+msgstr ""
+
+#: ../../../HISTORY.rst:6
+msgid "GINO 0.6"
+msgstr ""
+
+#: ../../../HISTORY.rst:9
+msgid "Migrating to GINO 0.6"
+msgstr ""
+
+#: ../../../HISTORY.rst:12
+msgid "1. Task Local"
+msgstr ""
+
+#: ../../../HISTORY.rst:14
+msgid ""
+"We created a new Python package aiocontextvars_ from previous ``local.py``. "
+"If you made use of the task local features, you should install this package."
+msgstr ""
+
+#: ../../../HISTORY.rst:17
+msgid ""
+"Previous ``gino.enable_task_local`` and ``gino.disable_task_local`` are "
+"replaced by :meth:`aiocontextvars.enable_inherit "
+"<aiocontextvars.inherit.enable_inherit>` and "
+":meth:`aiocontextvars.disable_inherit "
+"<aiocontextvars.inherit.disable_inherit>`. However in GINO 0.5 they controls"
+" the whole task local feature switch, while aiocontextvars_ by default "
+"offers task local even without "
+":meth:`~aiocontextvars.inherit.enable_inherit`, which controls whether the "
+"local storage should be passed between chained tasks. When enabled, it "
+"behaves the same as enabled in 0.5, but you cannot completely turn off the "
+"task local feature while aiocontextvars_ is installed."
+msgstr ""
+
+#: ../../../HISTORY.rst:28
+msgid ""
+"There is no ``gino.get_local`` and ``gino.reset_local`` relevant in "
+"aiocontextvars_. The similar thing is :class:`aiocontextvars.ContextVar "
+"<aiocontextvars.var.ContextVar>` instance through its "
+":meth:`~aiocontextvars.var.ContextVar.get`, "
+":meth:`~aiocontextvars.var.ContextVar.set` and "
+":meth:`~aiocontextvars.var.ContextVar.delete` methods."
+msgstr ""
+
+#: ../../../HISTORY.rst:35
+msgid ""
+"Previous ``gino.is_local_root`` is now :attr:`not "
+"aiocontextvars.Context.current().inherited "
+"<aiocontextvars.context.Context.inherited>`."
+msgstr ""
+
+#: ../../../HISTORY.rst:40
+msgid "2. GinoEngine"
+msgstr ""
+
+#: ../../../HISTORY.rst:42
+msgid ""
+"GINO 0.6 hides :class:`asyncpg.Pool <asyncpg.pool.Pool>` behind the new "
+"SQLAlchemy-alike :class:`gino.GinoEngine <gino.engine.GinoEngine>`. Instead "
+"of doing this in 0.5::"
+msgstr ""
+
+#: ../../../HISTORY.rst:49
+msgid "You should change it to this in 0.6::"
+msgstr ""
+
+#: ../../../HISTORY.rst:54
+msgid "This equals to::"
+msgstr ""
+
+#: ../../../HISTORY.rst:64
+msgid "Or::"
+msgstr ""
+
+#: ../../../HISTORY.rst:72
+msgid "Or even this::"
+msgstr ""
+
+#: ../../../HISTORY.rst:80
+msgid "Choose whichever suits you the best."
+msgstr ""
+
+#: ../../../HISTORY.rst:82
+msgid ""
+"Obviously :class:`~gino.engine.GinoEngine` doesn't provide "
+":class:`asyncpg.Pool <asyncpg.pool.Pool>` methods directly any longer, but "
+"you can get the underlying :class:`asyncpg.Pool <asyncpg.pool.Pool>` object "
+"through :attr:`engine.raw_pool <gino.engine.GinoEngine.raw_pool>` property."
+msgstr ""
+
+#: ../../../HISTORY.rst:87
+msgid ""
+"``GinoPool.get_current_connection`` is now changed to "
+":attr:`~gino.engine.GinoEngine.current_connection` property on "
+":class:`~gino.engine.GinoEngine` instances to support multiple engines."
+msgstr ""
+
+#: ../../../HISTORY.rst:91
+msgid ""
+"``GinoPool().execution_option`` is gone, instead "
+":meth:`~gino.engine.GinoEngine.update_execution_options` on "
+":class:`~gino.engine.GinoEngine` instance is available."
+msgstr ""
+
+#: ../../../HISTORY.rst:95
+msgid ""
+"``GinoPool().metadata`` is gone, :attr:`~gino.engine.GinoEngine.dialect` is "
+"still available."
+msgstr ""
+
+#: ../../../HISTORY.rst:98
+msgid ""
+"These methods exist both in 0.5 ``GinoPool`` and 0.6 "
+":class:`~gino.engine.GinoEngine`: :meth:`~gino.engine.GinoEngine.close`, "
+":meth:`~gino.engine.GinoEngine.acquire`, "
+":meth:`~gino.engine.GinoEngine.release`, "
+":meth:`~gino.engine.GinoEngine.all`, :meth:`~gino.engine.GinoEngine.first`, "
+":meth:`~gino.engine.GinoEngine.scalar`, "
+":meth:`~gino.engine.GinoEngine.status`."
+msgstr ""
+
+#: ../../../HISTORY.rst:109
+msgid "3. GinoConnection"
+msgstr ""
+
+#: ../../../HISTORY.rst:111
+msgid ""
+"Similarly, :class:`~gino.engine.GinoConnection` in 0.6 is no longer a "
+"subclass of :class:`asyncpg.Connection <asyncpg.connection.Connection>`, "
+"instead it has a :class:`asyncpg.Connection <asyncpg.connection.Connection>`"
+" instance, accessible through :attr:`GinoConnection().raw_connection "
+"<gino.engine.GinoConnection.raw_connection>` property."
+msgstr ""
+
+#: ../../../HISTORY.rst:117
+msgid ""
+"``GinoConnection().metadata`` is deleted in 0.6, while "
+":attr:`gino.engine.GinoConnection.dialect` remained."
+msgstr ""
+
+#: ../../../HISTORY.rst:120
+msgid ""
+":meth:`GinoConnection().execution_options "
+"<gino.engine.GinoConnection.execution_options>` is changed from a mutable "
+"dict in 0.5 to a method returning a copy of current connection with the new "
+"options, the same as SQLAlchemy behavior."
+msgstr ""
+
+#: ../../../HISTORY.rst:125
+msgid ""
+"And :meth:`~gino.engine.GinoConnection.all`, "
+":meth:`~gino.engine.GinoConnection.first`, "
+":meth:`~gino.engine.GinoConnection.scalar`, "
+":meth:`~gino.engine.GinoConnection.status`, "
+":meth:`~gino.engine.GinoConnection.iterate`, "
+":meth:`~gino.engine.GinoConnection.transaction` remained in 0.6."
+msgstr ""
+
+#: ../../../HISTORY.rst:133
+msgid "4. Query API"
+msgstr ""
+
+#: ../../../HISTORY.rst:135
+msgid ""
+"All five query APIs :meth:`~gino.api.GinoExecutor.all`, "
+":meth:`~gino.api.GinoExecutor.first`, :meth:`~gino.api.GinoExecutor.scalar`,"
+" :meth:`~gino.api.GinoExecutor.status`, "
+":meth:`~gino.api.GinoExecutor.iterate` now accept the same parameters as "
+"SQLAlchemy :meth:`~sqlalchemy.engine.Connectable.execute`, meaning they "
+"accept raw SQL text, or multiple sets of parameters for \"executemany\". "
+"Please note, if the parameters are recognized as \"executemany\", none of "
+"the methods will return anything. Meanwhile, they no longer accept the "
+"parameter ``bind`` if they did. Just use the API on the "
+":class:`~gino.engine.GinoEngine` or :class:`~gino.engine.GinoConnection` "
+"object instead."
+msgstr ""
+
+#: ../../../HISTORY.rst:148
+msgid "5. Transaction"
+msgstr ""
+
+#: ../../../HISTORY.rst:150
+msgid ""
+"Transaction interface is rewritten. Now in 0.6, a "
+":class:`~gino.transaction.GinoTransaction` object is provided consistently "
+"from all 3 methods::"
+msgstr ""
+
+#: ../../../HISTORY.rst:164
+msgid "And different usage with ``await``::"
+msgstr ""
+
+#: ../../../HISTORY.rst:174
+msgid ""
+"The :class:`~gino.engine.GinoConnection` object is available at "
+":attr:`tx.connection <gino.transaction.GinoTransaction.connection>`, while "
+"underlying transaction object from database driver is available at "
+":attr:`tx.raw_transaction "
+"<gino.transaction.GinoTransaction.raw_transaction>` - for asyncpg it is an "
+":class:`asyncpg.transaction.Transaction` object."
+msgstr ""
+
+#: ../../../HISTORY.rst:181
+msgid "0.6.0 (TBD)"
+msgstr ""
+
+#: ../../../HISTORY.rst:183
+msgid "This is also version 1.0 beta 2."
+msgstr ""
+
+#: ../../../HISTORY.rst:185
+msgid "[Breaking] API Refactored, ``Pool`` replaced with ``Engine``"
+msgstr ""
+
+#: ../../../HISTORY.rst:187
+msgid "New API ``Engine`` replaced asyncpg ``Pool`` (#59)"
+msgstr ""
+
+#: ../../../HISTORY.rst:188
+msgid "Supported different dialects, theoretically"
+msgstr ""
+
+#: ../../../HISTORY.rst:189
+msgid "Used aiocontextvars_ instead of builtin task local (#89)"
+msgstr ""
+
+#: ../../../HISTORY.rst:190
+msgid ""
+"[Breaking] Fixed query API with ``multiparams`` (executemany) to return "
+"correctly (#20)"
+msgstr ""
+
+#: ../../../HISTORY.rst:191
+msgid "[Breaking] The query methods no longer accept the parameter ``bind``"
+msgstr ""
+
+#: ../../../HISTORY.rst:192
+msgid "[Breaking] ``Gino`` no longer exposes ``postgresql`` types"
+msgstr ""
+
+#: ../../../HISTORY.rst:193
+msgid "Added ``echo`` on engine (#142)"
+msgstr ""
+
+#: ../../../HISTORY.rst:194
+msgid "Added tests to cover 80% of code"
+msgstr ""
+
+#: ../../../HISTORY.rst:195
+msgid ""
+"Added ``gino`` extension on ``SchemaItem`` for ``create_all`` and so on (#76"
+" #106)"
+msgstr ""
+
+#: ../../../HISTORY.rst:196
+msgid "Added ``gino`` on model classes for ``create`` or ``drop``"
+msgstr ""
+
+#: ../../../HISTORY.rst:197
+msgid "Added ``_update_request_cls`` on ``CRUDModel`` (#147)"
+msgstr ""
+
+#: ../../../HISTORY.rst:198
+msgid "Rewrote the documentation (#146)"
+msgstr ""
+
+#: ../../../HISTORY.rst:204
+msgid "GINO 0.5"
+msgstr ""
+
+#: ../../../HISTORY.rst:207
+msgid "0.5.8 (2018-02-14)"
+msgstr ""
+
+#: ../../../HISTORY.rst:209
+msgid "Preparing for 0.6.0 which will be a breaking release"
+msgstr ""
+
+#: ../../../HISTORY.rst:210
+msgid ""
+"Fixed wrong value of ``Enum`` in creation (Contributed by Sergey Kovalev in "
+"#126)"
+msgstr ""
+
+#: ../../../HISTORY.rst:213
+msgid "0.5.7 (2017-11-24)"
+msgstr ""
+
+#: ../../../HISTORY.rst:215
+msgid "This is an emergency fix for 0.5.6."
+msgstr ""
+
+#: ../../../HISTORY.rst:217
+msgid "Fixed broken lazy connection (Contributed by Ádám Barancsuk in #114)"
+msgstr ""
+
+#: ../../../HISTORY.rst:218
+msgid "Added ``Model.outerjoin``"
+msgstr ""
+
+#: ../../../HISTORY.rst:221
+msgid "0.5.6 (2017-11-23)"
+msgstr ""
+
+#: ../../../HISTORY.rst:223
+msgid "Changed to use unnamed statement when possible (#80 #90)"
+msgstr ""
+
+#: ../../../HISTORY.rst:224
+msgid "Added more example (Contributed by Kentoseth in #109)"
+msgstr ""
+
+#: ../../../HISTORY.rst:225
+msgid ""
+"Added ``Model.join`` and made ``Model`` selectable (Contributed by Ádám "
+"Barancsuk in #112 #113)"
+msgstr ""
+
+#: ../../../HISTORY.rst:228
+msgid "0.5.5 (2017-10-18)"
+msgstr ""
+
+#: ../../../HISTORY.rst:230
+msgid ""
+"Ensured clean connection if transaction acquire fails (Contributed by "
+"Vladimir Goncharov in #87)"
+msgstr ""
+
+#: ../../../HISTORY.rst:231
+msgid "Added ability to reset local storage (#84)"
+msgstr ""
+
+#: ../../../HISTORY.rst:232
+msgid "Fixed bug in JSON property update"
+msgstr ""
+
+#: ../../../HISTORY.rst:233
+msgid "Added update chaining feature"
+msgstr ""
+
+#: ../../../HISTORY.rst:236
+msgid "0.5.4 (2017-10-04)"
+msgstr ""
+
+#: ../../../HISTORY.rst:238
+msgid "Updated example (Contributed by Kinware in #75)"
+msgstr ""
+
+#: ../../../HISTORY.rst:239
+msgid "Added ``Model.insert`` (Contributed by Neal Wang in #63)"
+msgstr ""
+
+#: ../../../HISTORY.rst:240
+msgid "Fixed issue that non-lazy acquiring fails dirty (#79)"
+msgstr ""
+
+#: ../../../HISTORY.rst:243
+msgid "0.5.3 (2017-09-23)"
+msgstr ""
+
+#: ../../../HISTORY.rst:245
+msgid ""
+"Fixed ``no module named cutils`` error (Contributed by Vladimir Goncharov in"
+" #73)"
+msgstr ""
+
+#: ../../../HISTORY.rst:248
+msgid "0.5.2 (2017-09-10)"
+msgstr ""
+
+#: ../../../HISTORY.rst:250
+msgid "Added missing driver name on dialect (#67)"
+msgstr ""
+
+#: ../../../HISTORY.rst:251
+msgid "Fixed dialect to support native decimal type (#67)"
+msgstr ""
+
+#: ../../../HISTORY.rst:254
+msgid "0.5.1 (2017-09-09)"
+msgstr ""
+
+#: ../../../HISTORY.rst:256
+msgid "This is an emergency fix for 0.5.0."
+msgstr ""
+
+#: ../../../HISTORY.rst:258
+msgid "Reverted the extension, back to pure Python (#60)"
+msgstr ""
+
+#: ../../../HISTORY.rst:259
+msgid "Used SQLAlchemy ``RowProxy``"
+msgstr ""
+
+#: ../../../HISTORY.rst:260
+msgid "Added ``first_or_404``"
+msgstr ""
+
+#: ../../../HISTORY.rst:261
+msgid "Fixed bug that ``GinoPool`` cannot be inherited"
+msgstr ""
+
+#: ../../../HISTORY.rst:264
+msgid "0.5.0 (2017-09-03)"
+msgstr ""
+
+#: ../../../HISTORY.rst:266
+msgid "This is also version 1.0 beta 1."
+msgstr ""
+
+#: ../../../HISTORY.rst:268
+msgid ""
+"[Breaking] Internal refactor: extracted and isolated a few modules, "
+"partially rewritten"
+msgstr ""
+
+#: ../../../HISTORY.rst:270
+msgid "Extracted CRUD operations"
+msgstr ""
+
+#: ../../../HISTORY.rst:271
+msgid "Core operations are moved to ``dialect`` and execution context"
+msgstr ""
+
+#: ../../../HISTORY.rst:272
+msgid "Removed ``guess_model``, switched to explicit execution options"
+msgstr ""
+
+#: ../../../HISTORY.rst:273
+msgid "Turned ``timeout`` parameter to an execution option"
+msgstr ""
+
+#: ../../../HISTORY.rst:274
+msgid ""
+"Extracted ``pool``, ``connection`` and ``api`` from ``asyncpg_delegate``"
+msgstr ""
+
+#: ../../../HISTORY.rst:275
+msgid ""
+"Added support for SQLAlchemy execution options, and a few custom options"
+msgstr ""
+
+#: ../../../HISTORY.rst:276
+msgid "[Breaking] Made `Model.select` return rows by default (#39)"
+msgstr ""
+
+#: ../../../HISTORY.rst:277
+msgid "Moved `get_or_404` to extensions (#38)"
+msgstr ""
+
+#: ../../../HISTORY.rst:278
+msgid "Added iterator on model classes (#43)"
+msgstr ""
+
+#: ../../../HISTORY.rst:279
+msgid "Added Tornado extension (Contributed by Vladimir Goncharov)"
+msgstr ""
+
+#: ../../../HISTORY.rst:280
+msgid "Added `Model.to_dict` (#47)"
+msgstr ""
+
+#: ../../../HISTORY.rst:281
+msgid ""
+"Added an extension module to update `asyncpg.Record` with processed results"
+msgstr ""
+
+#: ../../../HISTORY.rst:285
+msgid "Early Development Releases"
+msgstr ""
+
+#: ../../../HISTORY.rst:288
+msgid "0.4.1 (2017-08-20)"
+msgstr ""
+
+#: ../../../HISTORY.rst:290
+msgid "Support ``select`` on model instance"
+msgstr ""
+
+#: ../../../HISTORY.rst:293
+msgid "0.4.0 (2017-08-15)"
+msgstr ""
+
+#: ../../../HISTORY.rst:295
+msgid ""
+"Made ``get_or_404`` more friendly when Sanic is missing (Contributed by Neal"
+" Wang in #23 #31)"
+msgstr ""
+
+#: ../../../HISTORY.rst:296
+msgid "Delegated ``sqlalchemy.__all__`` (Contributed by Neal Wang in #10 #33)"
+msgstr ""
+
+#: ../../../HISTORY.rst:297
+msgid "[Breaking] Rewrote JSON/JSONB support (#29)"
+msgstr ""
+
+#: ../../../HISTORY.rst:298
+msgid ""
+"Added ``lazy`` parameter on ``db.acquire`` (Contributed by Binghan Li in "
+"#32)"
+msgstr ""
+
+#: ../../../HISTORY.rst:299
+msgid ""
+"Added Sanic integration (Contributed by Binghan Li, Tony Wang in #30 #32 "
+"#34)"
+msgstr ""
+
+#: ../../../HISTORY.rst:300
+msgid "Fixed ``iterate`` API to be compatible with asyncpg (#32)"
+msgstr ""
+
+#: ../../../HISTORY.rst:301
+msgid "Unified exceptions"
+msgstr ""
+
+#: ../../../HISTORY.rst:302
+msgid "[Breaking] Changed ``update`` API (#29)"
+msgstr ""
+
+#: ../../../HISTORY.rst:303 ../../../HISTORY.rst:326
+msgid "Bug fixes"
+msgstr ""
+
+#: ../../../HISTORY.rst:306
+msgid "0.3.0 (2017-08-07)"
+msgstr ""
+
+#: ../../../HISTORY.rst:308
+msgid "Supported ``__table_args__`` (#12)"
+msgstr ""
+
+#: ../../../HISTORY.rst:309
+msgid "Introduced task local to manage connection in context (#19)"
+msgstr ""
+
+#: ../../../HISTORY.rst:310
+msgid "Added ``query.gino`` extension for in-place execution"
+msgstr ""
+
+#: ../../../HISTORY.rst:311
+msgid "Refreshed README (#3)"
+msgstr ""
+
+#: ../../../HISTORY.rst:312
+msgid "Adopted PEP 487 (Contributed by Tony Wang in #17 #27)"
+msgstr ""
+
+#: ../../../HISTORY.rst:313
+msgid ""
+"Used ``weakref`` on ``__model__`` of table and query (Contributed by Tony "
+"Wang)"
+msgstr ""
+
+#: ../../../HISTORY.rst:314
+msgid ""
+"Delegated asyncpg ``timeout`` parameter (Contributed by Neal Wang in #16 "
+"#22)"
+msgstr ""
+
+#: ../../../HISTORY.rst:317
+msgid "0.2.3 (2017-08-04)"
+msgstr ""
+
+#: ../../../HISTORY.rst:319
+msgid "Supported any primary key (Contributed by Tony Wang in #11)"
+msgstr ""
+
+#: ../../../HISTORY.rst:322
+msgid "0.2.2 (2017-08-02)"
+msgstr ""
+
+#: ../../../HISTORY.rst:324
+msgid "Supported SQLAlchemy result processor"
+msgstr ""
+
+#: ../../../HISTORY.rst:325
+msgid "Added rich support on JSON/JSONB"
+msgstr ""
+
+#: ../../../HISTORY.rst:329
+msgid "0.2.1 (2017-07-28)"
+msgstr ""
+
+#: ../../../HISTORY.rst:331
+msgid "Added ``update`` and ``delete`` API"
+msgstr ""
+
+#: ../../../HISTORY.rst:334
+msgid "0.2.0 (2017-07-28)"
+msgstr ""
+
+#: ../../../HISTORY.rst:336
+msgid "Changed API, no longer reuses asyncpg API"
+msgstr ""
+
+#: ../../../HISTORY.rst:339
+msgid "0.1.1 (2017-07-25)"
+msgstr ""
+
+#: ../../../HISTORY.rst:341
+msgid "Added ``db.bind``"
+msgstr ""
+
+#: ../../../HISTORY.rst:342
+msgid "API changed: parameter ``conn`` renamed to optional ``bind``"
+msgstr ""
+
+#: ../../../HISTORY.rst:343
+msgid "Delegated asyncpg Pool with ``db.create_pool``"
+msgstr ""
+
+#: ../../../HISTORY.rst:344
+msgid "Internal enhancement and bug fixes"
+msgstr ""
+
+#: ../../../HISTORY.rst:347
+msgid "0.1.0 (2017-07-21)"
+msgstr ""
+
+#: ../../../HISTORY.rst:349
+msgid "First release on PyPI."
+msgstr ""

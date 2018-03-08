@@ -1,0 +1,50 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../why.rst:3
+msgid "Why Asynchronous ORM?"
+msgstr ""
+
+#: ../../why.rst:5
+msgid ""
+"Normally the answer is no, you don't need an asynchronous ORM. Before moving"
+" on, you should read `this blog post <http://techspot.zzzeek.org/2015/02/15"
+"/asynchronous-python-and-databases/>`_ from Mike Bayer, the author of "
+"SQLAlchemy. Though it was written before the project uvloop, but his points "
+"are still valid now:"
+msgstr ""
+
+#: ../../why.rst:10
+msgid "Async is usually not essential for stereotypical database logic;"
+msgstr ""
+
+#: ../../why.rst:11
+msgid "Async is **slower**, not faster, measured in single-routine."
+msgstr ""
+
+#: ../../why.rst:13
+msgid ""
+"So a general suggestion would be, don't use it. When you really need it, you"
+" will know why it is required. Even then, caution must be taken because "
+"asynchronous ORM is a minefield biting noses."
+msgstr ""
+
+#: ../../why.rst:17
+msgid "**THIS IS A WIP**"
+msgstr ""

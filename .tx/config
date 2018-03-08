@@ -1,6 +1,161 @@
 [main]
 host = https://www.transifex.com
 
+
+[gino.adv_topicspot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/adv_topics.po
+minimum_perc = 0
+source_file = docs/_build/locale/adv_topics.pot
+source_lang = en
+type = PO
+
+[gino.apipot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/api.po
+minimum_perc = 0
+source_file = docs/_build/locale/api.pot
+source_lang = en
+type = PO
+
+[gino.authorspot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/authors.po
+minimum_perc = 0
+source_file = docs/_build/locale/authors.pot
+source_lang = en
+type = PO
+
+[gino.contributingpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/contributing.po
+minimum_perc = 0
+source_file = docs/_build/locale/contributing.pot
+source_lang = en
+type = PO
+
+[gino.crudpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/crud.po
+minimum_perc = 0
+source_file = docs/_build/locale/crud.pot
+source_lang = en
+type = PO
+
+[gino.enginepot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/engine.po
+minimum_perc = 0
+source_file = docs/_build/locale/engine.pot
+source_lang = en
+type = PO
+
+[gino.ginoapipot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.api.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.api.pot
+source_lang = en
+type = PO
+
+[gino.ginocrudpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.crud.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.crud.pot
+source_lang = en
+type = PO
+
+[gino.ginodeclarativepot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.declarative.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.declarative.pot
+source_lang = en
+type = PO
+
+[gino.ginodialectsasyncpgpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.dialects.asyncpg.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.dialects.asyncpg.pot
+source_lang = en
+type = PO
+
+[gino.ginodialectspot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.dialects.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.dialects.pot
+source_lang = en
+type = PO
+
+[gino.ginoenginepot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.engine.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.engine.pot
+source_lang = en
+type = PO
+
+[gino.ginoexceptionspot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.exceptions.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.exceptions.pot
+source_lang = en
+type = PO
+
+[gino.ginoextpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.ext.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.ext.pot
+source_lang = en
+type = PO
+
+[gino.ginoextsanicpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.ext.sanic.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.ext.sanic.pot
+source_lang = en
+type = PO
+
+[gino.ginoexttornadopot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.ext.tornado.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.ext.tornado.pot
+source_lang = en
+type = PO
+
+[gino.ginojson_supportpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.json_support.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.json_support.pot
+source_lang = en
+type = PO
+
+[gino.ginopot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.pot
+source_lang = en
+type = PO
+
+[gino.ginoschemapot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.schema.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.schema.pot
+source_lang = en
+type = PO
+
+[gino.ginostrategiespot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.strategies.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.strategies.pot
+source_lang = en
+type = PO
+
+[gino.ginotransactionpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/gino.transaction.po
+minimum_perc = 0
+source_file = docs/_build/locale/gino.transaction.pot
+source_lang = en
+type = PO
+
+[gino.historypot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/history.po
+minimum_perc = 0
+source_file = docs/_build/locale/history.pot
+source_lang = en
+type = PO
+
 [gino.indexpot]
 file_filter = docs/locales/<lang>/LC_MESSAGES/index.po
 minimum_perc = 0
@@ -8,3 +163,44 @@ source_file = docs/_build/locale/index.pot
 source_lang = en
 type = PO
 
+[gino.sanicpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/sanic.po
+minimum_perc = 0
+source_file = docs/_build/locale/sanic.pot
+source_lang = en
+type = PO
+
+[gino.schemapot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/schema.po
+minimum_perc = 0
+source_file = docs/_build/locale/schema.pot
+source_lang = en
+type = PO
+
+[gino.tornadopot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/tornado.po
+minimum_perc = 0
+source_file = docs/_build/locale/tornado.pot
+source_lang = en
+type = PO
+
+[gino.transactionpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/transaction.po
+minimum_perc = 0
+source_file = docs/_build/locale/transaction.pot
+source_lang = en
+type = PO
+
+[gino.tutorialpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/tutorial.po
+minimum_perc = 0
+source_file = docs/_build/locale/tutorial.pot
+source_lang = en
+type = PO
+
+[gino.whypot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/why.po
+minimum_perc = 0
+source_file = docs/_build/locale/why.pot
+source_lang = en
+type = PO

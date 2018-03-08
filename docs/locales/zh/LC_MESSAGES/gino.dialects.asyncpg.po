@@ -1,0 +1,199 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../gino.dialects.asyncpg.rst:2
+msgid "gino.dialects.asyncpg module"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:1
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGCompiler`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:1
+msgid "Construct a new :class:`.SQLCompiler` object."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:0
+msgid "Parameters"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:3
+msgid ":class:`.Dialect` to be used"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:5
+msgid ":class:`.ClauseElement` to be compiled"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:7
+msgid ""
+"a list of column names to be compiled into an INSERT or UPDATE statement."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:10
+msgid ""
+"whether to generate INSERT statements as \"inline\", e.g. not formatted to "
+"return any generated defaults"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:13
+msgid "additional keyword arguments to be consumed by the superclass."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect:1
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGDialect`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:1
+msgid "Given a DBAPI connection, return its isolation level."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:3
+msgid ""
+"When working with a :class:`.Connection` object, the corresponding DBAPI "
+"connection may be procured using the :attr:`.Connection.connection` "
+"accessor."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:7
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:3
+msgid ""
+"Note that this is a dialect-level method which is used as part of the "
+"implementation of the :class:`.Connection` and :class:`.Engine` isolation "
+"level facilities; these APIs should be preferred for most typical use cases."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:15
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:11
+msgid ":meth:`.Connection.get_isolation_level` - view current level"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:17
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:13
+msgid ":attr:`.Connection.default_isolation_level` - view default level"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:19
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:15
+msgid ""
+":paramref:`.Connection.execution_options.isolation_level` - set per "
+":class:`.Connection` isolation level"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:22
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:18
+msgid ""
+":paramref:`.create_engine.isolation_level` - set per :class:`.Engine` "
+"isolation level"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.has_sequence:1
+msgid "Check the existence of a particular sequence in the database."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.has_sequence:3
+msgid ""
+"Given a :class:`.Connection` object and a string `sequence_name`, return "
+"True if the given sequence exists in the database, False otherwise."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.has_table:1
+msgid "Check the existence of a particular table in the database."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.has_table:3
+msgid ""
+"Given a :class:`.Connection` object and a string `table_name`, return True "
+"if the given table (possibly within the specified `schema`) exists in the "
+"database, False otherwise."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:1
+msgid "return a callable which sets up a newly created DBAPI connection."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:3
+msgid ""
+"This is used to set dialect-wide per-connection options such as isolation "
+"modes, unicode modes, etc."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:6
+msgid ""
+"If a callable is returned, it will be assembled into a pool listener that "
+"receives the direct DBAPI connection, with all wrappers removed."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:9
+msgid "If None is returned, no listener will be generated."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:1
+msgid "Given a DBAPI connection, set its isolation level."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgExecutionContext:1
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGExecutionContext`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.Cursor:1 ../../../gino/dialects/asyncpg.pydocstring
+#: of gino.dialects.asyncpg.CursorFactory:1
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.CursorIterator:1
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.DBAPICursor:1
+#: ../../../gino/dialects/asyncpg.pydocstring of gino.dialects.asyncpg.Pool:1
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.ResultProxy:1
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.Transaction:1
+msgid "Bases: :class:`object`"
+msgstr ""

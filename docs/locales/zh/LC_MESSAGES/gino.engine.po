@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../gino.engine.rst:2
+msgid "gino.engine module"
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.AcquireContext:1
+#: ../../../gino/engine.pydocstring of gino.engine.BaseDBAPIConnection:1
+#: ../../../gino/engine.pydocstring of gino.engine.GinoConnection:1
+#: ../../../gino/engine.pydocstring of gino.engine.GinoEngine:1
+#: ../../../gino/engine.pydocstring of gino.engine.TransactionContext:1
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.DBAPIConnection:1
+#: ../../../gino/engine.pydocstring of gino.engine.ReusingDBAPIConnection:1
+msgid "Bases: :class:`gino.engine.BaseDBAPIConnection`"
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.GinoConnection.status:1
+msgid "You can parse the return value like this: https://git.io/v7oze"
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.SAConnection:1
+msgid "Bases: :class:`sqlalchemy.engine.base.Connection`"
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.SAConnection:1
+msgid "Construct a new Connection."
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.SAConnection:3
+msgid ""
+"The constructor here is not public and is only called only by an "
+":class:`.Engine`. See :meth:`.Engine.connect` and "
+":meth:`.Engine.contextual_connect` methods."
+msgstr ""
+
+#: ../../../gino/engine.pydocstring of gino.engine.SAEngine:1
+msgid "Bases: :class:`sqlalchemy.engine.base.Engine`"
+msgstr ""

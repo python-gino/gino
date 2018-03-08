@@ -1,0 +1,70 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../../AUTHORS.rst:3
+msgid "Credits"
+msgstr ""
+
+#: ../../../AUTHORS.rst:6
+msgid "Development Lead"
+msgstr ""
+
+#: ../../../AUTHORS.rst:8
+msgid "Fantix King <fantix.king@gmail.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:11
+msgid "Contributors"
+msgstr ""
+
+#: ../../../AUTHORS.rst:13
+msgid "Tony Wang <wwwjfy@gmail.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:14
+msgid "Neal Wang <qdzzyb2015@gamil.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:15
+msgid "Binghan Li <lbhsot@163.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:16
+msgid "Vladimir Goncharov <dev.zelta@gmail.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:17
+msgid "Kinware <oss@kinware.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:18
+msgid "Kentoseth <kentoseth@devcroo.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:19
+msgid "Ádám Barancsuk <adam.barancsuk@gmail.com>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:20
+msgid "Sergey Kovalev <s_kovalev@wargaming.net>"
+msgstr ""
+
+#: ../../../AUTHORS.rst:21
+msgid "jonahfang"
+msgstr ""

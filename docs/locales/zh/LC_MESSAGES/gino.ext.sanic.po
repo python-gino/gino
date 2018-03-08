@@ -1,0 +1,91 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO 0.5.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../gino.ext.sanic.rst:2
+msgid "gino.ext.sanic module"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:1
+msgid "Bases: :class:`gino.api.Gino`"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:1
+msgid "Support Sanic web server."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:3
+msgid ""
+"By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could "
+"use database configuration in Sanic `config` to initialize the bound pool."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:6
+msgid ""
+"A lazy connection context is enabled by default for every request. You can "
+"change this default behavior by setting `DB_USE_CONNECTION_FOR_REQUEST` "
+"config value to `False`. By default, a database connection is borrowed on "
+"the first query, shared in the same execution context, and returned to the "
+"pool on response. If you need to release the connection early in the middle "
+"to do some long-running tasks, you can simply do this:"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:13
+msgid "await request['connection'].release()"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:15
+msgid ""
+"Here `request['connection']` is a :class:`LazyConnection` object, see its "
+"doc string for more information."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:1
+msgid "Bind self to the given :class:`~.engine.GinoEngine` and return it."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:3
+msgid ""
+"If the given ``bind`` is a string or :class:`~sqlalchemy.engine.url.URL`, "
+"all arguments will be sent to :meth:`~gino.strategies.create_engine` to "
+"create a new engine, and return it."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:0
+msgid "Returns"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:8
+msgid ":class:`~.engine.GinoEngine`"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoConnection:1
+msgid "Bases: :class:`gino.engine.GinoConnection`"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoEngine:1
+msgid "Bases: :class:`gino.engine.GinoEngine`"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoExecutor:1
+msgid "Bases: :class:`gino.api.GinoExecutor`"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.SanicModelMixin:1
+msgid "Bases: :class:`object`"
+msgstr ""
