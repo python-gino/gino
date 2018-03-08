@@ -8,3 +8,4 @@ dependencies:
     - asyncpg
     - sanic
     - tornado
+    - sphinxcontrib-asyncio
