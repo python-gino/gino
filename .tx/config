@@ -1,0 +1,10 @@
+[main]
+host = https://www.transifex.com
+
+[gino.indexpot]
+file_filter = docs/locales/<lang>/LC_MESSAGES/index.po
+minimum_perc = 0
+source_file = docs/_build/locale/index.pot
+source_lang = en
+type = PO
+
