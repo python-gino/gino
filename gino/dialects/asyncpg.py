@@ -13,7 +13,8 @@ from sqlalchemy.dialects.postgresql.base import (
 )
 from sqlalchemy.sql import sqltypes
 
-from ..engine import SAConnection, SAEngine, DBAPIConnection
+# noinspection PyProtectedMember
+from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
 
 DEFAULT = object()
 
@@ -320,8 +321,8 @@ class AsyncpgDialect(PGDialect):
             if k in kwargs:
                 self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._sa_conn = SAConnection(
-            SAEngine(self), DBAPIConnection(self.cursor_cls))
+        self._sa_conn = _SAConnection(
+            _SAEngine(self), _DBAPIConnection(self.cursor_cls))
 
     async def init_pool(self, url, loop):
         return await Pool(url, loop, init=self.on_connect(),

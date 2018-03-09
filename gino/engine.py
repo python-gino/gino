@@ -43,7 +43,7 @@ def _get_context_var():
     return ContextVar
 
 
-class BaseDBAPIConnection:
+class _BaseDBAPIConnection:
     _reset_agent = None
     gino_conn = None
 
@@ -79,7 +79,7 @@ class BaseDBAPIConnection:
         raise NotImplementedError
 
 
-class DBAPIConnection(BaseDBAPIConnection):
+class _DBAPIConnection(_BaseDBAPIConnection):
     def __init__(self, cursor_cls, pool=None):
         super().__init__(cursor_cls)
         self._pool = pool
@@ -113,7 +113,7 @@ class DBAPIConnection(BaseDBAPIConnection):
         return True
 
 
-class ReusingDBAPIConnection(BaseDBAPIConnection):
+class _ReusingDBAPIConnection(_BaseDBAPIConnection):
     def __init__(self, cursor_cls, root):
         super().__init__(cursor_cls)
         self._root = root
@@ -130,19 +130,19 @@ class ReusingDBAPIConnection(BaseDBAPIConnection):
 
 
 # noinspection PyAbstractClass
-class SAConnection(Connection):
+class _SAConnection(Connection):
     pass
 
 
 # noinspection PyAbstractClass
-class SAEngine(Engine):
-    _connection_cls = SAConnection
+class _SAEngine(Engine):
+    _connection_cls = _SAConnection
 
     def __init__(self, dialect, **kwargs):
         super().__init__(None, dialect, None, **kwargs)
 
 
-class AcquireContext:
+class _AcquireContext:
     __slots__ = ['_acquire', '_release']
 
     def __init__(self, acquire, release):
@@ -161,7 +161,7 @@ class AcquireContext:
         return self._acquire().__await__()
 
 
-class TransactionContext:
+class _TransactionContext:
     __slots__ = ['_conn_ctx', '_tx_ctx']
 
     def __init__(self, conn_ctx, args):
@@ -190,8 +190,33 @@ class TransactionContext:
 
 
 class GinoConnection:
+    """
+    Represents an actual database connection.
+
+    This is the root of all query API like :meth:`all`, :meth:`first`,
+    :meth:`scalar` or :meth:`status`, those on engine or query are simply
+    wrappers of methods in this class.
+
+    Usually instances of this class are created by :meth:`.GinoEngine.acquire`.
+
+    .. note::
+
+        :class:`.GinoConnection` may refer to zero or one underlying database
+        connection - when a :class:`.GinoConnection` is acquired with
+        ``lazy=True``, the underlying connection may still be in the pool,
+        until a query API is called or :meth:`get_raw_connection` is called.
+
+        Oppositely, one underlying database connection can be shared by many
+        :class:`.GinoConnection` instances when they are acquired with
+        ``reuse=True``. The actual database connection is only returned to the
+        pool when the **root** :class:`.GinoConnection` is released. Read more
+        in :meth:`GinoEngine.acquire` method.
+
+    """
+
     # noinspection PyProtectedMember
     schema_for_object = schema._schema_getter(None)
+    """A SQLAlchemy compatibility attribute, don't use it for now, it bites."""
 
     def __init__(self, dialect, sa_conn, stack=None):
         self._dialect = dialect
@@ -204,12 +229,41 @@ class GinoConnection:
 
     @property
     def raw_connection(self):
+        """
+        The current underlying database connection instance, type depends on
+        the dialect in use. May be ``None`` if self is a lazy connection.
+
+        """
         return self._dbapi_conn.raw_connection
 
     async def get_raw_connection(self, *, timeout=None):
+        """
+        Get the underlying database connection, acquire one if none present.
+
+        :param timeout: Seconds to wait for the underlying acquiring
+        :return: Underlying database connection instance depending on the
+                 dialect in use
+        :raises: :class:`~asyncio.TimeoutError` if the acquiring timed out
+
+        """
         return await self._dbapi_conn.acquire(timeout=timeout)
 
     async def release(self, *, permanent=False):
+        """
+        Returns the underlying database connection to its pool.
+
+        If ``permanent=False`` (default), this connection will be set in lazy
+        mode with underlying database connection returned, the next query on
+        this connection will cause a new database connection acquired. This is
+        useful when this connection may still be useful again later, while some
+        long-running I/O operations are about to take place, which should not
+        take up one database connection or even transaction for that long time.
+
+        Otherwise, this connection will be marked as closed after returning to
+        pool, and be no longer usable again. ``permanent=True`` is the same as
+        :meth:`.GinoEngine.release`.
+
+        """
         if permanent and self._stack is not None:
             for i in range(len(self._stack)):
                 if self._stack[-1].gino_conn is self:
@@ -226,20 +280,58 @@ class GinoConnection:
 
     @property
     def dialect(self):
+        """
+        The :class:`~sqlalchemy.engine.interfaces.Dialect` in use, inherited
+        from the engine created this connection.
+
+        """
         return self._dialect
 
     def _execute(self, clause, multiparams, params):
         return self._sa_conn.execute(clause, *multiparams, **params)
 
     async def all(self, clause, *multiparams, **params):
+        """
+        Runs the given query in database, returns all results as a list.
+
+        This method accepts the same parameters taken by SQLAlchemy
+        :meth:`~sqlalchemy.engine.Connectable.execute`. You can pass in a raw
+        SQL string, or *any* SQLAlchemy query clauses.
+
+        If the given query clause is built by CRUD models, then the returning
+        rows will be turned into relevant model objects (Only one type of model
+        per query is supported for now, no relationship support yet). See
+        :meth:`execution_options` for more information.
+
+        If the given parameters are parsed as "executemany" - bulk inserting
+        multiple rows in one call for example, the returning result from
+        database will be discarded and this method will return ``None``.
+
+        """
         result = self._execute(clause, multiparams, params)
         return await result.execute()
 
     async def first(self, clause, *multiparams, **params):
+        """
+        Runs the given query in database, returns the first result.
+
+        If the query returns no result, this method will return ``None``.
+
+        See :meth:`all` for common query comments.
+
+        """
         result = self._execute(clause, multiparams, params)
         return await result.execute(one=True)
 
     async def scalar(self, clause, *multiparams, **params):
+        """
+        Runs the given query in database, returns the first result.
+
+        If the query returns no result, this method will return ``None``.
+
+        See :meth:`all` for common query comments.
+
+        """
         result = self._execute(clause, multiparams, params)
         rv = await result.execute(one=True, return_model=False)
         if rv:
@@ -249,19 +341,119 @@ class GinoConnection:
 
     async def status(self, clause, *multiparams, **params):
         """
-        You can parse the return value like this: https://git.io/v7oze
+        Runs the given query in database, returns the query status.
+
+        The returning query status depends on underlying database and the
+        dialect in use. For asyncpg it is a string, you can parse it like this:
+        https://git.io/v7oze
+
         """
         result = self._execute(clause, multiparams, params)
         return await result.execute(status=True)
 
     def transaction(self, *args, **kwargs):
+        """
+        Starts a database transaction.
+
+        There are two ways using this method: **managed** as an asynchronous
+        context manager::
+
+            async with conn.transaction() as tx:
+                # run query in transaction
+
+        or **manually** awaited::
+
+            tx = await conn.transaction()
+            try:
+                # run query in transaction
+                await tx.commit()
+            except Exception:
+                await tx.rollback()
+                raise
+
+        Where the ``tx`` is an instance of the
+        :class:`~gino.transaction.GinoTransaction` class, feel free to read
+        more about it.
+
+        In the first managed mode, the transaction is automatically committed
+        on exiting the context block, or rolled back if an exception was raised
+        which led to the exit of the context. In the second manual mode, you'll
+        need to manually call the
+        :meth:`~gino.transaction.GinoTransaction.commit` or
+        :meth:`~gino.transaction.GinoTransaction.rollback` methods on need.
+
+        If this is a lazy connection, entering a transaction will cause a new
+        database connection acquired if none was present.
+
+        Transactions may support nesting depending on the dialect in use. For
+        example in asyncpg, starting a second transaction on the same
+        connection will create a save point in the database.
+
+        For now, the parameters are directly passed to underlying database
+        driver, read :meth:`asyncpg.connection.Connection.transaction` for
+        asyncpg.
+
+        """
         return GinoTransaction(self, args, kwargs)
 
     def iterate(self, clause, *multiparams, **params):
+        """
+        Creates a server-side cursor in database for large query results.
+
+        Cursors must work within transactions::
+
+            async with conn.transaction():
+                async for user in conn.iterate(User.query):
+                    # handle each user without loading all users into memory
+
+        Alternatively, you can manually control how the cursor works::
+
+            async with conn.transaction():
+                cursor = await conn.iterate(User.query)
+                user = await cursor.next()
+                users = await cursor.many(10)
+
+        Read more about how :class:`~gino.cursor.Cursor` works.
+
+        Similarly, this method takes the same parameters as :meth:`all`.
+
+        """
         result = self._execute(clause, multiparams, params)
         return result.iterate()
 
     def execution_options(self, **opt):
+        """
+        Set non-SQL options for the connection which take effect during
+        execution.
+
+        This method returns a copy of this :class:`.GinoConnection` which
+        references the same underlying database connection, but with the given
+        execution options set on the copy. Therefore, it is a good practice to
+        discard the copy immediately after use, for example::
+
+            row = await conn.execution_options(model=None).first(User.query)
+
+        This is very much the same as SQLAlchemy
+        :meth:`~sqlalchemy.engine.base.Connection.execution_options`, it
+        actually does pass the execution options to the underlying SQLAlchemy
+        :class:`~sqlalchemy.engine.base.Connection`. Furthermore, GINO added a
+        few execution options:
+
+        :param return_model: Boolean to control whether the returning results
+          should be loaded into model instances, where the model class is
+          defined in another execution option ``model``. Default is ``True``.
+
+        :param model: Specifies the type of model instance to create on return.
+          This has no effect if ``return_model`` is set to ``False``. Usually
+          in queries built by CRUD models, this execution option is
+          automatically set. For now, GINO only supports loading each row into
+          one type of model object, relationships are not supported. Please use
+          multiple queries for that. ``None`` for no postprocessing (default).
+
+        :param timeout: Seconds to wait for the query to finish. ``None`` for
+          no time out (default).
+
+        """
         return type(self)(self._dialect,
                           self._sa_conn.execution_options(**opt))
 
@@ -274,8 +466,8 @@ class GinoEngine:
     connection_cls = GinoConnection
 
     def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
-        self._sa_engine = SAEngine(dialect,
-                                   logging_name=logging_name, echo=echo)
+        self._sa_engine = _SAEngine(dialect,
+                                    logging_name=logging_name, echo=echo)
         self._dialect = dialect
         self._pool = pool
         self._loop = loop
@@ -290,7 +482,7 @@ class GinoEngine:
         return self._pool.raw_pool
 
     def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
-        return AcquireContext(functools.partial(
+        return _AcquireContext(functools.partial(
             self._acquire, timeout, reuse, lazy, reusable), self.release)
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
@@ -300,13 +492,13 @@ class GinoEngine:
             stack = collections.deque()
             self._ctx.set(stack)
         if reuse and stack:
-            dbapi_conn = ReusingDBAPIConnection(self._dialect.cursor_cls,
-                                                stack[-1])
+            dbapi_conn = _ReusingDBAPIConnection(self._dialect.cursor_cls,
+                                                 stack[-1])
             reusable = False
         else:
-            dbapi_conn = DBAPIConnection(self._dialect.cursor_cls, self._pool)
+            dbapi_conn = _DBAPIConnection(self._dialect.cursor_cls, self._pool)
         rv = self.connection_cls(self._dialect,
-                                 SAConnection(self._sa_engine, dbapi_conn),
+                                 _SAConnection(self._sa_engine, dbapi_conn),
                                  stack if reusable else None)
         dbapi_conn.gino_conn = rv
         if not lazy:
@@ -348,8 +540,8 @@ class GinoEngine:
         return self._dialect.compile(clause, *multiparams, **params)
 
     def transaction(self, *args, timeout=None, reuse=True, **kwargs):
-        return TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
-                                  (args, kwargs))
+        return _TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
+                                   (args, kwargs))
 
     def iterate(self, clause, *multiparams, **params):
         connection = self.current_connection
