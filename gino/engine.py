@@ -413,7 +413,7 @@ class GinoConnection:
                 user = await cursor.next()
                 users = await cursor.many(10)
 
-        Read more about how :class:`~gino.cursor.Cursor` works.
+        Read more about how :class:`~gino.dialects.base.Cursor` works.
 
         Similarly, this method takes the same parameters as :meth:`all`.
 

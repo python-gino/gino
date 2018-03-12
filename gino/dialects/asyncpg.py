@@ -1,7 +1,6 @@
 import inspect
 import itertools
 import time
-import weakref
 
 import asyncpg
 from sqlalchemy import util, exc, sql
@@ -13,10 +12,7 @@ from sqlalchemy.dialects.postgresql.base import (
 )
 from sqlalchemy.sql import sqltypes
 
-# noinspection PyProtectedMember
-from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
-
-DEFAULT = object()
+from . import base
 
 
 class AsyncpgCompiler(PGCompiler):
@@ -34,123 +30,66 @@ class AsyncpgCompiler(PGCompiler):
             return super()._apply_numbered_params()
 
 
-_NO_DEFAULT = object()
-
-
 # noinspection PyAbstractClass
-class AsyncpgExecutionContext(PGExecutionContext):
-    def _compiled_first_opt(self, key, default=_NO_DEFAULT):
-        rv = _NO_DEFAULT
-        opts = getattr(getattr(self, 'compiled', None), 'execution_options',
-                       None)
-        if opts:
-            rv = opts.get(key, _NO_DEFAULT)
-        if rv is _NO_DEFAULT:
-            # noinspection PyUnresolvedReferences
-            rv = self.execution_options.get(key, default)
-        if rv is _NO_DEFAULT:
-            raise LookupError('No such execution option!')
-        return rv
-
-    @util.memoized_property
-    def return_model(self):
-        return self._compiled_first_opt('return_model', True)
-
-    @util.memoized_property
-    def model(self):
-        rv = self._compiled_first_opt('model', None)
-        if isinstance(rv, weakref.ref):
-            rv = rv()
-        return rv
-
-    @util.memoized_property
-    def timeout(self):
-        return self._compiled_first_opt('timeout', None)
-
-    def process_rows(self, rows, return_model=True):
-        rv = rows = super().get_result_proxy().process_rows(rows)
-        if self.model is not None and return_model and self.return_model:
-            rv = []
-            for row in rows:
-                obj = self.model()
-                obj.__values__.update(row)
-                rv.append(obj)
-        return rv
-
-    def get_result_proxy(self):
-        return ResultProxy(self)
+class AsyncpgExecutionContext(base.ExecutionContextOverride,
+                              PGExecutionContext):
+    pass
 
 
-class CursorFactory:
-    def __init__(self, context):
+class AsyncpgIterator:
+    def __init__(self, context, iterator):
         self._context = context
-
-    @property
-    def context(self):
-        return self._context
-
-    async def get_raw_cursor(self):
-        prepared = await self._context.cursor.prepare(self._context.statement,
-                                                      self._context.timeout)
-        return prepared.cursor(*self._context.parameters[0],
-                               timeout=self._context.timeout)
-
-    def __aiter__(self):
-        return CursorIterator(self)
-
-    def __await__(self):
-        return Cursor(self).async_init().__await__()
-
-
-class CursorIterator:
-    def __init__(self, factory):
-        self._factory = factory
-        self._iterator = None
+        self._iterator = iterator
 
     async def __anext__(self):
-        if self._iterator is None:
-            raw = await self._factory.get_raw_cursor()
-            self._iterator = raw.__aiter__()
         row = await self._iterator.__anext__()
-        return self._factory.context.process_rows([row])[0]
+        return self._context.process_rows([row])[0]
 
 
-class Cursor:
-    def __init__(self, factory):
-        self._factory = factory
-        self._cursor = None
+class AsyncpgCursor(base.Cursor):
+    def __init__(self, context, cursor):
+        self._context = context
+        self._cursor = cursor
 
-    async def async_init(self):
-        raw = await self._factory.get_raw_cursor()
-        self._cursor = await raw
-        return self
-
-    async def many(self, n, *, timeout=DEFAULT):
-        if timeout is DEFAULT:
-            timeout = self._factory.context.timeout
+    async def many(self, n, *, timeout=base.DEFAULT):
+        if timeout is base.DEFAULT:
+            timeout = self._context.timeout
         rows = await self._cursor.fetch(n, timeout=timeout)
-        return self._factory.context.process_rows(rows)
+        return self._context.process_rows(rows)
 
-    async def next(self, *, timeout=DEFAULT):
-        if timeout is DEFAULT:
-            timeout = self._factory.context.timeout
+    async def next(self, *, timeout=base.DEFAULT):
+        if timeout is base.DEFAULT:
+            timeout = self._context.timeout
         row = await self._cursor.fetchrow(timeout=timeout)
         if not row:
             return None
-        return self._factory.context.process_rows([row])[0]
+        return self._context.process_rows([row])[0]
+
+    async def forward(self, n, *, timeout=base.DEFAULT):
+        if timeout is base.DEFAULT:
+            timeout = self._context.timeout
+        await self._cursor.forward(n, timeout=timeout)
 
 
-class DBAPICursor:
+class PreparedStatement(base.PreparedStatement):
+    def __init__(self, prepared):
+        super().__init__()
+        self._prepared = prepared
+
+    def _get_iterator(self, *params, **kwargs):
+        return AsyncpgIterator(
+            self.context, self._prepared.cursor(*params, **kwargs).__aiter__())
+
+    async def _get_cursor(self, *params, **kwargs):
+        iterator = await self._prepared.cursor(*params, **kwargs)
+        return AsyncpgCursor(self.context, iterator)
+
+
+class DBAPICursor(base.DBAPICursor):
     def __init__(self, dbapi_conn):
         self._conn = dbapi_conn
         self._attributes = None
         self._status = None
-
-    def execute(self, statement, parameters):
-        pass
-
-    def executemany(self, statement, parameters):
-        pass
 
     async def prepare(self, query, timeout):
         if timeout is None:
@@ -165,7 +104,7 @@ class DBAPICursor:
             self._attributes = prepared.get_attributes()
         except TypeError:  # asyncpg <= 0.12.0
             self._attributes = []
-        return prepared
+        return PreparedStatement(prepared)
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
         if timeout is None:
@@ -204,47 +143,7 @@ class DBAPICursor:
         return self._status.decode()
 
 
-class ResultProxy:
-    _metadata = True
-
-    def __init__(self, context):
-        self._context = context
-
-    @property
-    def context(self):
-        return self._context
-
-    async def execute(self, one=False, return_model=True, status=False):
-        context = self._context
-        cursor = context.cursor
-        if context.executemany:
-            return await cursor.async_execute(
-                context.statement, context.timeout, context.parameters,
-                many=True)
-        else:
-            args = context.parameters[0]
-            rows = await cursor.async_execute(
-                context.statement, context.timeout, args, 1 if one else 0)
-            item = context.process_rows(rows, return_model=return_model)
-            if one:
-                if item:
-                    item = item[0]
-                else:
-                    item = None
-            if status:
-                item = cursor.get_statusmsg(), item
-            return item
-
-    def iterate(self):
-        if self._context.executemany:
-            raise ValueError('too many multiparams')
-        return CursorFactory(self._context)
-
-    def _soft_close(self):
-        pass
-
-
-class Pool:
+class Pool(base.Pool):
     def __init__(self, url, loop, **kwargs):
         self._url = url
         self._loop = loop
@@ -281,7 +180,7 @@ class Pool:
         await self._pool.close()
 
 
-class Transaction:
+class Transaction(base.Transaction):
     def __init__(self, tx):
         self._tx = tx
 
@@ -300,7 +199,7 @@ class Transaction:
 
 
 # noinspection PyAbstractClass
-class AsyncpgDialect(PGDialect):
+class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     driver = 'asyncpg'
     supports_native_decimal = True
     default_paramstyle = 'numeric'
@@ -321,19 +220,11 @@ class AsyncpgDialect(PGDialect):
             if k in kwargs:
                 self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._sa_conn = _SAConnection(
-            _SAEngine(self), _DBAPIConnection(self.cursor_cls))
+        self._init_mixin()
 
     async def init_pool(self, url, loop):
         return await Pool(url, loop, init=self.on_connect(),
                           **self._pool_kwargs)
-
-    def compile(self, elem, *multiparams, **params):
-        context = self._sa_conn.execute(elem, *multiparams, **params).context
-        if context.executemany:
-            return context.statement, context.parameters
-        else:
-            return context.statement, context.parameters[0]
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):

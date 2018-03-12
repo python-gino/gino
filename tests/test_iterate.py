@@ -57,6 +57,18 @@ async def test_bind(bind, names):
                 dict(nickname='666'),
             ])
 
+    result = set()
+    async with bind.transaction():
+        cursor = await User.query.gino.iterate()
+        await cursor.forward(1)
+        result.add((await cursor.next()).nickname)
+        assert names != result
+        result.update([u.nickname for u in await cursor.many(1)])
+        assert names != result
+        result.update([u.nickname for u in await cursor.many(2)])
+        assert names != result
+        assert await cursor.next() is None
+
 
 # noinspection PyUnusedLocal,PyShadowingNames
 async def test_basic(engine, names):
