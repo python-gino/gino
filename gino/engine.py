@@ -143,19 +143,19 @@ class _SAEngine(Engine):
 
 
 class _AcquireContext:
-    __slots__ = ['_acquire', '_release']
+    __slots__ = ['_acquire', '_conn']
 
-    def __init__(self, acquire, release):
+    def __init__(self, acquire):
         self._acquire = acquire
-        self._release = release
+        self._conn = None
 
     async def __aenter__(self):
-        rv = await self._acquire()
-        self._release = functools.partial(self._release, rv)
-        return rv
+        self._conn = await self._acquire()
+        return self._conn
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._release()
+        conn, self._conn = self._conn, None
+        await conn.release()
 
     def __await__(self):
         return self._acquire().__await__()
@@ -212,6 +212,10 @@ class GinoConnection:
         pool when the **root** :class:`.GinoConnection` is released. Read more
         in :meth:`GinoEngine.acquire` method.
 
+    .. seealso::
+
+        :doc:`/engine`
+
     """
 
     # noinspection PyProtectedMember
@@ -248,20 +252,36 @@ class GinoConnection:
         """
         return await self._dbapi_conn.acquire(timeout=timeout)
 
-    async def release(self, *, permanent=False):
+    async def release(self, *, permanent=True):
         """
         Returns the underlying database connection to its pool.
 
-        If ``permanent=False`` (default), this connection will be set in lazy
-        mode with underlying database connection returned, the next query on
-        this connection will cause a new database connection acquired. This is
+        If ``permanent=False``, this connection will be set in lazy mode with
+        underlying database connection returned, the next query on this
+        connection will cause a new database connection acquired. This is
         useful when this connection may still be useful again later, while some
         long-running I/O operations are about to take place, which should not
         take up one database connection or even transaction for that long time.
 
-        Otherwise, this connection will be marked as closed after returning to
-        pool, and be no longer usable again. ``permanent=True`` is the same as
-        :meth:`.GinoEngine.release`.
+        Otherwise with ``permanent=True`` (default), this connection will be
+        marked as closed after returning to pool, and be no longer usable
+        again.
+
+        If this connection is a reusing connection, then only this connection
+        is closed (depending on ``permanent``), the reused underlying
+        connection will **not** be returned back to the pool.
+
+        Practically it is recommended to return connections in the reversed
+        order as they are borrowed, but if this connection is a reused
+        connection with still other opening connections reusing it, then on
+        release the underlying connection **will be** returned to the pool,
+        with all the reusing connections losing an available underlying
+        connection. The availability of further operations on those reusing
+        connections depends on the given ``permanent`` value.
+
+        .. seealso::
+
+            :meth:`.GinoEngine.acquire`
 
         """
         if permanent and self._stack is not None:
@@ -463,7 +483,24 @@ class GinoConnection:
 
 
 class GinoEngine:
+    """
+    Connects a :class:`~.dialects.base.Pool` and
+    :class:`~sqlalchemy.engine.interfaces.Dialect` together to provide a source
+    of database connectivity and behavior.
+
+    A :class:`.GinoEngine` object is instantiated publicly using the
+    :func:`gino.create_engine` function or
+    :func:`db.set_bind() <gino.api.Gino.set_bind>` method.
+
+    .. seealso::
+
+        :doc:`/engine`
+
+    """
+
     connection_cls = GinoConnection
+    """Customizes the connection class to use, default is
+    :class:`.GinoConnection`."""
 
     def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
         self._sa_engine = _SAEngine(dialect,
@@ -475,15 +512,86 @@ class GinoEngine:
 
     @property
     def dialect(self):
+        """
+        Read-only property for the
+        :class:`~sqlalchemy.engine.interfaces.Dialect` of this engine.
+
+        """
         return self._dialect
 
     @property
     def raw_pool(self):
+        """
+        Read-only access to the underlying database connection pool instance.
+        This depends on the actual dialect in use, :class:`~asyncpg.pool.Pool`
+        of asyncpg for example.
+
+        """
         return self._pool.raw_pool
 
     def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
+        """
+        Acquire a connection from the pool.
+
+        There are two ways using this method - as an asynchronous context
+        manager::
+
+            async with engine.acquire() as conn:
+                # play with the connection
+
+        which will guarantee the connection is returned to the pool when
+        leaving the ``async with`` block; or as a coroutine::
+
+            conn = await engine.acquire()
+            try:
+                # play with the connection
+            finally:
+                await conn.release()
+
+        where the connection should be manually returned to the pool with
+        :meth:`conn.release() <.GinoConnection.release>`.
+
+        Within the same context (usually the same :class:`~asyncio.Task`, see
+        also :doc:`/transaction`), a nesting acquire by default re
+
+        :param timeout: Block up to ``timeout`` seconds until there is one free
+          connection in the pool. Default is ``None`` - block forever until
+          succeeded. This has no effect when ``lazy=True``, and depends on the
+          actual situation when ``reuse=True``.
+
+        :param reuse: Reuse the latest reusable acquired connection (before
+          it's returned to the pool) in current context if there is one, or
+          borrow a new one if none present. Default is ``False`` for always
+          borrow a new one. This is useful when you are in a nested method call
+          series, wishing to use the same connection without passing it around
+          as parameters. See also: :doc:`/transaction`. A reusing connection is
+          not reusable even if ``reusable=True``. If the reused connection
+          happened to be a lazy one, then the reusing connection is lazy too.
+
+        :param lazy: Don't acquire the actual underlying connection yet - do it
+          only when needed. Default is ``False`` for always do it immediately.
+          This is useful before entering a code block which may or may not make
+          use of a given connection object. Feeding in a lazy connection will
+          save the borrow-return job if the connection is never used. If
+          setting ``reuse=True`` at the same time, then the reused connection -
+          if any - applies the same laziness. For example, reusing a lazy
+          connection with ``lazy=False`` will cause the reused connection to
+          acquire an underlying connection immediately.
+
+        :param reusable: Mark this connection as reusable or otherwise. This
+          has no effect if it is a reusing connection. All reusable connections
+          are placed in a stack, any reusing acquire operation will always
+          reuse the top (latest) reusable connection. One reusable connection
+          may be reused by several reusing connections - they all share one
+          same underlying connection. Acquiring a connection with
+          ``reusable=False`` and ``reusing=False`` makes it a cleanly isolated
+          connection which is only referenced once here.
+
+        :return: A :class:`.GinoConnection` object.
+
+        """
         return _AcquireContext(functools.partial(
-            self._acquire, timeout, reuse, lazy, reusable), self.release)
+            self._acquire, timeout, reuse, lazy, reusable))
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
         try:
@@ -507,43 +615,122 @@ class GinoEngine:
             stack.append(dbapi_conn)
         return rv
 
-    async def release(self, connection):
-        await connection.release(permanent=True)
-
     @property
     def current_connection(self):
+        """
+        Gets the most recently acquired reusable connection in the context.
+        ``None`` if there is no such connection.
+
+        :return: :class:`.GinoConnection`
+
+        """
         try:
             return self._ctx.get()[-1].gino_conn
         except (LookupError, IndexError):
             pass
 
     async def close(self):
+        """
+        Close the engine, by closing the underlying pool.
+
+        """
         await self._pool.close()
 
     async def all(self, clause, *multiparams, **params):
+        """
+        Acquires a connection with ``reuse=True`` and runs
+        :meth:`~.GinoConnection.all` on it. This means you can safely do this
+        without borrowing more than one underlying connection::
+
+            async with engine.acquire():
+                await engine.all('SELECT ...')
+
+        The same applies for other query methods.
+
+        """
         async with self.acquire(reuse=True) as conn:
             return await conn.all(clause, *multiparams, **params)
 
     async def first(self, clause, *multiparams, **params):
+        """
+        Runs :meth:`~.GinoConnection.first`, See :meth:`.all`.
+
+        """
         async with self.acquire(reuse=True) as conn:
             return await conn.first(clause, *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, **params):
+        """
+        Runs :meth:`~.GinoConnection.scalar`, See :meth:`.all`.
+
+        """
         async with self.acquire(reuse=True) as conn:
             return await conn.scalar(clause, *multiparams, **params)
 
     async def status(self, clause, *multiparams, **params):
+        """
+        Runs :meth:`~.GinoConnection.status`, See :meth:`.all`.
+
+        """
         async with self.acquire(reuse=True) as conn:
             return await conn.status(clause, *multiparams, **params)
 
     def compile(self, clause, *multiparams, **params):
+        """
+        A shortcut for :meth:`~gino.dialects.base.AsyncDialectMixin.compile` on
+        the dialect, returns raw SQL string and parameters according to the
+        rules of the dialect.
+
+        """
         return self._dialect.compile(clause, *multiparams, **params)
 
-    def transaction(self, *args, timeout=None, reuse=True, **kwargs):
-        return _TransactionContext(self.acquire(timeout=timeout, reuse=reuse),
-                                   (args, kwargs))
+    def transaction(self, *args, timeout=None, reuse=True, reusable=True,
+                    **kwargs):
+        """
+        Borrows a new connection and starts a transaction with it.
+
+        Different to :meth:`.GinoConnection.transaction`, transaction on engine
+        level supports only managed usage::
+
+            async with engine.transaction() as tx:
+                # play with transaction here
+
+        Where the implicitly acquired connection is available as
+        :attr:`tx.connection <gino.transaction.GinoTransaction.connection>`.
+
+        By default, :meth:`.transaction` acquires connection with
+        ``reuse=True`` and ``reusable=True``, that means it by default tries to
+        create a nested transaction instead of a new transaction on a new
+        connection. You can change the default behavior by setting these two
+        arguments.
+
+        The other arguments are the same as
+        :meth:`~.GinoConnection.transaction` on connection.
+
+        .. seealso::
+
+            :meth:`.GinoEngine.acquire`
+
+            :meth:`.GinoConnection.transaction`
+
+            :class:`~gino.transaction.GinoTransaction`
+
+        :return: A asynchronous context manager that yields a
+          :class:`~gino.transaction.GinoTransaction`
+
+        """
+        return _TransactionContext(self.acquire(
+            timeout=timeout, reuse=reuse, reusable=reusable), (args, kwargs))
 
     def iterate(self, clause, *multiparams, **params):
+        """
+        Creates a server-side cursor in database for large query results.
+
+        This requires that there is a reusable connection in the current
+        context, and an active transaction is present. Then its
+        :meth:`.GinoConnection.iterate` is executed and returned.
+
+        """
         connection = self.current_connection
         if connection is None:
             raise ValueError(
@@ -551,6 +738,16 @@ class GinoEngine:
         return connection.iterate(clause, *multiparams, **params)
 
     def update_execution_options(self, **opt):
+        """Update the default execution_options dictionary
+        of this :class:`.GinoEngine`.
+
+        .. seealso::
+
+            :meth:`sqlalchemy.engine.Engine.update_execution_options`
+
+            :meth:`.GinoConnection.execution_options`
+
+        """
         self._sa_engine.update_execution_options(**opt)
 
     async def _run_visitor(self, *args, **kwargs):

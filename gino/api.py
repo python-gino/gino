@@ -284,8 +284,8 @@ class Gino(sa.MetaData):
         :param bind: A :class:`~.engine.GinoEngine` instance to bind. Also
                      accepts string or :class:`~sqlalchemy.engine.url.URL`,
                      which will be passed to
-                     :meth:`~gino.strategies.create_engine` when this
-                     :class:`Gino` instance is awaited. Default is ``None``.
+                     :meth:`~gino.create_engine` when this :class:`Gino`
+                     instance is awaited. Default is ``None``.
         :param model_classes: A :class:`tuple` of base class and mixin classes
                               to create the :attr:`~.Gino.Model` class. Default
                               is :class:`(CRUDModel, ) <gino.crud.CRUDModel>`.
@@ -356,8 +356,7 @@ class Gino(sa.MetaData):
 
         If the given ``bind`` is a string or
         :class:`~sqlalchemy.engine.url.URL`, all arguments will be sent to
-        :meth:`~gino.strategies.create_engine` to create a new engine, and
-        return it.
+        :meth:`~gino.create_engine` to create a new engine, and return it.
 
         :return: :class:`~.engine.GinoEngine`
 
@@ -365,7 +364,7 @@ class Gino(sa.MetaData):
         if isinstance(bind, str):
             bind = make_url(bind)
         if isinstance(bind, URL):
-            from .strategies import create_engine
+            from . import create_engine
             bind = await create_engine(bind, loop=loop, **kwargs)
         self.bind = bind
         return bind
@@ -389,9 +388,9 @@ class Gino(sa.MetaData):
         Shortcut for :meth:`set_bind` and :meth:`pop_bind` plus closing engine.
 
         This method accepts the same arguments of
-        :meth:`~gino.strategies.create_engine`. This allows inline creating an
-        engine and binding self on enter, and unbinding self and closing the
-        engine on exit::
+        :meth:`~gino.create_engine`. This allows inline creating an engine and
+        binding self on enter, and unbinding self and closing the engine on
+        exit::
 
             async with db.with_bind('postgresql://...') as engine:
                 # play with engine
@@ -458,14 +457,6 @@ class Gino(sa.MetaData):
 
         """
         return self.bind.acquire(*args, **kwargs)
-
-    async def release(self, connection):
-        """
-        A delegate of :meth:`GinoEngine.release()
-        <.engine.GinoEngine.release>`.
-
-        """
-        return await self.bind.release(connection)
 
     def transaction(self, *args, **kwargs):
         """

@@ -162,10 +162,10 @@ information about how to compose this database URL.
 .. note::
 
     Under the hood :meth:`~gino.api.Gino.set_bind` calls
-    :meth:`~gino.strategies.create_engine` and bind the engine to this ``db``
-    object. GINO engine is similar to SQLAlchemy engine, but not identical.
-    Because GINO engine is asynchronous, while the other is not. Please refer
-    to the API reference of GINO for more information.
+    :meth:`~gino.create_engine` and bind the engine to this ``db`` object. GINO
+    engine is similar to SQLAlchemy engine, but not identical. Because GINO
+    engine is asynchronous, while the other is not. Please refer to the API
+    reference of GINO for more information.
 
 Now that we are connected, let's create the table in database (in the same
 ``main()`` method)::

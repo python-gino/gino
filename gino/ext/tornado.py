@@ -167,6 +167,7 @@ except ImportError:
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
+from ..strategies import GinoStrategy
 
 
 def _assert_not_negative(name):
@@ -231,6 +232,14 @@ class GinoEngine(_Engine):
         return rv
 
 
+class TornadoStrategy(GinoStrategy):
+    name = 'tornado'
+    engine_cls = GinoEngine
+
+
+TornadoStrategy()
+
+
 class Gino(_Gino):
     """
     Base class for GINO database.
@@ -259,7 +268,7 @@ class Gino(_Gino):
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('engine_cls', GinoEngine)
+        kwargs.setdefault('strategy', 'tornado')
         return await super().set_bind(bind, loop=loop, **kwargs)
 
 

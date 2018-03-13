@@ -142,7 +142,7 @@ async def test_reuse(bind):
                 assert (tx2.connection.raw_connection is not
                         tx.connection.raw_connection)
     with pytest.raises(ValueError, match='already released'):
-        await db.release(conn)
+        await conn.release()
     assert init_size == qsize(bind)
 
 

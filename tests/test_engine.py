@@ -303,13 +303,13 @@ async def test_lazy(mocker):
     ctx = engine.acquire(lazy=True)
     conn = await ctx.__aenter__()
     t1 = loop.create_task(conn.scalar('select 1'))
-    t2 = loop.create_task(conn.release())
+    t2 = loop.create_task(conn.release(permanent=False))
     with pytest.raises(ValueError):
         await t1
     assert not await t2
     assert qsize(engine) == init_size_2
 
-    await conn.release()
+    await conn.release(permanent=False)
     assert qsize(engine) == init_size_2
 
     await blocker
@@ -320,19 +320,19 @@ async def test_release(engine):
     init_size = qsize(engine)
     async with engine.acquire() as conn:
         assert await conn.scalar('select 8') == 8
-        await conn.release()
+        await conn.release(permanent=False)
         assert await conn.scalar('select 8') == 8
-        await conn.release()
+        await conn.release(permanent=False)
     with pytest.raises(ValueError, match='released permanently'):
         await conn.scalar('select 8')
     with pytest.raises(ValueError, match='already released'):
-        await conn.release(permanent=True)
+        await conn.release()
 
     conn = await engine.acquire()
     assert await conn.scalar('select 8') == 8
-    await conn.release()
+    await conn.release(permanent=False)
     assert await conn.scalar('select 8') == 8
-    await conn.release(permanent=True)
+    await conn.release()
     with pytest.raises(ValueError, match='released permanently'):
         await conn.scalar('select 8')
 
@@ -345,38 +345,38 @@ async def test_release(engine):
     assert await conn3.scalar('select 8') == 8
     assert await conn4.scalar('select 8') == 8
 
+    await conn1.release(permanent=False)
+    assert await conn2.scalar('select 8') == 8
+
+    await conn2.release(permanent=False)
+    assert await conn2.scalar('select 8') == 8
+
     await conn1.release()
-    assert await conn2.scalar('select 8') == 8
-
-    await conn2.release()
-    assert await conn2.scalar('select 8') == 8
-
-    await conn1.release(permanent=True)
     with pytest.raises(ValueError, match='released permanently'):
         await conn2.scalar('select 8')
     assert await conn4.scalar('select 8') == 8
 
-    await conn4.release(permanent=True)
+    await conn4.release()
     with pytest.raises(ValueError, match='released permanently'):
         await conn4.scalar('select 8')
 
     assert await conn3.scalar('select 8') == 8
-    await conn3.release()
+    await conn3.release(permanent=False)
     assert await conn3.scalar('select 8') == 8
     assert init_size - 1 == qsize(engine)
-    await conn3.release()
+    await conn3.release(permanent=False)
     assert init_size == qsize(engine)
-    await conn3.release(permanent=True)
+    await conn3.release()
     assert init_size == qsize(engine)
 
     conn1 = await engine.acquire()
     conn2 = await engine.acquire()
     conn3 = await engine.acquire()
     assert engine.current_connection is conn3
-    await conn2.release(permanent=True)
+    await conn2.release()
     assert engine.current_connection is conn3
-    await conn1.release(permanent=True)
+    await conn1.release()
     assert engine.current_connection is conn3
-    await conn3.release(permanent=True)
+    await conn3.release()
     assert engine.current_connection is None
     assert init_size == qsize(engine)

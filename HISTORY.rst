@@ -16,27 +16,27 @@ Migrating to GINO 0.6
 We created a new Python package aiocontextvars_ from previous ``local.py``. If
 you made use of the task local features, you should install this package.
 
-Previous ``gino.enable_task_local`` and ``gino.disable_task_local`` are
-replaced by ``aiocontextvars.enable_inherit`` and
-``aiocontextvars.disable_inherit``. However in GINO 0.5 they controls the whole
-task local feature switch, while aiocontextvars_ by default offers task local
-even without ``enable_inherit``, which controls whether the local storage
-should be passed between chained tasks. When enabled, it behaves the same as
-enabled in 0.5, but you cannot completely turn off the task local feature while
-aiocontextvars_ is installed.
+Previous ``gino.enable_task_local()`` and ``gino.disable_task_local()`` are
+replaced by ``aiocontextvars.enable_inherit()`` and
+``aiocontextvars.disable_inherit()``. However in GINO 0.5 they controls the
+whole task local feature switch, while aiocontextvars_ by default offers task
+local even without ``enable_inherit()``, which controls whether the local
+storage should be passed between chained tasks. When enabled, it behaves the
+same as enabled in 0.5, but you cannot completely turn off the task local
+feature while aiocontextvars_ is installed.
 
-There is no ``gino.get_local`` and ``gino.reset_local`` relevant in
+There is no ``gino.get_local()`` and ``gino.reset_local()`` relevant in
 aiocontextvars_. The similar thing is ``aiocontextvars.ContextVar`` instance
-through its ``get``, ``set`` and ``delete`` methods.
+through its ``get()``, ``set()`` and ``delete()`` methods.
 
-Previous ``gino.is_local_root`` is now
+Previous ``gino.is_local_root()`` is now
 ``not aiocontextvars.Context.current().inherited``.
 
 2. Engine
 """""""""
 
 GINO 0.6 hides ``asyncpg.Pool`` behind the new SQLAlchemy-alike
-``gino.Engine``. Instead of doing this in 0.5::
+``gino.GinoEngine``. Instead of doing this in 0.5::
 
     async with db.create_pool('postgresql://...') as pool:
         # your code here
@@ -74,46 +74,54 @@ Or even this::
 
 Choose whichever suits you the best.
 
-Obviously ``Engine`` doesn't provide ``asyncpg.Pool`` methods directly any
+Obviously ``GinoEngine`` doesn't provide ``asyncpg.Pool`` methods directly any
 longer, but you can get the underlying ``asyncpg.Pool`` object through
 ``engine.raw_pool`` property.
 
-``GinoPool.get_current_connection`` is now changed to ``current_connection``
-property on ``Engine`` instances to support multiple engines.
+``GinoPool.get_current_connection()`` is now changed to ``current_connection``
+property on ``GinoEngine`` instances to support multiple engines.
 
-``GinoPool().execution_option`` is gone, instead ``update_execution_options``
-on ``Engine`` instance is available.
+``GinoPool.execution_option`` is gone, instead ``update_execution_options()``
+on ``GinoEngine`` instance is available.
 
 ``GinoPool().metadata`` is gone, ``dialect`` is still available.
 
-These methods exist both in 0.5 ``GinoPool`` and 0.6 ``Engine``: ``close``,
-``acquire``, ``release``, ``all``, ``first``, ``scalar``, ``status``.
+``GinoPool.release()`` is removed in ``GinoEngine`` and ``Gino``, the
+``release()`` method on ``GinoConnection`` object should be used instead.
+
+These methods exist both in 0.5 ``GinoPool`` and 0.6 ``GinoEngine``:
+``close()``, ``acquire()``, ``all()``, ``first()``, ``scalar()``, ``status()``.
 
 3. GinoConnection
 """""""""""""""""
 
 Similarly, ``GinoConnection`` in 0.6 is no longer a subclass of
 ``asyncpg.Connection``, instead it has a ``asyncpg.Connection`` instance,
-accessable through ``GinoConnection().raw_connection`` property.
+accessable through ``GinoConnection.raw_connection`` property.
 
-``GinoConnection().metadata`` is deleted in 0.6, while ``dialect`` remained.
+``GinoConnection.metadata`` is deleted in 0.6, while ``dialect`` remained.
 
-``GinoConnection().execution_options`` is changed from a mutable dict in 0.5 to
+``GinoConnection.execution_options()`` is changed from a mutable dict in 0.5 to
 a method returning a copy of current connection with the new options, the same
 as SQLAlchemy behavior.
 
-And ``all``, ``first``, ``scalar``, ``status``, ``iterate``, ``transaction``
-remained in 0.6.
+``GinoConnection.release()`` is still present, but its default behavior has
+been changed to permanently release this connection. You should add argument
+``permanent=False`` to remain its previous behavior.
+
+And ``all()``, ``first()``, ``scalar()``, ``status()``, ``iterate()``,
+``transaction()`` remained in 0.6.
 
 4. Query API
 """"""""""""
 
-All five query APIs ``all``, ``first``, ``scalar``, ``status``, ``iterate`` now
-accept the same parameters as SQLAlchemy ``execute``, meaning they accept raw
-SQL text, or multiple sets of parameters for "executemany". Please note, if the
-parameters are recognized as "executemany", none of the methods will return
-anything. Meanwhile, they no longer accept the parameter ``bind`` if they did.
-Just use the API on the ``Engine`` or ``GinoConnection`` object instead.
+All five query APIs ``all()``, ``first()``, ``scalar()``, ``status()``,
+``iterate()`` now accept the same parameters as SQLAlchemy ``execute()``,
+meaning they accept raw SQL text, or multiple sets of parameters for
+"executemany". Please note, if the parameters are recognized as "executemany",
+none of the methods will return anything. Meanwhile, they no longer accept the
+parameter ``bind`` if they did. Just use the API on the ``GinoEngine`` or
+``GinoConnection`` object instead.
 
 5. Transaction
 """"""""""""""
@@ -162,7 +170,7 @@ This is also version 1.0 beta 2.
 * Added ``echo`` on engine (#142)
 * Added tests to cover 80% of code
 * Added ``gino`` extension on ``SchemaItem`` for ``create_all`` and so on (#76 #106)
-* Added ``gino`` on model classes for ``create`` or ``drop``
+* Added ``gino`` extension on model classes for ``create()`` or ``drop()``
 * Added ``_update_request_cls`` on ``CRUDModel`` (#147)
 * Rewrote the documentation (#146)
 

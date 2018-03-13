@@ -9,6 +9,7 @@ except ImportError:
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
+from ..strategies import GinoStrategy
 
 
 class SanicModelMixin:
@@ -50,6 +51,14 @@ class GinoEngine(_Engine):
         return rv
 
 
+class SanicStrategy(GinoStrategy):
+    name = 'sanic'
+    engine_cls = GinoEngine
+
+
+SanicStrategy()
+
+
 # noinspection PyClassHasNoInit
 class Gino(_Gino):
     """Support Sanic web server.
@@ -64,7 +73,7 @@ class Gino(_Gino):
     pool on response. If you need to release the connection early in the middle
     to do some long-running tasks, you can simply do this:
 
-        await request['connection'].release()
+        await request['connection'].release(permanent=False)
 
     Here `request['connection']` is a :class:`LazyConnection` object, see its
     doc string for more information.
@@ -89,7 +98,7 @@ class Gino(_Gino):
             async def on_response(request, _):
                 conn = request.pop('connection', None)
                 if conn is not None:
-                    await self.release(conn)
+                    await conn.release()
 
         @app.listener('before_server_start')
         async def before_server_start(_, loop):
@@ -125,5 +134,5 @@ class Gino(_Gino):
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('engine_cls', GinoEngine)
+        kwargs.setdefault('strategy', 'sanic')
         return await super().set_bind(bind, loop=loop, **kwargs)
