@@ -284,7 +284,7 @@ class Gino(sa.MetaData):
         :param bind: A :class:`~.engine.GinoEngine` instance to bind. Also
                      accepts string or :class:`~sqlalchemy.engine.url.URL`,
                      which will be passed to
-                     :meth:`~gino.create_engine` when this :class:`Gino`
+                     :func:`~gino.create_engine` when this :class:`Gino`
                      instance is awaited. Default is ``None``.
         :param model_classes: A :class:`tuple` of base class and mixin classes
                               to create the :attr:`~.Gino.Model` class. Default
@@ -356,7 +356,7 @@ class Gino(sa.MetaData):
 
         If the given ``bind`` is a string or
         :class:`~sqlalchemy.engine.url.URL`, all arguments will be sent to
-        :meth:`~gino.create_engine` to create a new engine, and return it.
+        :func:`~gino.create_engine` to create a new engine, and return it.
 
         :return: :class:`~.engine.GinoEngine`
 
@@ -388,7 +388,7 @@ class Gino(sa.MetaData):
         Shortcut for :meth:`set_bind` and :meth:`pop_bind` plus closing engine.
 
         This method accepts the same arguments of
-        :meth:`~gino.create_engine`. This allows inline creating an engine and
+        :func:`~gino.create_engine`. This allows inline creating an engine and
         binding self on enter, and unbinding self and closing the engine on
         exit::
 

@@ -162,7 +162,7 @@ information about how to compose this database URL.
 .. note::
 
     Under the hood :meth:`~gino.api.Gino.set_bind` calls
-    :meth:`~gino.create_engine` and bind the engine to this ``db`` object. GINO
+    :func:`~gino.create_engine` and bind the engine to this ``db`` object. GINO
     engine is similar to SQLAlchemy engine, but not identical. Because GINO
     engine is asynchronous, while the other is not. Please refer to the API
     reference of GINO for more information.
@@ -415,7 +415,7 @@ At last. Deleting is similar to updating, but way simpler. ::
 
 .. hint::
 
-    Remember the model object is in memory? In the last :meth:`print`
+    Remember the model object is in memory? In the last :func:`print`
     statement, even though the row is already deleted in database, the object
     ``user`` still exists with its values untouched.
 
