@@ -7,6 +7,8 @@ History
 GINO 0.6
 --------
 
+This is also version 1.0 beta 2.
+
 Migrating to GINO 0.6
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -154,10 +156,8 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
-0.6.0 (TBD)
+0.6.0 (2018-03-14)
 ^^^^^^^^^^^^^^^^^^
-
-This is also version 1.0 beta 2.
 
 * [Breaking] API Refactored, ``Pool`` replaced with ``Engine``
 
@@ -179,6 +179,8 @@ This is also version 1.0 beta 2.
 
 GINO 0.5
 --------
+
+This is also version 1.0 beta 1.
 
 0.5.8 (2018-02-14)
 ^^^^^^^^^^^^^^^^^^
@@ -240,8 +242,6 @@ This is an emergency fix for 0.5.0.
 0.5.0 (2017-09-03)
 ^^^^^^^^^^^^^^^^^^
 
-This is also version 1.0 beta 1.
-
 * [Breaking] Internal refactor: extracted and isolated a few modules, partially rewritten
 
   * Extracted CRUD operations
@@ -260,6 +260,9 @@ This is also version 1.0 beta 1.
 
 Early Development Releases
 --------------------------
+
+Considered as alpha releases.
+
 
 0.4.1 (2017-08-20)
 ^^^^^^^^^^^^^^^^^^

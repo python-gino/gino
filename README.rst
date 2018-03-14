@@ -24,29 +24,36 @@ GINO
         :alt: Gitter chat
 
 
-GINO - GINO Is Not ORM - is a lightweight asynchronous Python ORM based on
-SQLAlchemy_ core. Now (early 2018) GINO supports asyncpg_, Sanic_ and Tornado_.
-
+GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
+SQLAlchemy_ core for Python asyncio_. Now (early 2018) GINO supports only one
+dialect asyncpg_.
 
 * Free software: BSD license
-* Documentation: https://python-gino.readthedocs.io.
-
-GINO is built on top of SQLAlchemy core, your tables are 100% compatible with
-vanilla SQLAlchemy, using Alembic_ for example. GINO defined its own ``Engine``
-and ``Connection`` API for asynchronous programming, as well as an asynchronous
-dialect API for adapting non-DB-API asynchronous database connectors, asyncpg_
-for example. On top of such core, GINO offered an object abstraction API for
-simple CRUD operations.
-
-GINO requires Python 3.6 for now, it may be backported to Python 3.5 if time,
-but no 3.4 or lower.
+* Requires: Python 3.6
 
 
-Example
--------
+Documentation
+-------------
 
-A piece of code is worth a thousand words:
+* English_
+* Chinese_
 
+
+Features
+--------
+
+* Robust SQLAlchemy-asyncpg bi-translator with no hard hack
+* Asynchronous SQLAlchemy-alike engine and connection
+* Asynchronous dialect API
+* Asynchronous-friendly CRUD objective models
+* Well-considered contextual connection and transaction management
+* Reusing native SQLAlchemy core to build queries with grammar sugars
+* Support Sanic_ and Tornado_
+* Rich PostgreSQL JSONB support
+
+
+Showcase
+--------
 
 .. code-block:: python
 
@@ -97,8 +104,6 @@ A piece of code is worth a thousand words:
 
    asyncio.get_event_loop().run_until_complete(main())
 
-Please follow the documentation_ for more information.
-
 
 Contribute
 ----------
@@ -108,9 +113,9 @@ free to take any of them and pull requests are greatly welcome.
 
 To run tests:
 
-.. code-block:: shell
+.. code-block:: console
 
-   python setup.py test
+   $ python setup.py test
 
 
 Credits
@@ -138,5 +143,6 @@ software project outsourcing on Python, iOS and Android development.
 .. _peewee-async: https://github.com/05bit/peewee-async
 .. _asyncorm: https://github.com/monobot/asyncorm
 .. _Tornado: http://www.tornadoweb.org/
-.. _documentation: https://python-gino.readthedocs.io/
+.. _English: https://python-gino.readthedocs.io/
+.. _Chinese: https://python-gino.readthedocs.io/zh/latest/
 .. _DecentFoX Studio: https://decentfox.com/
