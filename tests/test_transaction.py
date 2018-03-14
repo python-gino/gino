@@ -229,9 +229,23 @@ async def test_early_end(bind):
 # noinspection PyUnreachableCode
 async def test_end_raises_in_with(engine):
     async with engine.transaction() as tx:
-        await tx.commit()
+        with pytest.raises(AssertionError, match='Illegal in managed mode'):
+            await tx.commit()
+        await tx.raise_commit()
         assert False, 'Should not reach here'
 
     async with engine.transaction() as tx:
-        await tx.rollback()
+        with pytest.raises(AssertionError, match='Illegal in managed mode'):
+            await tx.rollback()
+        await tx.raise_rollback()
+        assert False, 'Should not reach here'
+
+
+async def test_base_exception(engine):
+    async with engine.transaction() as tx:
+        # noinspection PyBroadException
+        try:
+            await tx.raise_commit()
+        except Exception:
+            pass
         assert False, 'Should not reach here'
