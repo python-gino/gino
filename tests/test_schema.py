@@ -1,9 +1,17 @@
+from enum import Enum
+
 import pytest
 
 import gino
+from gino.dialects.asyncpg import AsyncEnum
 
 pytestmark = pytest.mark.asyncio
 db = gino.Gino()
+
+
+class MyEnum(Enum):
+    ONE = 'one'
+    TWO = 'two'
 
 
 class Blog(db.Model):
@@ -13,6 +21,8 @@ class Blog(db.Model):
     title = db.Column(db.Unicode(), index=True, comment='Title Comment')
     visits = db.Column(db.BigInteger(), default=0)
     comment_id = db.Column(db.ForeignKey('s_comment.id'))
+    number = db.Column(db.Enum(MyEnum), nullable=False, default=MyEnum.TWO)
+    number2 = db.Column(AsyncEnum(MyEnum), nullable=False, default=MyEnum.TWO)
 
 
 class Comment(db.Model):
@@ -40,6 +50,8 @@ async def test(engine, define=True):
         Comment.__table__.schema = 'schema_test'
         db.bind = engine
         await db.gino.create_all()
+        await Blog.number.type.create_async(engine, checkfirst=True)
+        await Blog.number2.type.create_async(engine, checkfirst=True)
         await db.gino.create_all(tables=[Blog.__table__], checkfirst=True)
         await blog_seq.gino.create(checkfirst=True)
         await Blog.__table__.gino.create(checkfirst=True)

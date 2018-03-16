@@ -6,6 +6,7 @@ import asyncpg
 from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.postgresql import *
 from sqlalchemy.dialects.postgresql.base import (
+    ENUM,
     PGCompiler,
     PGDialect,
     PGExecutionContext,
@@ -198,6 +199,44 @@ class Transaction(base.Transaction):
         await self._tx.rollback()
 
 
+class AsyncEnum(ENUM):
+    async def create_async(self, bind=None, checkfirst=True):
+        if not checkfirst or \
+            not await bind.dialect.has_type(
+                bind, self.name, schema=self.schema):
+            await bind.status(CreateEnumType(self))
+
+    async def drop_async(self, bind=None, checkfirst=True):
+        if not checkfirst or \
+                await bind.dialect.has_type(bind, self.name,
+                                            schema=self.schema):
+            await bind.status(DropEnumType(self))
+
+    async def _on_table_create_async(self, target, bind, checkfirst=False,
+                                     **kw):
+        if checkfirst or (
+                not self.metadata and
+                not kw.get('_is_metadata_operation', False)) and \
+                not self._check_for_name_in_memos(checkfirst, kw):
+            await self.create_async(bind=bind, checkfirst=checkfirst)
+
+    async def _on_table_drop_async(self, target, bind, checkfirst=False, **kw):
+        if not self.metadata and \
+            not kw.get('_is_metadata_operation', False) and \
+                not self._check_for_name_in_memos(checkfirst, kw):
+            await self.drop_async(bind=bind, checkfirst=checkfirst)
+
+    async def _on_metadata_create_async(self, target, bind, checkfirst=False,
+                                        **kw):
+        if not self._check_for_name_in_memos(checkfirst, kw):
+            await self.create_async(bind=bind, checkfirst=checkfirst)
+
+    async def _on_metadata_drop_async(self, target, bind, checkfirst=False,
+                                      **kw):
+        if not self._check_for_name_in_memos(checkfirst, kw):
+            await self.drop_async(bind=bind, checkfirst=checkfirst)
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     driver = 'asyncpg'
@@ -213,6 +252,13 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     init_kwargs = set(itertools.chain(
         *[inspect.getfullargspec(f).kwonlydefaults.keys() for f in
           [asyncpg.create_pool, asyncpg.connect]]))
+    colspecs = util.update_copy(
+        PGDialect.colspecs,
+        {
+            ENUM: AsyncEnum,
+            sqltypes.Enum: AsyncEnum,
+        }
+    )
 
     def __init__(self, *args, **kwargs):
         self._pool_kwargs = {}

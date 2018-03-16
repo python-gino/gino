@@ -1,6 +1,7 @@
 # noinspection PyProtectedMember
 from sqlalchemy.sql.base import _bind_or_error
 from sqlalchemy.sql.ddl import *
+from sqlalchemy.types import SchemaType
 
 
 class AsyncVisitor:
@@ -55,10 +56,11 @@ class AsyncSchemaGenerator(AsyncVisitor, SchemaGenerator):
         event_collection = [
             t for (t, fks) in collection if t is not None
         ]
-        metadata.dispatch.before_create(metadata, self.connection,
-                                        tables=event_collection,
-                                        checkfirst=self.checkfirst,
-                                        _ddl_runner=self)
+        await metadata.dispatch.before_create.gino(
+            metadata, self.connection,
+            tables=event_collection,
+            checkfirst=self.checkfirst,
+            _ddl_runner=self)
 
         for seq in seq_coll:
             await self.traverse_single(seq, create_ok=True)
@@ -73,19 +75,20 @@ class AsyncSchemaGenerator(AsyncVisitor, SchemaGenerator):
                 for fkc in fkcs:
                     await self.traverse_single(fkc)
 
-        metadata.dispatch.after_create(metadata, self.connection,
-                                       tables=event_collection,
-                                       checkfirst=self.checkfirst,
-                                       _ddl_runner=self)
+        await metadata.dispatch.after_create.gino(
+            metadata, self.connection,
+            tables=event_collection,
+            checkfirst=self.checkfirst,
+            _ddl_runner=self)
 
     async def visit_table(
-        self, table, create_ok=False,
-        include_foreign_key_constraints=None,
-        _is_metadata_operation=False):
+            self, table, create_ok=False,
+            include_foreign_key_constraints=None,
+            _is_metadata_operation=False):
         if not create_ok and not await self._can_create_table(table):
             return
 
-        table.dispatch.before_create(
+        await table.dispatch.before_create.gino(
             table, self.connection,
             checkfirst=self.checkfirst,
             _ddl_runner=self,
@@ -117,7 +120,7 @@ class AsyncSchemaGenerator(AsyncVisitor, SchemaGenerator):
                 if column.comment is not None:
                     await self.connection.status(SetColumnComment(column))
 
-        table.dispatch.after_create(
+        await table.dispatch.after_create.gino(
             table, self.connection,
             checkfirst=self.checkfirst,
             _ddl_runner=self,
@@ -202,7 +205,7 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
             t for (t, fks) in collection if t is not None
         ]
 
-        metadata.dispatch.before_drop(
+        await metadata.dispatch.before_drop.gino(
             metadata, self.connection, tables=event_collection,
             checkfirst=self.checkfirst, _ddl_runner=self)
 
@@ -217,7 +220,7 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
         for seq in seq_coll:
             await self.traverse_single(seq, drop_ok=True)
 
-        metadata.dispatch.after_drop(
+        await metadata.dispatch.after_drop.gino(
             metadata, self.connection, tables=event_collection,
             checkfirst=self.checkfirst, _ddl_runner=self)
 
@@ -249,7 +252,7 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
         if not drop_ok and not await self._can_drop_table(table):
             return
 
-        table.dispatch.before_drop(
+        await table.dispatch.before_drop.gino(
             table, self.connection,
             checkfirst=self.checkfirst,
             _ddl_runner=self,
@@ -261,7 +264,7 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
 
         await self.connection.status(DropTable(table))
 
-        table.dispatch.after_drop(
+        await table.dispatch.after_drop.gino(
             table, self.connection,
             checkfirst=self.checkfirst,
             _ddl_runner=self,
@@ -302,3 +305,91 @@ class GinoSchemaVisitor:
 
     async def drop_all(self, bind=None, tables=None, checkfirst=True):
         await self.drop(bind=bind, tables=tables, checkfirst=checkfirst)
+
+
+class AsyncSchemaTypeMixin:
+    async def create_async(self, bind=None, checkfirst=False):
+        if bind is None:
+            bind = _bind_or_error(self)
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await t.create_async(bind=bind, checkfirst=checkfirst)
+
+    async def drop_async(self, bind=None, checkfirst=False):
+        if bind is None:
+            bind = _bind_or_error(self)
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await t.drop_async(bind=bind, checkfirst=checkfirst)
+
+    async def _on_table_create_async(self, target, bind, **kw):
+        if not self._is_impl_for_variant(bind.dialect, kw):
+            return
+
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await getattr(t, '_on_table_create_async')(target, bind, **kw)
+
+    async def _on_table_create_async(self, target, bind, **kw):
+        if not self._is_impl_for_variant(bind.dialect, kw):
+            return
+
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await getattr(t, '_on_table_create_async')(target, bind, **kw)
+
+    async def _on_metadata_create_async(self, target, bind, **kw):
+        if not self._is_impl_for_variant(bind.dialect, kw):
+            return
+
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await getattr(t, '_on_metadata_create_async')(target, bind, **kw)
+
+    async def _on_metadata_drop_async(self, target, bind, **kw):
+        if not self._is_impl_for_variant(bind.dialect, kw):
+            return
+
+        t = self.dialect_impl(bind.dialect)
+        if t.__class__ is not self.__class__ and isinstance(t, SchemaType):
+            await getattr(t, '_on_metadata_drop_async')(target, bind, **kw)
+
+
+async def _call_portable_instancemethod(fn, args, kw):
+    m = getattr(fn.target, f'{fn.name}_async', None)
+    if m is None:
+        return fn(*args, **kw)
+    else:
+        kw.update(fn.kwargs)
+        return await m(*args, **kw)
+
+
+class _ParentCaller:
+    def __init__(self, listener):
+        self._listener = listener
+
+    async def call(self, *args, **kw):
+        for fn in self._listener.parent_listeners:
+            await _call_portable_instancemethod(fn, args, kw)
+
+    def __call__(self, *args, **kwargs):
+        return self.call(*args, **kwargs)
+
+
+class _Caller(_ParentCaller):
+    async def call(self, *args, **kw):
+        await super().call(*args, **kw)
+        for fn in self._listener.listeners:
+            await _call_portable_instancemethod(fn, args, kw)
+
+
+# noinspection PyUnresolvedReferences,PyProtectedMember
+def patch_schema(db):
+    for st in {'Enum'}:
+        setattr(db, st, type(st, (getattr(db, st), AsyncSchemaTypeMixin), {}))
+    from sqlalchemy.event.attr import (
+        _EmptyListener,
+        _CompoundListener,
+    )
+    _EmptyListener.gino = property(_ParentCaller)
+    _CompoundListener.gino = property(_Caller)

@@ -247,5 +247,5 @@ async def test_base_exception(engine):
         try:
             await tx.raise_commit()
         except Exception:
-            pass
+            assert False, 'Should not reach here'
         assert False, 'Should not reach here'

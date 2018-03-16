@@ -7,7 +7,7 @@ from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
 from .declarative import declarative_base
-from .schema import GinoSchemaVisitor
+from .schema import GinoSchemaVisitor, patch_schema
 from . import json_support
 
 
@@ -318,6 +318,7 @@ class Gino(sa.MetaData):
                 Executable.gino = property(self.query_executor)
             if schema_ext:
                 SchemaItem.gino = property(self.schema_visitor)
+                patch_schema(self)
 
     # noinspection PyPep8Naming
     @property
