@@ -67,6 +67,7 @@ Contents
    sanic
    tornado
    adv_topics
+   faq
    api
    contributing
    authors

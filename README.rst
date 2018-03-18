@@ -105,6 +105,75 @@ Showcase
    asyncio.get_event_loop().run_until_complete(main())
 
 
+About The Name
+--------------
+
+About the name GINO Is Not ORM - because I don't really like ORM (smile). GINO
+does perform the Object-Relational Mapping work under the
+`Data Mapper Pattern <https://en.wikipedia.org/wiki/Data_mapper_pattern>`_, but
+it is just not a traditional ORM. The Objects in GINO are completely stateless
+from database - they are pure plain Python objects in memory. Changing their
+attribute values does not make them "dirty" - or in a different way of thinking
+they are always "dirty". Any access to database must be explicitly executed.
+Using GINO is more like making up SQL clauses with Models and Objects,
+executing them to make changes in database, or loading data from database and
+wrapping the results with Objects again. Objects are just row data containers,
+you are still dealing with SQL which is represented by Models and SQLAlchemy
+core grammars. Besides if you don't like ORM at all, you can use GINO without
+ORM:
+
+.. code-block:: python
+
+    import sqlalchemy as sa
+
+    metadata = sa.MetaData()
+
+    user = sa.Table(
+        'users', metadata,
+        sa.Column('id', sa.BigInteger(), primary_key=True),
+        sa.Column('nickname', sa.Unicode()),
+    )
+
+
+    import gino
+
+    async def main():
+        e = await gino.create_engine('postgresql://localhost/gino')
+        users = await e.all(sa.select([user]))
+        print(users)
+        # prints something like this:
+        # [(1, 'fantix'), (2, 'fantix'), (3, 'fantix'), (5, 'fantix')]
+
+
+    import asyncio
+
+    asyncio.get_event_loop().run_until_complete(main())
+
+or a bit more GINO-ish:
+
+.. code-block:: python
+
+    from gino import Gino
+
+    db = Gino()
+
+    user = db.Table(
+        'users', db,
+        db.Column('id', db.BigInteger(), primary_key=True),
+        db.Column('nickname', db.Unicode()),
+    )
+
+    async def main():
+        async with db.with_bind('postgresql://localhost/gino'):
+            users = await db.select([user]).gino.all()
+            print(users)
+
+
+    import asyncio
+
+    asyncio.get_event_loop().run_until_complete(main())
+
+
 Contribute
 ----------
 
