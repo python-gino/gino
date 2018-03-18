@@ -156,6 +156,12 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
+0.6.1 (2018-03-18)
+^^^^^^^^^^^^^^^^^^
+
+* Fixed ``create`` and ``drop`` for ``Enum`` type (#160)
+* A bit more documentation (#159)
+
 0.6.0 (2018-03-14)
 ^^^^^^^^^^^^^^^^^^
 
