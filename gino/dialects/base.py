@@ -1,3 +1,4 @@
+import asyncio
 import weakref
 
 from sqlalchemy import util
@@ -6,6 +7,11 @@ from sqlalchemy import util
 from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
 
 DEFAULT = object()
+
+
+class BaseDBAPI:
+    paramstyle = 'numeric'
+    Error = Exception
 
 
 class DBAPICursor:
@@ -132,13 +138,23 @@ class _ResultProxy:
 
     async def execute(self, one=False, return_model=True, status=False):
         context = self._context
+
+        param_groups = []
+        for params in context.parameters:
+            replace_params = []
+            for val in params:
+                if asyncio.iscoroutine(val):
+                    val = await val
+                replace_params.append(val)
+            param_groups.append(replace_params)
+
         cursor = context.cursor
         if context.executemany:
             return await cursor.async_execute(
-                context.statement, context.timeout, context.parameters,
+                context.statement, context.timeout, param_groups,
                 many=True)
         else:
-            args = context.parameters[0]
+            args = param_groups[0]
             rows = await cursor.async_execute(
                 context.statement, context.timeout, args, 1 if one else 0)
             item = context.process_rows(rows, return_model=return_model)
@@ -217,10 +233,15 @@ class ExecutionContextOverride:
 
 class AsyncDialectMixin:
     cursor_cls = DBAPICursor
+    dbapi_class = BaseDBAPI
 
     def _init_mixin(self):
         self._sa_conn = _SAConnection(
             _SAEngine(self), _DBAPIConnection(self.cursor_cls))
+
+    @classmethod
+    def dbapi(cls):
+        return cls.dbapi_class
 
     def compile(self, elem, *multiparams, **params):
         context = self._sa_conn.execute(elem, *multiparams, **params).context

@@ -29,6 +29,16 @@ class GinoStrategy(EngineStrategy):
                 getattr(dialect_cls, 'init_kwargs', set())):
             if k in kwargs:
                 dialect_args[k] = pop_kwarg(k)
+
+        dbapi = kwargs.pop('module', None)
+        if dbapi is None:
+            dbapi_args = {}
+            for k in util.get_func_kwargs(dialect_cls.dbapi):
+                if k in kwargs:
+                    dbapi_args[k] = pop_kwarg(k)
+            dbapi = dialect_cls.dbapi(**dbapi_args)
+        dialect_args['dbapi'] = dbapi
+
         dialect = dialect_cls(**dialect_args)
         pool = await dialect.init_pool(u, loop)
 

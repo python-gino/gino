@@ -16,6 +16,10 @@ from sqlalchemy.sql import sqltypes
 from . import base
 
 
+class AsyncpgDBAPI(base.BaseDBAPI):
+    Error = asyncpg.PostgresError, asyncpg.InterfaceError
+
+
 class AsyncpgCompiler(PGCompiler):
     @property
     def bindtemplate(self):
@@ -34,7 +38,29 @@ class AsyncpgCompiler(PGCompiler):
 # noinspection PyAbstractClass
 class AsyncpgExecutionContext(base.ExecutionContextOverride,
                               PGExecutionContext):
-    pass
+    async def _execute_scalar(self, stmt, type_):
+        conn = self.root_connection
+        if isinstance(stmt, util.text_type) and \
+                not self.dialect.supports_unicode_statements:
+            stmt = self.dialect._encoder(stmt)[0]
+
+        if self.dialect.positional:
+            default_params = self.dialect.execute_sequence_format()
+        else:
+            default_params = {}
+
+        conn._cursor_execute(self.cursor, stmt, default_params, context=self)
+        r = await self.cursor.async_execute(stmt, None, default_params, 1)
+        r = r[0][0]
+        if type_ is not None:
+            # apply type post processors to the result
+            proc = type_._cached_result_processor(
+                self.dialect,
+                self.cursor.description[0][1]
+            )
+            if proc:
+                return proc(r)
+        return r
 
 
 class AsyncpgIterator:
@@ -241,7 +267,7 @@ class AsyncEnum(ENUM):
 class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     driver = 'asyncpg'
     supports_native_decimal = True
-    default_paramstyle = 'numeric'
+    dbapi_class = AsyncpgDBAPI
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
     cursor_cls = DBAPICursor

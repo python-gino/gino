@@ -639,8 +639,8 @@ class GinoEngine:
     async def all(self, clause, *multiparams, **params):
         """
         Acquires a connection with ``reuse=True`` and runs
-        :meth:`~.GinoConnection.all` on it. This means you can safely do this
-        without borrowing more than one underlying connection::
+        :meth:`~.GinoConnection.all` on it. ``reuse=True` means you can safely
+        do this without borrowing more than one underlying connection::
 
             async with engine.acquire():
                 await engine.all('SELECT ...')
@@ -669,7 +669,7 @@ class GinoEngine:
 
     async def status(self, clause, *multiparams, **params):
         """
-        Runs :meth:`~.GinoConnection.status`, See :meth:`.all`.
+        Runs :meth:`~.GinoConnection.status`. See also :meth:`.all`.
 
         """
         async with self.acquire(reuse=True) as conn:
