@@ -6,10 +6,11 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.6.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-03-19 20:09+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: fantix <fantix.king@gmail.com>, 2018\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,29 +20,29 @@ msgstr ""
 
 #: ../../tutorial.rst:2
 msgid "Get Started"
-msgstr ""
+msgstr "上手指南"
 
 #: ../../tutorial.rst:4
 msgid ""
 "This tutorial helps beginners to get started with the basic part of GINO. "
 "Target audiences of this tutorial should have basic knowledge of:"
-msgstr ""
+msgstr "这是一篇写给刚入坑同学的指南，将介绍 GINO 的基本部分。阅读之前，请先了解以下知识点："
 
 #: ../../tutorial.rst:7
 msgid "RDBMS, especially PostgreSQL_"
-msgstr ""
+msgstr "关系型数据库，尤其是 PostgreSQL_"
 
 #: ../../tutorial.rst:8
 msgid "Asynchronous programming in Python"
-msgstr ""
+msgstr "Python 异步编程"
 
 #: ../../tutorial.rst:10
 msgid "Knowledge of SQLAlchemy_ is not required."
-msgstr ""
+msgstr "您不需要对 SQLAlchemy_ 有所了解。"
 
 #: ../../tutorial.rst:16
 msgid "Introduction"
-msgstr ""
+msgstr "介绍"
 
 #: ../../tutorial.rst:18
 msgid ""
@@ -49,6 +50,8 @@ msgid ""
 "asynchronous application. Instead of interacting RDBMS directly with raw "
 "SQL, you can access your data through friendly objective API."
 msgstr ""
+"简单来说，GINO 可以在您的异步应用中帮助您完成 SQL 语句的生成及执行，您只需要通过友好的对象化 API 来操作您的数据即可，无需亲自编写 SQL"
+" 与数据库交互。"
 
 #: ../../tutorial.rst:22
 msgid ""
@@ -57,10 +60,12 @@ msgid ""
 "make your code run faster, if not slower. Please read :doc:`why` for more "
 "information."
 msgstr ""
+"因为异步编程并不会使您的程序变快——如果说不拖累的话——而且还会增加复杂度和风险，所以也许您并不需要 GINO 或者说是异步数据库连接。跳坑之前请先阅读"
+" :doc:`why`。"
 
 #: ../../tutorial.rst:28
 msgid "Installation"
-msgstr ""
+msgstr "安装"
 
 #: ../../tutorial.rst:32
 msgid ""
@@ -69,56 +74,58 @@ msgid ""
 "over and over again. It is highly recommended for most projects, unless you "
 "truly need a bare environment and handle connections manually."
 msgstr ""
+"GINO 有一个可选依赖 "
+"aiocontextvars_，用来在协程中共享数据库连接，避免手动地把连接传来传去。除非您确实需要一个纯手动的环境，否则我们强烈建议大多数项目安装此依赖。"
 
 #: ../../tutorial.rst:41
 msgid "Stable release"
-msgstr ""
+msgstr "稳定版"
 
 #: ../../tutorial.rst:43
 msgid "To install GINO, run this command in your terminal:"
-msgstr ""
+msgstr "请在终端中执行以下命令以安装 GINO："
 
 #: ../../tutorial.rst:49
 msgid ""
 "This is the preferred method to install GINO, as it will always install the "
 "most recent stable release."
-msgstr ""
+msgstr "以上就是安装 GINO 的推荐方式，因为这种方式始终会去安装最新的稳定版。"
 
 #: ../../tutorial.rst:52
 msgid ""
 "If you don't have `pip`_ installed, this `Python installation guide`_ can "
 "guide you through the process."
-msgstr ""
+msgstr "如果您还没有安装过 `pip`_，您可以参阅 `Python installation guide`_。"
 
 #: ../../tutorial.rst:60
 msgid "From sources"
-msgstr ""
+msgstr "从源码安装"
 
 #: ../../tutorial.rst:62
 msgid "The sources for GINO can be downloaded from the `Github repo`_."
-msgstr ""
+msgstr "GINO 的源码可以从 `Github repo`_ 下载。"
 
 #: ../../tutorial.rst:64
 msgid "You can either clone the public repository:"
-msgstr ""
+msgstr "您可以 git clone："
 
 #: ../../tutorial.rst:70
 msgid "Or download the `tarball`_:"
-msgstr ""
+msgstr "或者下载 `tarball`_："
 
 #: ../../tutorial.rst:76
 msgid "Once you have a copy of the source, you can install it with:"
-msgstr ""
+msgstr "拿到源码后，您可以这样安装："
 
 #: ../../tutorial.rst:88
 msgid "Declare Models"
-msgstr ""
+msgstr "声明模型"
 
 #: ../../tutorial.rst:90
 msgid ""
 "First of all, we'll need a :class:`~gino.api.Gino` object, usually under the"
 " name of ``db`` as a global variable::"
-msgstr ""
+msgstr "开始之前，我们需要先创建一个 :class:`~gino.api.Gino` 的全局实例，通常叫做 ``db``： ::"
 
 #: ../../tutorial.rst:97
 msgid ""
@@ -188,10 +195,10 @@ msgstr ""
 #: ../../tutorial.rst:164
 msgid ""
 "Under the hood :meth:`~gino.api.Gino.set_bind` calls "
-":meth:`~gino.strategies.create_engine` and bind the engine to this ``db`` "
-"object. GINO engine is similar to SQLAlchemy engine, but not identical. "
-"Because GINO engine is asynchronous, while the other is not. Please refer to"
-" the API reference of GINO for more information."
+":func:`~gino.create_engine` and bind the engine to this ``db`` object. GINO "
+"engine is similar to SQLAlchemy engine, but not identical. Because GINO "
+"engine is asynchronous, while the other is not. Please refer to the API "
+"reference of GINO for more information."
 msgstr ""
 
 #: ../../tutorial.rst:170
@@ -416,7 +423,7 @@ msgstr ""
 
 #: ../../tutorial.rst:418
 msgid ""
-"Remember the model object is in memory? In the last :meth:`print` statement,"
+"Remember the model object is in memory? In the last :func:`print` statement,"
 " even though the row is already deleted in database, the object ``user`` "
 "still exists with its values untouched."
 msgstr ""
