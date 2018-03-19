@@ -46,11 +46,8 @@ This documentation is still under development. Please excuse the WIP pages.
 Translations
 ============
 
-* English_
-* Chinese_
-
-.. _English: https://python-gino.readthedocs.io/
-.. _Chinese: https://python-gino.readthedocs.io/zh/latest/
+* `English <https://python-gino.readthedocs.io/>`_
+* `Chinese <https://python-gino.readthedocs.io/zh/latest/>`_
 
 ========
 Contents

@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.6.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-03-19 21:13+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: fantix <fantix.king@gmail.com>, 2018\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
@@ -18,106 +18,76 @@ msgstr ""
 "Language: zh\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../../../README.rst:3
-msgid "GINO"
-msgstr "GINO"
+#: ../../index.rst:3
+msgid "Welcome"
+msgstr "欢迎"
 
-#: ../../../README.rst:27
+#: ../../index.rst:27
 msgid ""
-"GINO - GINO Is Not ORM - is a lightweight asynchronous Python ORM based on "
-"SQLAlchemy_ core. Now (early 2018) GINO supports asyncpg_, Sanic_ and "
-"Tornado_."
+"GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of "
+"SQLAlchemy_ core for Python asyncio_. Now (early 2018) GINO supports only "
+"one dialect asyncpg_."
 msgstr ""
-"GINO 递归定义为 GINO Is Not ORM，是一个基于 SQLAlchemy_ core 的轻量级异步 Python ORM "
-"框架，目前（2018 年初）支持 asyncpg_、Sanic_ 和 Tornado_。"
+"GINO 递归定义为 GINO Is Not ORM，是一个基于 asyncio_ 和 SQLAlchemy_ core 的轻量级异步 Python "
+"ORM 框架，目前（2018 年初）仅支持 asyncpg_ 一种引擎。"
 
-#: ../../../README.rst:31
+#: ../../index.rst:31
 msgid "Free software: BSD license"
 msgstr "自由软件：BSD 许可"
 
-#: ../../../README.rst:32
-msgid "Documentation: https://python-gino.readthedocs.io."
-msgstr "文档地址：https://python-gino.readthedocs.io"
+#: ../../index.rst:32
+msgid "Requires: Python 3.6"
+msgstr "依赖关系：Python 3.6"
 
-#: ../../../README.rst:34
+#: ../../index.rst:33
+msgid "Source code: https://github.com/fantix/gino"
+msgstr "源码仓库：https://github.com/fantix/gino"
+
+#: ../../index.rst:34
+msgid "Community: https://gitter.im/python-gino/Lobby"
+msgstr "联系我们：https://gitter.im/python-gino/Lobby"
+
+#: ../../index.rst:36
 msgid ""
-"GINO is built on top of SQLAlchemy core, your tables are 100% compatible "
-"with vanilla SQLAlchemy, using Alembic_ for example. GINO defined its own "
-"``Engine`` and ``Connection`` API for asynchronous programming, as well as "
-"an asynchronous dialect API for adapting non-DB-API asynchronous database "
-"connectors, asyncpg_ for example. On top of such core, GINO offered an "
-"object abstraction API for simple CRUD operations."
+"If you were using GINO 0.5.x, please read `Migrating to GINO 0.6 "
+"<history.html#migrating-to-gino-0-6>`_ first."
 msgstr ""
+"如果您曾使用过 GINO 0.5.x，请先阅读 `升级至 GINO 0.6 <history.html#migrating-to-"
+"gino-0-6>`_。"
 
-#: ../../../README.rst:41
+#: ../../index.rst:39
 msgid ""
-"GINO requires Python 3.6 for now, it may be backported to Python 3.5 if "
-"time, but no 3.4 or lower."
-msgstr ""
+"This documentation is still under development. Please excuse the WIP pages."
+msgstr "本文档尚未编写完毕，未完之处敬请见谅。"
 
-#: ../../../README.rst:46
-msgid "Example"
-msgstr ""
+#: ../../index.rst:47
+msgid "Translations"
+msgstr "翻译版本"
 
-#: ../../../README.rst:48
-msgid "A piece of code is worth a thousand words:"
-msgstr ""
+#: ../../index.rst:49
+msgid "`English <https://python-gino.readthedocs.io/>`_"
+msgstr "`英文 <https://python-gino.readthedocs.io/>`_"
 
-#: ../../../README.rst:100
-msgid "Please follow the documentation_ for more information."
-msgstr ""
+#: ../../index.rst:50
+msgid "`Chinese <https://python-gino.readthedocs.io/zh/latest/>`_"
+msgstr "`中文 <https://python-gino.readthedocs.io/zh/latest/>`_"
 
-#: ../../../README.rst:104
-msgid "Contribute"
-msgstr ""
-
-#: ../../../README.rst:106
-msgid ""
-"There are a few tasks in GitHub issues marked as ``help wanted``. Please "
-"feel free to take any of them and pull requests are greatly welcome."
-msgstr ""
-
-#: ../../../README.rst:109
-msgid "To run tests:"
-msgstr ""
-
-#: ../../../README.rst:117
-msgid "Credits"
-msgstr ""
-
-#: ../../../README.rst:119
-msgid ""
-"Credit goes to all contributors listed or not listed in the AUTHORS file. "
-"This project is inspired by asyncpgsa_, peewee-async_ and asyncorm_. "
-"asyncpg_ and SQLAlchemy_ as the dependencies did most of the heavy lifting. "
-"This package was created with Cookiecutter_ and the `audreyr/cookiecutter-"
-"pypackage`_ project template."
-msgstr ""
-
-#: ../../../README.rst:125
-msgid ""
-"Special thanks to my wife Daisy and her outsourcing company `DecentFoX "
-"Studio`_, for offering me the opportunity to build this project. We are open"
-" for global software project outsourcing on Python, iOS and Android "
-"development."
-msgstr ""
-
-#: ../../index.rst:5
+#: ../../index.rst:54
 msgid "Contents"
-msgstr ""
+msgstr "目录"
 
-#: ../../index.rst:25
+#: ../../index.rst:75
 msgid "Module Documentation"
-msgstr ""
+msgstr "API 文档"
 
-#: ../../index.rst:27
+#: ../../index.rst:77
 msgid ":ref:`genindex`"
-msgstr ""
+msgstr ":ref:`genindex`"
 
-#: ../../index.rst:28
+#: ../../index.rst:78
 msgid ":ref:`modindex`"
-msgstr ""
+msgstr ":ref:`modindex`"
 
-#: ../../index.rst:29
+#: ../../index.rst:79
 msgid ":ref:`search`"
-msgstr ""
+msgstr ":ref:`search`"
