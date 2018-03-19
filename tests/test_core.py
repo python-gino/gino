@@ -13,17 +13,19 @@ async def test_engine_only():
 
     metadata = MetaData()
 
-    users = Table('users', metadata,
-                  Column('id', Integer, primary_key=True),
-                  Column('name', String),
-                  Column('fullname', String),
-                  )
+    users = Table(
+        'users', metadata,
+        Column('id', Integer, primary_key=True),
+        Column('name', String),
+        Column('fullname', String),
+    )
 
-    addresses = Table('addresses', metadata,
-                      Column('id', Integer, primary_key=True),
-                      Column('user_id', None, ForeignKey('users.id')),
-                      Column('email_address', String, nullable=False)
-                      )
+    addresses = Table(
+        'addresses', metadata,
+        Column('id', Integer, primary_key=True),
+        Column('user_id', None, ForeignKey('users.id')),
+        Column('email_address', String, nullable=False)
+    )
 
     engine = await gino.create_engine(PG_URL)
     await GinoSchemaVisitor(metadata).create_all(engine)
@@ -41,17 +43,19 @@ async def test_core():
 
     db = Gino()
 
-    users = db.Table('users', db,
-                     db.Column('id', db.Integer, primary_key=True),
-                     db.Column('name', db.String),
-                     db.Column('fullname', db.String),
-                     )
+    users = db.Table(
+        'users', db,
+        db.Column('id', db.Integer, primary_key=True),
+        db.Column('name', db.String),
+        db.Column('fullname', db.String),
+    )
 
-    addresses = db.Table('addresses', db,
-                         db.Column('id', db.Integer, primary_key=True),
-                         db.Column('user_id', None, db.ForeignKey('users.id')),
-                         db.Column('email_address', db.String, nullable=False)
-                         )
+    addresses = db.Table(
+        'addresses', db,
+        db.Column('id', db.Integer, primary_key=True),
+        db.Column('user_id', None, db.ForeignKey('users.id')),
+        db.Column('email_address', db.String, nullable=False)
+    )
 
     async with db.with_bind(PG_URL):
         await db.gino.create_all()
@@ -85,7 +89,7 @@ async def test_orm():
         user_id = db.Column(None, db.ForeignKey('users.id'))
         email_address = db.Column(db.String, nullable=False)
 
-    async with db.with_bind('postgresql://localhost/gino'):
+    async with db.with_bind(PG_URL):
         await db.gino.create_all()
         try:
             await User.create(name='jack', fullname='Jack Jones')
