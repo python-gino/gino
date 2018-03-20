@@ -26,7 +26,7 @@ differences behind the unified diagram API for engine to use.
     In SQLAlchemy, database drivers are supposed to follow the DB-API standard,
     which does not usually provide a pool implementation. Therefore, SQLAlchemy
     has its own pool implementation, created directly in engine. This is where
-    this dialect doesn't fit SQLAlchemy.
+    this diagram doesn't fit SQLAlchemy.
 
 The pool creates raw connections, not the :class:`~gino.engine.GinoConnection`
 green in the diagram. The connection in the diagram is a many-to-one wrapper of
@@ -70,11 +70,51 @@ Then let's get to some details.
 Creating Engines
 ----------------
 
-Different from :func:`sqlalchemy.create_engine`, GINO's version sets the
-default strategy to :class:`~gino.strategies.GinoStrategy` - an asynchronous
-SQLAlchemy engine strategy that generates asynchronous engines and connections.
-Also :class:`~gino.strategies.GinoStrategy` replaces the default dialect of
-``postgresql://`` from psycopg2 to asyncpg.
+GINO reuses the strategy system SQLAlchemy provides to create engines. The name
+of GINO's strategy to create asynchronous :class:`~gino.engine.GinoEngine` is
+just ``gino``, but only available after ``gino`` is imported::
+
+    import gino, sqlalchemy
+
+    async def main():
+        e = await sqlalchemy.create_engine('postgresql://...', strategy='gino')
+        # e is a GinoEngine
+
+Also the GINO strategy replaces the default dialect of ``postgresql://`` from
+``psycopg2`` to ``asyncpg``, so that you don't have to replace the URL which
+may be shared between GINO and vanilla SQLAlchemy in parallel. GINO also offers
+a shortcut as :func:`gino.create_engine`, which only sets the default strategy
+to ``gino`` and does nothing more. So here is an identical example::
+
+    import gino
+
+    async def main():
+        e = await gino.create_engine('postgresql://...')
+        # e is also a GinoEngine
+
+As you may have noticed, when using the GINO strategy,
+:func:`~sqlalchemy.create_engine` returns a coroutine, which must be awaited
+for result. Because it will create a database connection pool behind the scene,
+and actually making a few initial connections by default.
+
+For it is just SQLAlchemy :func:`~sqlalchemy.create_engine`, the same rules of
+parameters apply in GINO too. Well for now, GINO only supports a small amount
+of all the parameters listed in SQLAlchemy document (we are working on it!):
+
+For Dialect:
+
+* `isolation_level <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.isolation_level>`_
+* `paramstyle <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.paramstyle>`_
+
+For Engine:
+
+* `echo <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.echo>`_
+* `execution_options <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.execution_options>`_
+* `logging_name <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.logging_name>`_
+
+While these parameters are discarded by GINO:
+
+* `module <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.module>`_
 
 
 Managing Connections

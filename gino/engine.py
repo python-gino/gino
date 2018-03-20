@@ -502,9 +502,12 @@ class GinoEngine:
     """Customizes the connection class to use, default is
     :class:`.GinoConnection`."""
 
-    def __init__(self, dialect, pool, loop, logging_name=None, echo=None):
-        self._sa_engine = _SAEngine(dialect,
-                                    logging_name=logging_name, echo=echo)
+    def __init__(self, dialect, pool, loop,
+                 logging_name=None, echo=None, execution_options=None):
+        self._sa_engine = _SAEngine(
+            dialect,
+            logging_name=logging_name, echo=echo,
+            execution_options=execution_options)
         self._dialect = dialect
         self._pool = pool
         self._loop = loop

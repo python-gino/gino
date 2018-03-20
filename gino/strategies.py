@@ -30,13 +30,12 @@ class GinoStrategy(EngineStrategy):
             if k in kwargs:
                 dialect_args[k] = pop_kwarg(k)
 
-        dbapi = kwargs.pop('module', None)
-        if dbapi is None:
-            dbapi_args = {}
-            for k in util.get_func_kwargs(dialect_cls.dbapi):
-                if k in kwargs:
-                    dbapi_args[k] = pop_kwarg(k)
-            dbapi = dialect_cls.dbapi(**dbapi_args)
+        kwargs.pop('module', None)  # unused
+        dbapi_args = {}
+        for k in util.get_func_kwargs(dialect_cls.dbapi):
+            if k in kwargs:
+                dbapi_args[k] = pop_kwarg(k)
+        dbapi = dialect_cls.dbapi(**dbapi_args)
         dialect_args['dbapi'] = dbapi
 
         dialect = dialect_cls(**dialect_args)
