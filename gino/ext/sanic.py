@@ -5,7 +5,7 @@ try:
     # noinspection PyPackageRequirements
     from aiocontextvars import enable_inherit, disable_inherit
 except ImportError:
-    enable_inherit = disable_inherit = lambda: None
+    enable_inherit = disable_inherit = lambda loop: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine

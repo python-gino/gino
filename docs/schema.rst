@@ -100,7 +100,7 @@ normal :class:`~sqlalchemy.schema.MetaData` still offering some conveniences:
 * It delegates most public types you can access on ``sqlalchemy``
 * It works with both normal SQLAlchemy engine and asynchronous GINO engine
 * It exposes all query APIs on :class:`~gino.engine.GinoConnection` level
-* It injects two ``gino`` extension on SQLAlchemy query clauses and schema
+* It injects two ``gino`` extensions on SQLAlchemy query clauses and schema
   items, allowing short inline execution like ``users.select().gino.all()``
 * It is also the entry for the third scenario, see later
 
