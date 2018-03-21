@@ -32,7 +32,7 @@ The pool creates raw connections, not the :class:`~gino.engine.GinoConnection`
 green in the diagram. The connection in the diagram is a many-to-one wrapper of
 the raw connection, because of the reuse and lazy features, we'll get to that
 part later. The connection is created by the engine, thus inherits the same
-dialect, with which the connection run queries.
+dialect, and is used for running queries.
 
 On the outer side, SQLAlchemy queries can be executed directly on the engine or
 connection. When on engine, it will try to acquire a reusable connection to
@@ -47,9 +47,9 @@ actually execute the connection, and release the connection after use.
     can only release the connection implicitly when the result data is found
     exhausted.
 
-    By immediately releasing connection, GINO may not release the related raw
-    connection, in the case when the releasing connection is reusing raw
-    connection of another parent connection. We'll get to this later.
+    By immediately releasing a connection, GINO may not release the related raw
+    connection when the raw connection was reused from another parent
+    connection. We'll get to this later.
 
 GINO also supports `implicit execution
 <https://docs.sqlalchemy.org/en/latest/core/connections.html#connectionless-execution-implicit-execution>`_
@@ -80,11 +80,21 @@ just ``gino``, but only available after ``gino`` is imported::
         e = await sqlalchemy.create_engine('postgresql://...', strategy='gino')
         # e is a GinoEngine
 
-Also the GINO strategy replaces the default dialect of ``postgresql://`` from
-``psycopg2`` to ``asyncpg``, so that you don't have to replace the URL which
-may be shared between GINO and vanilla SQLAlchemy in parallel. GINO also offers
-a shortcut as :func:`gino.create_engine`, which only sets the default strategy
-to ``gino`` and does nothing more. So here is an identical example::
+.. tip::
+
+    Please read `this SQLAlchemy document
+    <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_
+    to learn about writing database URLs.
+
+Also the GINO strategy replaces the default driver of dialect ``postgresql://``
+from ``psycopg2`` to ``asyncpg``, so that you don't have to replace the URL
+as it may be shared between GINO and vanilla SQLAlchemy in parallel.
+Alternatively, you can explicitly specify the driver to use by
+``postgresql+asyncpg://...`` or just ``asyncpg://...``.
+
+GINO also offers a shortcut as :func:`gino.create_engine`, which only sets the
+default strategy to ``gino`` and does nothing more. So here is an identical
+example::
 
     import gino
 
@@ -116,6 +126,60 @@ While these parameters are discarded by GINO:
 
 * `module <https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine.params.module>`_
 
+In addition, keyword arguments for creating the underlying pool is accepted
+here. In the case of asyncpg, they are from :func:`~asyncpg.pool.create_pool`.
+For example, we can create an engine without initial connections::
+
+    e = await gino.create_engine('postgresql://...', min_size=0)
+
+Similar to SQLAlchemy, GINO also provides shortcut to create engine while
+setting it as a bind. In SQLAlchemy it is like this::
+
+    import sqlalchemy
+
+    metadata = sqlalchemy.MetaData()
+    metadata.bind = 'postgresql://...'
+
+    # or in short
+
+    metadata = sqlalchemy.MetaData('postgresql://...')
+
+This implicitly calls :func:`~sqlalchemy.create_engine` under the hood. However
+in GINO, creating an engine requires ``await``, it can no longer be hidden
+behind a normal assignment statement. Therefore, GINO removed the assignment
+magic in subclass :class:`~gino.api.Gino`, reverted it to simple assignment::
+
+    import gino
+
+    db = gino.Gino()
+
+    async def main():
+        # db.bind = 'postgresql://...' doesn't work!! It sets a string on bind
+        engine = await gino.create_engine('postgresql://...')
+        db.bind = engine
+
+And provided a shortcut to do so::
+
+    engine = await db.set_bind('postgresql://...')
+
+And another simpler shortcut for one-time usage::
+
+    db = await gino.Gino('postgresql://...')
+
+To unset a bind and close the engine::
+
+    engine, db.bind = db.bind, None
+    await engine.close()
+
+Or with a shortcut correspondingly::
+
+    await engine.pop_bind().close()
+
+Furthermore, the two steps can be combined into one shortcut with asynchronous
+context manager::
+
+    async with db.with_bind('postgresql://...') as engine:
+        # your code here
 
 Managing Connections
 --------------------
