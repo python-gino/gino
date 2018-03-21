@@ -184,6 +184,140 @@ context manager::
 Managing Connections
 --------------------
 
+With a :class:`~gino.engine.GinoEngine` at hand, you can acquire connections
+from the pool now::
+
+    conn = await engine.acquire()
+
+Don't forget to release it after use::
+
+    await conn.release()
+
+Yes this can be easily missing. The recommended way is to use the asynchronous
+context manager::
+
+    async with engine.acquire() as conn:
+        # play with the connection
+
+Here ``conn`` is a :class:`~gino.engine.GinoConnection` instance. As mentioned
+previously, :class:`~gino.engine.GinoConnection` is mapped to an underlying raw
+connection, as shown in following diagram:
+
+.. image:: connection.png
+
+Each column has at most one actual raw connection, and the number is the
+sequence the connections are created in this example. It is designed this way
+so that GINO could offer two features for connection management: ``reuse`` and
+``lazy``. They are keyword arguments on :meth:`~gino.engine.GinoEngine.acquire`
+and by default switched off.
+
+reuse
+"""""
+
+When acquiring a :class:`~gino.engine.GinoConnection` (2), GINO will borrow a
+raw connection (1) from the underlying pool first, and assign it to this
+:class:`~gino.engine.GinoConnection` (2). This is the default behavior of
+:meth:`~gino.engine.GinoConnection.acquire` with no arguments given. Even when
+you are nesting two acquires, you still get two actual raw connection
+borrowed::
+
+    async with engine.acquire() as conn1:
+        async with engine.acquire() as conn2:
+            # conn2 is a completely different connection than conn1
+
+But sometimes ``conn2`` may exist in a different method::
+
+    async def outer():
+        async with engine.acquire() as conn1:
+            await inner()
+
+    async def inner():
+        async with engine.acquire() as conn2:
+            # ...
+
+And we probably wish ``inner`` could reuse the same raw connection in
+``outer`` to save some resource, or borrow a new one if ``inner`` is
+individually called without ``outer``::
+
+    async def outer():
+        async with engine.acquire() as conn1:
+            await inner(conn1)
+
+    async def inner(conn2=None):
+        if conn2 is None:
+            async with engine.acquire() as conn2:
+                # ...
+        else:
+            # the same ... again
+
+This is exactly the scenario ``reuse`` could be useful. We can simply tell the
+:meth:`~gino.engine.GinoConnection.acquire` to reuse the most recent reusable
+connection in current context by setting ``reuse=True``, as presented in this
+identical example::
+
+    async def outer():
+        async with engine.acquire() as conn1:
+            await inner(conn1)
+
+    async def inner():
+        async with engine.acquire(reuse=True) as conn2:
+            # ...
+
+Back to previous diagram, the blue :class:`~gino.engine.GinoConnection`
+instances (3, 4, 6) are "reusing connections" acquired with ``reuse=True``,
+while the green ones (2, 5, 7) are not, thus they become "reusable
+connections". The green reusable connections are put in a stack in current
+context, so that ``acquire(reuse=True)`` always reuses the most recent
+connection at the top of the stack. For example, (3) and (4) reuse the only
+available (2), therefore (2, 3, 4) all map to the same raw connection (1). Then
+after (5), (6) no longer reuses (2) because (5) is now the head of the stack.
+
+.. tip::
+
+    By context, we are actually referring to the context concept in either
+    `aiocontextvars <https://github.com/fantix/aiocontextvars>`_ the optional
+    dependency or `contextvars
+    <https://docs.python.org/3.7/library/contextvars.html>`_ the new module in
+    upcoming Python 3.7. Simply speaking, you may treat a function call chain
+    including awaited :class:`~asyncio.Task` created in the chain as in the
+    same context, something like a thread local in asyncio.
+
+.. note::
+
+    And that is to say, `aiocontextvars
+    <https://github.com/fantix/aiocontextvars>`_ is a required dependency for
+    ``reuse`` to work correctly in Python 3.6. Without context, the stack is
+    always empty for any :meth:`~gino.engine.GinoEngine.acquire` thus no one
+    could reuse raw connections at all.
+
+:class:`~gino.engine.GinoConnection` (2) may be created through
+``acquire(reuse=True)`` too - because the stack is empty before (2), there is
+nothing to reuse, so (2) upgraded itself to a reusable connection.
+
+lazy
+""""
+
+As you may have found, :class:`~gino.engine.GinoConnection` (5) does not have
+an underlying raw connection, even when it is reused by (6). This is because
+both (5) and (6) set ``lazy=True`` on acquire.
+
+A lazy connection will not borrow a raw connection on creation, it will only do
+so when have to, e.g. when executing a query or starting a transaction. On
+implementation level, ``lazy`` is extremely easy in
+:meth:`~gino.engine.GinoEngine.acquire`: if ``lazy=False`` then borrow a raw
+connection, else do nothing. That's it. Before executing a query or starting a
+transaction, :class:`~gino.egnine.GinoConnection` will always try to borrow a
+raw connection if there is none present.
+
+When used together with ``reuse``, at most one raw connection may be borrowed
+for one reusing chain. For example, executing queries on both (5) and (6) will
+result only one raw connection checked out, no matter which executes first. It
+is also worth noting that, if we set ``lazy=False`` on (6), then the raw
+connection will be immediately borrowed on acquire, and shared between both (5)
+and (6).
+
+reusable
+""""""""
 
 Implicit Execution
 ------------------
