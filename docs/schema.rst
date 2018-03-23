@@ -72,7 +72,7 @@ then :meth:`~gino.engine.GinoEngine.acquire` checks out a
 :class:`~gino.engine.GinoConnection`, and
 :meth:`~gino.engine.GinoConnection.status` executes the insert and returns the
 status text. This works similarly as SQLAlchemy
-:meth:`sqlalchemy.engine.Connection.execute` - they take the same parameters
+:meth:`~sqlalchemy.engine.Connection.execute` - they take the same parameters
 but return a bit differently. There are also other similar query APIs:
 
 * :meth:`~gino.engine.GinoConnection.all` returns a list of

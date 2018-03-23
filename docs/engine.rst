@@ -269,8 +269,9 @@ while the green ones (2, 5, 7) are not, thus they become "reusable
 connections". The green reusable connections are put in a stack in current
 context, so that ``acquire(reuse=True)`` always reuses the most recent
 connection at the top of the stack. For example, (3) and (4) reuse the only
-available (2), therefore (2, 3, 4) all map to the same raw connection (1). Then
-after (5), (6) no longer reuses (2) because (5) is now the head of the stack.
+available (2) at that moment, therefore (2, 3, 4) all map to the same raw
+connection (1). Then after (5), (6) no longer reuses (2) because (5) is now the
+new head of the stack.
 
 .. tip::
 
@@ -286,13 +287,25 @@ after (5), (6) no longer reuses (2) because (5) is now the head of the stack.
 
     And that is to say, `aiocontextvars
     <https://github.com/fantix/aiocontextvars>`_ is a required dependency for
-    ``reuse`` to work correctly in Python 3.6. Without context, the stack is
-    always empty for any :meth:`~gino.engine.GinoEngine.acquire` thus no one
-    could reuse raw connections at all.
+    ``reuse`` to work correctly in Python 3.6 - actually ``reuse`` is the
+    reason for introducing context in the first place. Without context, the
+    stack is always empty for any :meth:`~gino.engine.GinoEngine.acquire` thus
+    no one could reuse any raw connection at all.
 
 :class:`~gino.engine.GinoConnection` (2) may be created through
 ``acquire(reuse=True)`` too - because the stack is empty before (2), there is
 nothing to reuse, so (2) upgraded itself to a reusable connection.
+
+Releasing a reusing connection won't cause the reused raw connection being
+returned to the pool, only directly releasing the reused
+:class:`~gino.engine.GinoConnection` can do so. Connections should be released
+in the reversed order as they are acquired, but if the reused connection is
+released before reusing connections by accident, then all the reusing
+connections depending on it will turn closed because they are reusing the same
+raw connection which is returned to the pool, any further execution will fail.
+For example, if (3) is released first, then (2) and (4) are still functional.
+But if (2) is released first, then (3) and (4) will be released implicitly and
+are no longer usable any more.
 
 lazy
 """"
@@ -302,22 +315,217 @@ an underlying raw connection, even when it is reused by (6). This is because
 both (5) and (6) set ``lazy=True`` on acquire.
 
 A lazy connection will not borrow a raw connection on creation, it will only do
-so when have to, e.g. when executing a query or starting a transaction. On
-implementation level, ``lazy`` is extremely easy in
+so when have to, e.g. when executing a query or starting a transaction. For
+example, :class:`~gino.engine.GinoConnection` (7) is acquired lazily without a
+raw connection, and (8) is only created when a query is executed on (7)::
+
+    async with engine.acquire(lazy=True) as conn:  # (7)
+        await conn.scalar('select now()')          # (8)
+
+On implementation level, ``lazy`` is extremely easy in
 :meth:`~gino.engine.GinoEngine.acquire`: if ``lazy=False`` then borrow a raw
 connection, else do nothing. That's it. Before executing a query or starting a
 transaction, :class:`~gino.egnine.GinoConnection` will always try to borrow a
-raw connection if there is none present.
+raw connection if there is none present. This allows GINO to "transiently
+release" a raw connection, while all :class:`~gino.engine.GinoConnection`
+mapped to this raw connection are put in lazy mode (again). This is especially
+useful before you need to run some networking tasks in a database-related
+context - the networking task may take a long time to finish, we don't want to
+waste a connection resource checked out for nothing. For example::
+
+    async with engine.acquire(lazy=True) as conn:  # (7)
+        await conn.scalar('select now()')          # (8)
+        await conn.release(permanent=False)        # release (8)
+        await asyncio.sleep(10)                    # simulate long I/O work
+        await conn.scalar('select now()')          # re-acquire a new raw connection,
+                                                   #   not necessarily the same (8)
 
 When used together with ``reuse``, at most one raw connection may be borrowed
 for one reusing chain. For example, executing queries on both (5) and (6) will
 result only one raw connection checked out, no matter which executes first. It
 is also worth noting that, if we set ``lazy=False`` on (6), then the raw
 connection will be immediately borrowed on acquire, and shared between both (5)
-and (6).
+and (6). It's been quite a while, let me post the same diagram again:
+
+.. image:: connection.png
+
 
 reusable
 """"""""
 
+Usually, you don't have to worry about the two options ``reuse`` and ``lazy``,
+using the default :meth:`~gino.engine.GinoEngine.acquire` will always create
+a concrete :class:`~gino.engine.GinoConnection` with a new raw connection with
+it. It is only that they are by default reusable (the green ones). If you need
+an absolutely isolated unique connection that has no risk being reused, you may
+use ``reusable=False`` on acquire. As shown in the diagram, the unreusable
+:class:`~gino.engine.GinoConnection` is an orphan away from any stack::
+
+    async with engine.acquire():                    # (2)
+        async with engine.acquire(reusable=False):  # the unreusable connection
+            async with engine.acquire(reuse=True):  # (3)
+
+Unreusable connections can be lazy. But it is usually meaningless to specify
+both ``reuse=True`` and ``reusable=False`` at the same time, because reusing
+connections are always unusable - they are also not in the stack. You cannot
+reuse a reusing connection, you only reuse a reusable connection in the stack.
+Making a reusing connection unreusable doesn't make its related reusable
+connection unreusable. Hmm if this is getting more confusing, just don't use
+``acquire(reuse=True, reusable=False)`` unless you know what it does.
+
+
+current_connection
+""""""""""""""""""
+
+Except for all scenarios supported by above three options, there is still one
+left out: we may want to acquire a reusing-only connection. There is no such
+option to do so, but GINO could do the same thing through
+:attr:`~gino.engine.GinoEngine.current_connection` which is always the reusable
+:class:`~gino.engine.GinoConnection` at the top of current stack, or ``None``
+if current stack is empty.
+
+.. tip::
+
+    The different between :attr:`~gino.engine.GinoEngine.current_connection`
+    and :meth:`acquire(reuse=True) <gino.engine.GinoEngine.acquire>` is, the
+    latter always produces a :class:`~gino.engine.GinoConnection`, while the
+    former may not.
+
+
+Executing Queries
+-----------------
+
+Once you have a :class:`~gino.engine.GinoConnection` instance, you can start
+executing queries with it. There are 4 variants of the execute method:
+:meth:`~gino.engine.GinoConnection.all`,
+:meth:`~gino.engine.GinoConnection.first`,
+:meth:`~gino.engine.GinoConnection.scalar` and
+:meth:`~gino.engine.GinoConnection.status`. They are basically the same:
+accepting the same parameters, calling the same underlying methods. The
+difference is how they treat the results:
+
+* :meth:`~gino.engine.GinoConnection.all` returns all results in a
+  :class:`list`, which may be empty when the query has no result, empty but
+  still a :class:`list`.
+* :meth:`~gino.engine.GinoConnection.first` returns the first result directly,
+  or ``None`` if there is no result at all. There is usually some optimization
+  behind the scene to efficiently get only the first result, instead of loading
+  the full result set into memory.
+* :meth:`~gino.engine.GinoConnection.scalar` is similar to
+  :meth:`~gino.engine.GinoConnection.first`, it returns the first value of the
+  first result. Quite convenient to just retrieve a scalar value from database,
+  like ``NOW()``, ``MAX()``, ``COUNT()`` or whatever generates a single value.
+  ``None`` is also returned when there is no result, it is up to you how to
+  distinguish no result and the first value is ``NULL``.
+* :meth:`~gino.engine.GinoConnection.status` executes the query and discard all
+  the query results at all. Instead it returns the execution status line as it
+  is, usually a textual string. Note, there may be no optimization to only
+  return the status without loading the results, so make your query generate
+  nothing if you don't want any result.
+
+By "result", I meant :class:`~sqlalchemy.engine.RowProxy` of SQLAlchemy - an
+immutable row instance with both :class:`tuple` and :class:`dict` interfaces.
+Database values are translated twice before they are eventually stored in a
+:class:`~sqlalchemy.engine.RowProxy`: first by the database driver (dialect)
+from network payload to Python objects (see `Type Conversion
+<https://magicstack.github.io/asyncpg/current/usage.html#type-conversion>`_ of
+how asyncpg does this), second by SQLAlchemy
+:meth:`~sqlalchemy.types.TypeEngine.result_processor` depending on the actual
+type and dialect.
+
+The arguments taken by these 4 methods are identical to the ones accepted by
+SQLAlchemy :meth:`~sqlalchemy.engine.Connection.execute` (click to read more),
+usually a plain string of SQL directly or a SQLAlchemy query clause, followed
+by query parameters. In the case when multiple dictionaries are given to
+``multiparams``, all 4 methods will always return ``None`` discarding all
+results. Likewise, the parameter values are processed twice too: first by
+:meth:`~sqlalchemy.types.TypeEngine.bind_processor` then the database driver.
+
+GINO also supports SQLAlchemy
+:meth:`~sqlalchemy.engine.Connection.execution_options` provided either on
+:meth:`engine level <gino.engine.GinoEngine.update_execution_options>`,
+:meth:`connection level <gino.engine.GinoConnection.execution_options>` or on
+:meth:`queries <sqlalchemy.sql.expression.Executable.execution_options>`. At
+the moment we are working on being compatible with SQLAlchemy execution
+options. In the mean while, GINO provides several new execution options, for
+example enabling ``return_model`` and providing a ``model`` will make
+:meth:`~gino.engine.GinoConnection.all` and
+:meth:`~gino.engine.GinoConnection.first` return ORM model instance(s) instead
+of :class:`~sqlalchemy.engine.RowProxy` instance(s). See also
+:meth:`~sqlalchemy.engine.Connection.execution_options` for more information.
+
+In addition, GINO has an :meth:`~gino.engine.GinoConnection.iterate` method to
+traverse the query results progressively, instead of loading all the results at
+once. This method takes the same arguments as the other 4 execute methods do,
+and follows the same rule of data handling. For now with asyncpg, this creates
+a `server-side cursor
+<https://magicstack.github.io/asyncpg/current/api/index.html#cursors>`_.
+
+
 Implicit Execution
 ------------------
+
+Acquire a :class:`~gino.engine.GinoConnection` and execute queries on it, that
+is the most explicit way. You can also execute queries on a
+:class:`~gino.engine.GinoEngine` instance. In this case, a connection will be
+acquired with ``reuse=True`` for you implicitly, and released after returning::
+
+    await engine.scalar('select now()')
+
+Equals to::
+
+    async with engine.acquire(reuse=True) as conn:
+        await conn.scalar('select now()')
+
+This allows you to easily write connectionless code. For example::
+
+    async def get_now():
+        return await engine.scalar('select now()')
+
+    async def main():
+        async with engine.acquire():
+            now = await get_now()
+            await engine.status('UPDATE ...')
+
+In this example, ``main()`` will take only one raw connection. ``get_now()``
+can also work alone out of any ``acquire()`` context, thanks to ``reuse``.
+
+Furthermore, GINO provides the same query APIs on :class:`~gino.api.Gino`
+directly. They are simply delegates to corresponding API methods on the
+``bind``. This allows even engine-less programming::
+
+    db = gino.Gino()
+
+    async def get_now():
+        return await db.scalar('select now()')
+
+    async def main():
+        async with db.with_bind('postgresql://...'):
+            now = await get_now()
+            await db.status('UPDATE ...')
+
+.. note::
+
+    In this example we didn't put the two queries in an ``acquire()`` block, so
+    they might be executed in two different connections.
+
+At last, the SQLAlchemy `implicit execution
+<https://docs.sqlalchemy.org/en/latest/core/connections.html#connectionless-execution-implicit-execution>`_
+on queries also work in GINO, under an extension named ``gino``::
+
+    await users_table.select().gino.all()
+
+By default, the extension :class:`~gino.api.GinoExecutor` is injected on
+:class:`~sqlalchemy.sql.expression.Executable` as a property of name ``gino``
+at the creation of :class:`~gino.api.Gino` instance. Therefore, any
+:class:`~sqlalchemy.sql.expression.Executable` object has the ``gino``
+property for implicit execution. Similarly, the execution methods calls the
+corresponding ones on the ``bind`` of the ``db`` instance.
+
+.. warning::
+
+    The assumption for code above to run as expected is having
+    `aiocontextvars <https://github.com/fantix/aiocontextvars>`_ installed on
+    Python 3.6, or directly using Python 3.7. Or else, nested implicit
+    executions will always run in a different new connection. This may be not
+    so important here, but it is crucial for transactions.
