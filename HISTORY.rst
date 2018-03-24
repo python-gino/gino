@@ -156,6 +156,13 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
+0.6.2 (2018-03-24)
+^^^^^^^^^^^^^^^^^^
+
+* Fixed SQLAlchemy prefetch issue (#141)
+* Fixed issue that mixin class on Model not working (#174)
+* Added more documentation (Thanks Olaf Conradi for reviewing)
+
 0.6.1 (2018-03-18)
 ^^^^^^^^^^^^^^^^^^
 
