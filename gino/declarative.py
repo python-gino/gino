@@ -55,11 +55,13 @@ class Model:
 
         columns = []
         updates = {}
-        for k, v in sub_cls.__dict__.items():
-            if isinstance(v, sa.Column):
-                v.name = k
-                columns.append(v)
-                updates[k] = sub_cls.__attr_factory__(v)
+        for each_cls in sub_cls.__mro__[::-1]:
+            for k, v in each_cls.__dict__.items():
+                if isinstance(v, sa.Column):
+                    v = v.copy()
+                    v.name = k
+                    columns.append(v)
+                    updates[k] = sub_cls.__attr_factory__(v)
 
         # handle __table_args__
         table_args = getattr(sub_cls, '__table_args__', None)

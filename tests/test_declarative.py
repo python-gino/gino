@@ -68,3 +68,27 @@ async def test_join_t112(engine):
            'JOIN cars ON cars.id = wheels.car_id')
 
     assert engine.compile(Wheel.join(Car).select())[0] == sql
+
+
+async def test_mixin():
+    class Tracked:
+        created = db.Column(db.DateTime(timezone=True))
+
+    class Audit(Tracked):
+        pass
+
+    class Thing(Audit, db.Model):
+        __tablename__ = 'thing'
+
+        id = db.Column(db.Integer, primary_key=True)
+
+    class Another(Audit, db.Model):
+        __tablename__ = 'another'
+
+        id = db.Column(db.Integer, primary_key=True)
+
+    assert isinstance(Thing.__table__.c.created, db.Column)
+    assert isinstance(Another.__table__.c.created, db.Column)
+    assert Thing.created is not Another.created
+    assert Thing.created is Thing.__table__.c.created
+    assert Another.created is Another.__table__.c.created
