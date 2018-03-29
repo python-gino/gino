@@ -7,7 +7,6 @@ from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
 from .declarative import declarative_base
-from .loader import Loader
 from .schema import GinoSchemaVisitor, patch_schema
 from . import json_support
 
@@ -111,7 +110,7 @@ class GinoExecutor:
         information.
 
         """
-        self._query = self._query.execution_options(loader=Loader.get(value))
+        self._query = self._query.execution_options(loader=value)
         return self
 
     async def all(self, *multiparams, **params):

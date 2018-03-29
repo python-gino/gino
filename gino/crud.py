@@ -513,4 +513,48 @@ class CRUDModel(Model):
 
     @classmethod
     def load(cls, *column_names, **relationships):
+        """
+        Populates a :class:`.loader.Loader` instance to be used by the
+        ``loader`` execution option in order to customize the loading behavior
+        to load specified fields into instances of this model.
+
+        This method shouldn't be used alone (if you are looking for reloading
+        the instance from database, check :meth:`.get` or :attr:`.query`), it
+        is usually given to the ``loader`` execution option.
+
+        This method takes both positional arguments and keyword arguments with
+        very different meanings. The positional arguments should be column
+        names as strings, specifying only these columns should be loaded into
+        the model instance (other values are discarded even if they are
+        retrieved from database). Meanwhile, the keyword arguments should be
+        loaders for instance attributes. For example::
+
+            u = await User.query.gino.load(User.load('id', 'name')).first()
+
+        .. tip::
+
+            ``gino.load`` is a shortcut for setting the execution option
+            ``loader``.
+
+        This will populate a ``User`` instance with only ``id`` and ``name``
+        values, all the rest are simply ``None`` even if the query actually
+        returned all the column values.
+
+        ::
+
+            q = User.join(Team).select()
+            u = await q.gino.load(User.load(team=Team)).first()
+
+        This will load two instances of model ``User`` and ``Team``, returning
+        the ``User`` instance with ``u.team`` set to the ``Team`` instance.
+
+        Both positional and keyword arguments can be used ath the same time. If
+        they are both omitted, like ``Team.load()``, it is equivalent to just
+        ``Team`` as a loader.
+
+        .. seealso::
+
+            :meth:`~gino.engine.GinoConnection.execution_options`
+
+        """
         return ModelLoader(cls, *column_names, **relationships)

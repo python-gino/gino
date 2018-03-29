@@ -230,7 +230,7 @@ class ExecutionContextOverride:
         if loader is not None and return_model and self.return_model:
             rv = []
             for row in rows:
-                obj = loader.load(row, None)
+                obj = Loader.get(loader).load(row, None)
                 rv.append(obj)
         return rv
 
