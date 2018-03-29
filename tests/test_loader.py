@@ -92,7 +92,7 @@ async def test_func(user):
     assert u.team.company.name == user.team.company.name
 
 
-async def test_adjaceny_list(user):
+async def test_adjacency_list(user):
     Group = Team.__table__.alias()
 
     def loader(row, context):
