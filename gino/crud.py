@@ -11,6 +11,15 @@ from .exceptions import NoSuchRowError
 DEFAULT = object()
 
 
+class _Create:
+    def __get__(self, instance, owner):
+        if instance is None:
+            # noinspection PyProtectedMember
+            return owner._create_without_instance
+        else:
+            # noinspection PyProtectedMember
+            return instance._create_from_instance
+
 class _Query:
     def __get__(self, instance, owner):
         q = sa.select([owner.__table__])
@@ -198,6 +207,40 @@ class CRUDModel(Model):
 
     """
 
+    create = _Create()
+    """
+    This ``create`` behaves a bit different on model classes compared to model
+    instances.
+
+    On model classes, ``create`` will create a new model instance and insert
+    it into database. On model instances, ``create`` will just insert the
+    instance into the database.
+
+    Under the hood :meth:`.create` uses ``INSERT ... RETURNING ...`` to
+    create the new model instance and load it with database default data if
+    not specified.
+
+    Some examples::
+
+        user1 = await User.create(name='fantix', age=32)
+        user2 = User(name='gino', age=42)
+        await user2.create()
+
+    :param bind: A :class:`~gino.engine.GinoEngine` to execute the
+      ``INSERT`` statement with, or ``None`` (default) to use the bound
+      engine on the metadata (:class:`~gino.api.Gino`).
+
+    :param timeout: Seconds to wait for the database to finish executing,
+      ``None`` for wait forever. By default it will use the ``timeout``
+      execution option value if unspecified.
+
+    :param values: Keyword arguments are pairs of attribute names and their
+      initial values. Only available when called on a model class.
+
+    :return: The instance of this model class (newly created or existing).
+
+    """
+
     query = _Query()
     """
     Get a SQLAlchemy query clause of the table behind this model. This equals
@@ -324,33 +367,7 @@ class CRUDModel(Model):
         return rv
 
     @classmethod
-    async def create(cls, bind=None, timeout=DEFAULT, **values):
-        """
-        Class method to create a new model instance and insert the row into
-        database.
-
-        Under the hood :meth:`.create` uses ``INSERT ... RETURNING ...`` to
-        create the new model instance and load it with database default data if
-        not specified.
-
-        For example::
-
-            user = await User.create(name='fantix', age=32)
-
-        :param bind: A :class:`~gino.engine.GinoEngine` to execute the
-          ``INSERT`` statement with, or ``None`` (default) to use the bound
-          engine on the metadata (:class:`~gino.api.Gino`).
-
-        :param timeout: Seconds to wait for the database to finish executing,
-          ``None`` for wait forever. By default it will use the ``timeout``
-          execution option value if unspecified.
-
-        :param values: Keyword arguments are pairs of attribute names and their
-          initial values.
-
-        :return: An instance of this model class.
-
-        """
+    async def _create_without_instance(cls, bind=None, timeout=DEFAULT, **values):
         rv = cls(**values)
 
         # handle JSON properties
@@ -369,7 +386,10 @@ class CRUDModel(Model):
                 setattr(rv, key, getattr(rv, key))
                 prop.save(rv)
                 props.append(prop)
+        return await cls._create(rv, bind=bind, timeout=timeout, **values)
 
+    @classmethod
+    async def _create(cls, rv, bind, timeout, **values):
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
@@ -443,6 +463,9 @@ class CRUDModel(Model):
         for c in self.__table__.primary_key.columns:
             q = q.where(c == getattr(self, c.name))
         return q
+
+    async def _create_from_instance(self, bind=None, timeout=DEFAULT):
+        return await type(self)._create(self, bind=bind, timeout=timeout)
 
     def _update(self, **values):
         return self._update_request_cls(self).update(**values)
