@@ -1,13 +1,10 @@
-import random
-import string
-
 import asyncpg
 import pytest
 import sqlalchemy
 from async_generator import yield_, async_generator
 
 import gino
-from .models import db, DB_ARGS, PG_URL
+from .models import db, DB_ARGS, PG_URL, random_name
 
 ECHO = False
 
@@ -48,6 +45,4 @@ async def asyncpg_pool(sa_engine):
         await rv.execute('DELETE FROM gino_users')
 
 
-@pytest.fixture
-def random_name(length=8) -> str:
-    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+pytest.fixture(random_name)

@@ -9,7 +9,7 @@ class Loader:
     def get(cls, value):
         if isinstance(value, Loader):
             rv = value
-        elif issubclass(value, Model):
+        elif isinstance(value, type) and issubclass(value, Model):
             rv = ModelLoader(value)
         elif isinstance(value, Column):
             rv = ColumnLoader(value)
@@ -39,7 +39,7 @@ class ModelLoader(Loader):
         rv = self.model()
         for c in self.columns:
             rv.__values__[c.name] = row[c]
-        for key, value in self.relationships:
+        for key, value in self.relationships.items():
             setattr(rv, key, value.load(row, rv))
         return rv
 
@@ -57,7 +57,7 @@ class TupleLoader(Loader):
         self.loaders = (self.get(value) for value in values)
 
     def load(self, row, context):
-        return (loader.load(row, context) for loader in self.loaders)
+        return tuple(loader.load(row, context) for loader in self.loaders)
 
 
 class CallableLoader(Loader):

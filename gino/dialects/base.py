@@ -231,7 +231,6 @@ class ExecutionContextOverride:
             rv = []
             for row in rows:
                 obj = loader.load(row, None)
-                obj.__values__.update(row)
                 rv.append(obj)
         return rv
 
