@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from .models import User, UserType, Friendship
+from .models import db, User, UserType, Friendship
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,6 +28,32 @@ async def test_get(engine):
     assert u1.id == u3.id
     assert u1.nickname == u3.nickname
     assert u1 is not u3
+
+
+async def test_textual_sql(engine):
+    u1 = await test_create(engine)
+    u2 = await engine.first(db.text(
+        'SELECT * FROM gino_users WHERE id = :uid'
+    ).bindparams(uid=u1.id).columns(*User).execution_options(model=User))
+    assert isinstance(u2, User)
+    assert u1.id == u2.id
+    assert u1.nickname == u2.nickname
+    assert u1.type is u2.type
+    assert u1 is not u2
+
+    u2 = await engine.first(db.text(
+        'SELECT * FROM gino_users WHERE id = :uid AND type = :utype'
+    ).bindparams(
+        db.bindparam('utype', type_=db.Enum(UserType))
+    ).bindparams(
+        uid=u1.id,
+        utype=UserType.USER,
+    ).columns(*User).execution_options(model=User))
+    assert isinstance(u2, User)
+    assert u1.id == u2.id
+    assert u1.nickname == u2.nickname
+    assert u1.type is u2.type
+    assert u1 is not u2
 
 
 async def test_select(engine):
