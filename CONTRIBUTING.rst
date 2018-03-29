@@ -111,3 +111,15 @@ Tips
 To run a subset of tests::
 
 $ py.test -svx tests.test_gino
+
+By default the tests run against a default installed postgres database. If you
+wish to run against a separate database for the tests you can do this by first
+creating a new database and user using 'psql' or similar::
+
+    CREATE ROLE gino WITH LOGIN ENCRYPTED PASSWORD 'gino';
+    CREATE DATABASE gino WITH OWNER = gino;
+
+Then run the tests like so::
+
+    export DB_USER=gino DB_PASS=gino DB_NAME=gino
+    py.test

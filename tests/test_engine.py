@@ -31,7 +31,7 @@ async def test_basic(engine):
 
 async def test_issue_79():
     import gino
-    e = await gino.create_engine('postgresql:///non_exist', min_size=0)
+    e = await gino.create_engine(PG_URL + '_non_exist', min_size=0)
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
