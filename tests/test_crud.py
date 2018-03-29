@@ -17,6 +17,17 @@ async def test_create(engine):
     return u
 
 
+async def test_create_from_instance(engine):
+    nickname = 'test_create_from_instance_{}'.format(random.random())
+    u = User(nickname='will-be-replaced', type=UserType.USER)
+    u.nickname = nickname
+    await u.create(bind=engine, timeout=10)
+    assert u.id is not None
+    assert u.nickname == nickname
+    assert u.type == UserType.USER
+    return u
+
+
 async def test_get(engine):
     u1 = await test_create(engine)
     u2 = await User.get(u1.id, bind=engine, timeout=10)
@@ -28,6 +39,12 @@ async def test_get(engine):
     assert u1.id == u3.id
     assert u1.nickname == u3.nickname
     assert u1 is not u3
+
+    u4 = await test_create_from_instance(engine)
+    u5 = await engine.first(u4.query)
+    assert u4.id == u5.id
+    assert u4.nickname == u5.nickname
+    assert u4 is not u5
 
 
 async def test_textual_sql(engine):
