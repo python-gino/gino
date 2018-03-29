@@ -7,6 +7,7 @@ from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
 from .declarative import declarative_base
+from .loader import Loader
 from .schema import GinoSchemaVisitor, patch_schema
 from . import json_support
 
@@ -95,6 +96,22 @@ class GinoExecutor:
 
         """
         self._query = self._query.execution_options(timeout=timeout)
+        return self
+
+    def load(self, value):
+        """
+        Shortcut to set execution option ``loader`` in a chaining call.
+
+        For example to load ``Book`` instances with their authors::
+
+            query = Book.join(User).select()
+            books = await query.gino.load(Book.load(author=User)).all()
+
+        Read :meth:`~gino.engine.GinoConnection.execution_options` for more
+        information.
+
+        """
+        self._query = self._query.execution_options(loader=Loader.get(value))
         return self
 
     async def all(self, *multiparams, **params):

@@ -7,6 +7,7 @@ from sqlalchemy.sql import ClauseElement
 from . import json_support
 from .declarative import Model
 from .exceptions import NoSuchRowError
+from .loader import ModelLoader
 
 DEFAULT = object()
 
@@ -509,3 +510,7 @@ class CRUDModel(Model):
                 keys.add(key)
                 keys.discard(prop.column_name)
         return dict((k, getattr(self, k)) for k in keys)
+
+    @classmethod
+    def load(cls, *column_names, **relationships):
+        return ModelLoader(cls, *column_names, **relationships)

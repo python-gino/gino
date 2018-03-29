@@ -37,6 +37,7 @@ class User(db.Model):
     balance = db.IntegerProperty(default=0)
     birthday = db.DateTimeProperty(
         default=lambda i: datetime.utcfromtimestamp(0))
+    team_id = db.Column(db.ForeignKey('gino_teams.id'))
 
     @balance.after_get
     def balance(self, val):
@@ -62,6 +63,20 @@ class Relation(db.Model):
     __tablename__ = 'gino_relation'
 
     name = db.Column(db.Text(), primary_key=True)
+
+
+class Team(db.Model):
+    __tablename__ = 'gino_teams'
+
+    id = db.Column(db.BigInteger(), primary_key=True)
+    parent_id = db.Column(db.ForeignKey('gino_teams.id'))
+    company_id = db.Column(db.ForeignKey('gino_companies.id'))
+
+
+class Company(db.Model):
+    __tablename__ = 'gino_companies'
+
+    id = db.Column(db.BigInteger(), primary_key=True)
 
 
 def qsize(engine):
