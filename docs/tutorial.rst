@@ -241,6 +241,12 @@ properties on the object::
     print(f'ID:       {user.id}')           # 1
     print(f'Nickname: {user.nickname}')     # fantix
 
+It is also possible to create a model instance in-memory first, modify it, then
+finally create it in the database::
+
+    user = User(nickname='fantix')
+    user.nickname += ' (founder)'
+    await user.create()
 
 Retrieve
 ^^^^^^^^
