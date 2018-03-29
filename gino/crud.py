@@ -7,7 +7,7 @@ from sqlalchemy.sql import ClauseElement
 from . import json_support
 from .declarative import Model
 from .exceptions import NoSuchRowError
-from .loader import ModelLoader
+from .loader import AliasLoader, ModelLoader
 
 DEFAULT = object()
 
@@ -198,6 +198,36 @@ class UpdateRequest:
                 value = getattr(self._instance, value_from)[key]
             method(k, value)
         return self
+
+
+class Alias:
+    """
+    Experimental proxy for table alias on model.
+
+    """
+    def __init__(self, model, *args, **kwargs):
+        self.model = model
+        self.alias = model.__table__.alias(*args, **kwargs)
+
+    def __getattr__(self, item):
+        rv = getattr(self.alias.columns, item,
+                     getattr(self.model, item,
+                             getattr(self.alias, item, DEFAULT)))
+        if rv is DEFAULT:
+            raise AttributeError
+        return rv
+
+    def __iter__(self):
+        return iter(self.alias.columns)
+
+    def load(self, *column_names, **relationships):
+        return AliasLoader(self, *column_names, **relationships)
+
+
+# noinspection PyProtectedMember
+@sa.inspection._inspects(Alias)
+def _inspect_alias(target):
+    return sa.inspection.inspect(target.alias)
 
 
 class CRUDModel(Model):
@@ -558,3 +588,11 @@ class CRUDModel(Model):
 
         """
         return ModelLoader(cls, *column_names, **relationships)
+
+    @classmethod
+    def alias(cls, *args, **kwargs):
+        """
+        Experimental proxy for table alias on model.
+
+        """
+        return Alias(cls, *args, **kwargs)

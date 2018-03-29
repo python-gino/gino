@@ -93,29 +93,37 @@ async def test_func(user):
 
 
 async def test_adjacency_list(user):
-    Group = Team.__table__.alias()
+    group = Team.alias()
 
+    with pytest.raises(AttributeError):
+        group.non_exist()
+
+    # noinspection PyUnusedLocal
     def loader(row, context):
         rv = User(id=row[User.id], nickname=row[User.nickname])
         rv.team = Team(id=row[Team.id], name=row[Team.name])
-        rv.team.parent = Team(id=row[Group.c.id], name=row[Group.c.name])
+        rv.team.parent = Team(id=row[group.id], name=row[group.name])
         return rv
 
-    u = await User.outerjoin(
-        Team
-    ).outerjoin(
-        Group, Team.parent_id == Group.c.id
-    ).select().gino.load(loader).first()
+    for exp in (loader,
+                User.load(team=Team.load(parent=group)),
+                User.load(team=Team.load(parent=group.load('id', 'name'))),
+                User.load(team=Team.load(parent=group.load()))):
+        u = await User.outerjoin(
+            Team
+        ).outerjoin(
+            group, Team.parent_id == group.id
+        ).select().gino.load(exp).first()
 
-    assert isinstance(u, User)
-    assert u.id == user.id
-    assert u.nickname == user.nickname
-    assert isinstance(u.team, Team)
-    assert u.team.id == user.team.id
-    assert u.team.name == user.team.name
-    assert isinstance(u.team.parent, Team)
-    assert u.team.parent.id == user.team.parent.id
-    assert u.team.parent.name == user.team.parent.name
+        assert isinstance(u, User)
+        assert u.id == user.id
+        assert u.nickname == user.nickname
+        assert isinstance(u.team, Team)
+        assert u.team.id == user.team.id
+        assert u.team.name == user.team.name
+        assert isinstance(u.team.parent, Team)
+        assert u.team.parent.id == user.team.parent.id
+        assert u.team.parent.name == user.team.parent.name
 
 
 async def test_literal(user):

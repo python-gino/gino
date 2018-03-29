@@ -7,10 +7,14 @@ class Loader:
 
     @classmethod
     def get(cls, value):
+        from .crud import Alias
+
         if isinstance(value, Loader):
             rv = value
         elif isinstance(value, type) and issubclass(value, Model):
             rv = ModelLoader(value)
+        elif isinstance(value, Alias):
+            rv = AliasLoader(value)
         elif isinstance(value, Column):
             rv = ColumnLoader(value)
         elif isinstance(value, tuple):
@@ -42,6 +46,12 @@ class ModelLoader(Loader):
         for key, value in self.relationships.items():
             setattr(rv, key, value.load(row, rv))
         return rv
+
+
+class AliasLoader(ModelLoader):
+    def __init__(self, alias, *column_names, **relationships):
+        super().__init__(alias, *column_names, **relationships)
+        self.model = alias.model
 
 
 class ColumnLoader(Loader):
