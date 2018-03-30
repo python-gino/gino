@@ -9,22 +9,41 @@ pytestmark = pytest.mark.asyncio
 
 async def test_create(engine):
     nickname = 'test_create_{}'.format(random.random())
-    u = await User.create(bind=engine, nickname=nickname,
-                          type=UserType.USER, timeout=10)
+    u = await User.create(bind=engine, timeout=10,
+                          nickname=nickname, age=42, type=UserType.USER)
     assert u.id is not None
     assert u.nickname == nickname
     assert u.type == UserType.USER
+    assert u.age == 42
+
+    u2 = await User.get(u.id, bind=engine, timeout=10)
+    assert u2.id == u.id
+    assert u2.nickname == nickname
+    assert u2.type == UserType.USER
+    assert u2.age == 42
+    assert u2 is not u
+
     return u
 
 
 async def test_create_from_instance(engine):
     nickname = 'test_create_from_instance_{}'.format(random.random())
-    u = User(nickname='will-be-replaced', type=UserType.USER)
+    u = User(nickname='will-be-replaced', type=UserType.USER, age=42)
     u.nickname = nickname
+    u.age = 21
     await u.create(bind=engine, timeout=10)
     assert u.id is not None
     assert u.nickname == nickname
     assert u.type == UserType.USER
+    assert u.age == 21
+
+    u2 = await User.get(u.id, bind=engine, timeout=10)
+    assert u2.id == u.id
+    assert u2.nickname == nickname
+    assert u2.type == UserType.USER
+    assert u2.age == 21
+    assert u2 is not u
+
     return u
 
 
