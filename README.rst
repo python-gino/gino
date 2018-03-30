@@ -48,7 +48,7 @@ Features
 * Asynchronous-friendly CRUD objective models
 * Well-considered contextual connection and transaction management
 * Reusing native SQLAlchemy core to build queries with grammar sugars
-* Support Sanic_ and Tornado_
+* Support Sanic_, Tornado_ and aiohttp_
 * Rich PostgreSQL JSONB support
 
 
@@ -215,3 +215,4 @@ software project outsourcing on Python, iOS and Android development.
 .. _Chinese: https://python-gino.readthedocs.io/zh/latest/
 .. _DecentFoX Studio: https://decentfox.com/
 .. _`Data Mapper Pattern`: https://en.wikipedia.org/wiki/Data_mapper_pattern
+.. _aiohttp: https://github.com/aio-libs/aiohttp
