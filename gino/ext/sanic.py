@@ -64,19 +64,18 @@ class Gino(_Gino):
     """Support Sanic web server.
 
     By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could
-    use database configuration in Sanic `config` to initialize the bound pool.
+    use database configuration in Sanic ``config`` to initialize the bound
+    engine.
 
     A lazy connection context is enabled by default for every request. You can
-    change this default behavior by setting `DB_USE_CONNECTION_FOR_REQUEST`
-    config value to `False`. By default, a database connection is borrowed on
+    change this default behavior by setting ``DB_USE_CONNECTION_FOR_REQUEST``
+    config value to ``False``. By default, a database connection is borrowed on
     the first query, shared in the same execution context, and returned to the
     pool on response. If you need to release the connection early in the middle
-    to do some long-running tasks, you can simply do this:
+    to do some long-running tasks, you can simply do this::
 
         await request['connection'].release(permanent=False)
 
-    Here `request['connection']` is a :class:`LazyConnection` object, see its
-    doc string for more information.
     """
     model_base_classes = _Gino.model_base_classes + (SanicModelMixin,)
     query_executor = GinoExecutor

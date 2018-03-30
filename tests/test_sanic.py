@@ -31,7 +31,21 @@ async def app():
 
     @app.route('/users/<uid:int>')
     async def get_user(request, uid):
-        return json((await User.get_or_404(uid)).to_dict())
+        method = request.args.get('method')
+        q = User.query.where(User.id == uid)
+        if method == '1':
+            return json((await q.gino.first_or_404()).to_dict())
+        elif method == '2':
+            return json(
+                (await request['connection'].first_or_404(q)).to_dict())
+        elif method == '3':
+            return json(
+                (await db.bind.first_or_404(q)).to_dict())
+        elif method == '4':
+            return json(
+                (await db.first_or_404(q)).to_dict())
+        else:
+            return json((await User.get_or_404(uid)).to_dict())
 
     @app.route('/users', methods=['POST'])
     async def add_user(request):
@@ -62,6 +76,10 @@ def test_index_returns_200(app):
 def test(app):
     request, response = app.test_client.get('/users/1')
     assert response.status == 404
+
+    for method in '1234':
+        request, response = app.test_client.get(f'/users/1?method={method}')
+        assert response.status == 404
 
     request, response = app.test_client.post('/users',
                                              data=dict(name='fantix'))
