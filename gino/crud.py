@@ -18,7 +18,7 @@ class _Create:
             return owner._create_without_instance
         else:
             # noinspection PyProtectedMember
-            return instance._create_from_instance
+            return instance._create
 
 class _Query:
     def __get__(self, instance, owner):
@@ -368,40 +368,37 @@ class CRUDModel(Model):
 
     @classmethod
     async def _create_without_instance(cls, bind=None, timeout=DEFAULT, **values):
-        rv = cls(**values)
+        return await cls(**values)._create(bind=bind, timeout=timeout)
 
+    async def _create(self, bind=None, timeout=DEFAULT):
         # handle JSON properties
-        props = []
-        for key, value in values.items():
-            prop = cls.__dict__.get(key)
-            if isinstance(prop, json_support.JSONProperty):
-                prop.save(rv)
-                props.append(prop)
+        cls = type(self)
+        keys = set(self.__profile__.keys() if self.__profile__ else [])
+        for key in keys:
+            cls.__dict__.get(key).save(self)
+        # initialize default values
         for key, prop in cls.__dict__.items():
-            if key in values:
+            if key in keys:
                 continue
             if isinstance(prop, json_support.JSONProperty):
                 if prop.default is None or prop.after_get.method is not None:
                     continue
-                setattr(rv, key, getattr(rv, key))
-                prop.save(rv)
-                props.append(prop)
-        return await cls._create(rv, bind=bind, timeout=timeout, **values)
+                setattr(self, key, getattr(self, key))
+                prop.save(self)
 
-    @classmethod
-    async def _create(cls, rv, bind, timeout, **values):
+        # insert into database
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
         # noinspection PyArgumentList
-        q = cls.__table__.insert().values(**rv.__values__).returning(
+        q = cls.__table__.insert().values(**self.__values__).returning(
             *cls).execution_options(**opts)
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(q)
-        rv.__values__.update(row)
-        rv.__profile__ = None
-        return rv
+        self.__values__.update(row)
+        self.__profile__ = None
+        return self
 
     @classmethod
     async def get(cls, ident, bind=None, timeout=DEFAULT):
@@ -463,9 +460,6 @@ class CRUDModel(Model):
         for c in self.__table__.primary_key.columns:
             q = q.where(c == getattr(self, c.name))
         return q
-
-    async def _create_from_instance(self, bind=None, timeout=DEFAULT):
-        return await type(self)._create(self, bind=bind, timeout=timeout)
 
     def _update(self, **values):
         return self._update_request_cls(self).update(**values)
