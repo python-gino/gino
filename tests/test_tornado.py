@@ -6,6 +6,8 @@ import tornado.options
 import tornado.escape
 from gino.ext.tornado import Gino, Application, GinoRequestHandler
 
+from .models import DB_ARGS
+
 
 # noinspection PyShadowingNames
 @pytest.fixture
@@ -46,6 +48,15 @@ def app():
             user = await User.create(nickname=self.get_argument('name'))
             self.write(f'Hi, {user.nickname}!')
 
+    options = {
+        'db_host': DB_ARGS['host'],
+        'db_port': DB_ARGS['port'],
+        'db_user': DB_ARGS['user'],
+        'db_password': DB_ARGS['password'],
+        'db_database': DB_ARGS['database'],
+    }
+    for option, value in options.items():
+        setattr(tornado.options.options, option, value)
     app = Application([
         tornado.web.URLSpec(r'/', AllUsers, name='index'),
         tornado.web.URLSpec(r'/user/(?P<uid>[0-9]+)', GetUser, name='user'),
