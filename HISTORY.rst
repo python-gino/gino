@@ -1,5 +1,3 @@
-.. highlight:: python3
-
 =======
 History
 =======
