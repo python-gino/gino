@@ -5,8 +5,6 @@ from .declarative import Model
 
 
 class Loader:
-    one = True
-
     @classmethod
     def get(cls, value):
         from .crud import Alias
