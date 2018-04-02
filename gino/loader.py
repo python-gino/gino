@@ -1,4 +1,6 @@
+from sqlalchemy import select
 from sqlalchemy.schema import Column
+
 from .declarative import Model
 
 
@@ -25,8 +27,25 @@ class Loader:
             rv = ValueLoader(value)
         return rv
 
-    def load(self, row, context):
+    @property
+    def query(self):
+        rv = select(self.get_columns())
+        from_clause = self.get_from()
+        if from_clause is not None:
+            rv = rv.select_from(from_clause)
+        return rv.execution_options(loader=self)
+
+    def do_load(self, row, context):
         raise NotImplementedError
+
+    def get_columns(self):
+        return []
+
+    def get_from(self):
+        return None
+
+    def __getattr__(self, item):
+        return getattr(self.query, item)
 
 
 class ModelLoader(Loader):
@@ -38,27 +57,52 @@ class ModelLoader(Loader):
             self.columns = model
         self.relationships = dict((key, self.get(value))
                                   for key, value in relationships.items())
+        self.on_clause = None
 
-    def load(self, row, context):
+    def do_load(self, row, context):
         rv = self.model()
         for c in self.columns:
             rv.__values__[c.name] = row[c]
         for key, value in self.relationships.items():
-            setattr(rv, key, value.load(row, rv))
+            setattr(rv, key, value.do_load(row, rv))
         return rv
+
+    def get_columns(self):
+        yield from self.columns
+        for subloader in self.relationships.values():
+            yield from subloader.get_columns()
+
+    def get_from(self):
+        rv = self.model
+        for key, subloader in self.relationships.items():
+            from_clause = subloader.get_from()
+            if from_clause is not None:
+                rv = rv.outerjoin(from_clause,
+                                  getattr(subloader, 'on_clause', None))
+        return rv
+
+    def load(self, *column_names, **relationships):
+        if column_names:
+            self.columns = [getattr(self.model, name) for name in column_names]
+        self.relationships.update((key, self.get(value))
+                                  for key, value in relationships.items())
+        return self
+
+    def on(self, on_clause):
+        self.on_clause = on_clause
+        return self
 
 
 class AliasLoader(ModelLoader):
     def __init__(self, alias, *column_names, **relationships):
         super().__init__(alias, *column_names, **relationships)
-        self.model = alias.model
 
 
 class ColumnLoader(Loader):
     def __init__(self, column):
         self.column = column
 
-    def load(self, row, context):
+    def do_load(self, row, context):
         return row[self.column]
 
 
@@ -66,15 +110,15 @@ class TupleLoader(Loader):
     def __init__(self, values):
         self.loaders = (self.get(value) for value in values)
 
-    def load(self, row, context):
-        return tuple(loader.load(row, context) for loader in self.loaders)
+    def do_load(self, row, context):
+        return tuple(loader.do_load(row, context) for loader in self.loaders)
 
 
 class CallableLoader(Loader):
     def __init__(self, func):
         self.func = func
 
-    def load(self, row, context):
+    def do_load(self, row, context):
         return self.func(row, context)
 
 
@@ -82,5 +126,5 @@ class ValueLoader(Loader):
     def __init__(self, value):
         self.value = value
 
-    def load(self, row, context):
+    def do_load(self, row, context):
         return self.value

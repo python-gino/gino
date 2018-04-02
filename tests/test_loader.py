@@ -59,17 +59,26 @@ async def test_load_relationship(user):
 
 
 async def test_load_nested(user):
-    u = await User.outerjoin(Team).outerjoin(Company).select().gino.load(
-        User.load(team=Team.load(company=Company))).first()
-    assert isinstance(u, User)
-    assert u.id == user.id
-    assert u.nickname == user.nickname
-    assert isinstance(u.team, Team)
-    assert u.team.id == user.team.id
-    assert u.team.name == user.team.name
-    assert isinstance(u.team.company, Company)
-    assert u.team.company.id == user.team.company.id
-    assert u.team.company.name == user.team.company.name
+    for u in (
+        await User.outerjoin(Team).outerjoin(Company).select().gino.load(
+            User.load(team=Team.load(company=Company))).first(),
+        await User.load(team=Team.load(company=Company)).gino.first(),
+        await User.load(team=Team.load(company=Company.on(
+                Team.company_id == Company.id))).gino.first(),
+        await User.load(team=Team.load(company=Company).on(
+                User.team_id == Team.id)).gino.first(),
+        await User.load(team=Team.on(User.team_id == Team.id).load(
+            company=Company)).gino.first(),
+    ):
+        assert isinstance(u, User)
+        assert u.id == user.id
+        assert u.nickname == user.nickname
+        assert isinstance(u.team, Team)
+        assert u.team.id == user.team.id
+        assert u.team.name == user.team.name
+        assert isinstance(u.team.company, Company)
+        assert u.team.company.id == user.team.company.id
+        assert u.team.company.name == user.team.company.name
 
 
 async def test_func(user):
@@ -124,6 +133,22 @@ async def test_adjacency_list(user):
         assert isinstance(u.team.parent, Team)
         assert u.team.parent.id == user.team.parent.id
         assert u.team.parent.name == user.team.parent.name
+
+
+async def test_adjacency_list_query_builder(user):
+    group = Team.alias()
+    u = await User.load(team=Team.load(parent=group.on(
+        Team.parent_id == group.id))).gino.first()
+
+    assert isinstance(u, User)
+    assert u.id == user.id
+    assert u.nickname == user.nickname
+    assert isinstance(u.team, Team)
+    assert u.team.id == user.team.id
+    assert u.team.name == user.team.name
+    assert isinstance(u.team.parent, Team)
+    assert u.team.parent.id == user.team.parent.id
+    assert u.team.parent.name == user.team.parent.name
 
 
 async def test_literal(user):

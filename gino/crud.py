@@ -220,8 +220,14 @@ class Alias:
     def __iter__(self):
         return iter(self.alias.columns)
 
+    def __call__(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
     def load(self, *column_names, **relationships):
         return AliasLoader(self, *column_names, **relationships)
+
+    def on(self, on_clause):
+        return self.load().on(on_clause)
 
 
 # noinspection PyProtectedMember
@@ -548,9 +554,10 @@ class CRUDModel(Model):
         ``loader`` execution option in order to customize the loading behavior
         to load specified fields into instances of this model.
 
-        This method shouldn't be used alone (if you are looking for reloading
-        the instance from database, check :meth:`.get` or :attr:`.query`), it
-        is usually given to the ``loader`` execution option.
+        The basic usage of this method is to provide the ``loader`` execution
+        option (if you are looking for reloading
+        the instance from database, check :meth:`.get` or :attr:`.query`) for a
+        given query.
 
         This method takes both positional arguments and keyword arguments with
         very different meanings. The positional arguments should be column
@@ -582,12 +589,51 @@ class CRUDModel(Model):
         they are both omitted, like ``Team.load()``, it is equivalent to just
         ``Team`` as a loader.
 
+        Additionally, a :class:`.loader.Loader` instance can also be used to
+        generate queries, as its structure is usually the same as the query::
+
+            u = await User.load(team=Team).query.gino.first()
+
+        This generates a query like this::
+
+            SELECT users.xxx, ..., teams.xxx, ...
+              FROM users LEFT JOIN teams
+                ON ...
+
+        The :class:`~.loader.Loader` delegates attributes on the ``query``, so
+        ``.query`` can be omitted. The ``LEFT JOIN`` is built-in behavior,
+        while the ``ON`` clause is generated based on foreign key. If there is
+        no foreign key, or the condition should be customized, you can use
+        this::
+
+            u = await User.load(team=Team.on(User.team_id == Team.id)).gino.first()
+
+        And you can use both :meth:`~.load` and :meth:`~.on` at the same time
+        in a chain, in whatever order suits you.
+
         .. seealso::
 
             :meth:`~gino.engine.GinoConnection.execution_options`
 
         """
         return ModelLoader(cls, *column_names, **relationships)
+
+    @classmethod
+    def on(cls, on_clause):
+        """
+        Customize the on-clause for the auto-generated outer join query.
+
+        .. note::
+
+            This has no effect when provided as the ``loader`` execution option
+            for a given query.
+
+        .. seealso::
+
+            :meth:`.load`
+
+        """
+        return cls.load().on(on_clause)
 
     @classmethod
     def alias(cls, *args, **kwargs):
