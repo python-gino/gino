@@ -165,7 +165,7 @@ async def test_properties(bind):
 
 
 async def test_no_profile():
-    with pytest.raises(RuntimeError, match='Error calling __set_name__'):
+    with pytest.raises(AttributeError, match=r'JSON\[B\] column'):
         # noinspection PyUnusedLocal
         class Test(db.Model):
             __tablename__ = 'tests_no_profile'

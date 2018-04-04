@@ -78,4 +78,4 @@ async def test_no_alter(engine, mocker):
     engine.dialect.supports_alter = False
     warn = mocker.patch('warnings.warn')
     await test(engine, define=False)
-    warn.assert_called()
+    assert warn.called

@@ -30,12 +30,6 @@ class JSONProperty:
         self.after_get = Hook(self)
         self.before_set = Hook(self)
 
-    def __set_name__(self, owner, name):
-        if not hasattr(owner, self.column_name):
-            raise AttributeError(
-                f'Requires "{self.column_name}" JSON[B] column.')
-        self.name = name
-
     def __get__(self, instance, owner):
         if instance is None:
             exp = self.make_expression(

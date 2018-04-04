@@ -26,6 +26,7 @@ deploy:
 install: pip install -U tox-travis
 language: python
 python:
+- 3.5
 - 3.6
 script: tox
 services:

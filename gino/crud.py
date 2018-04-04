@@ -20,6 +20,7 @@ class _Create:
             # noinspection PyProtectedMember
             return instance._create
 
+
 class _Query:
     def __get__(self, instance, owner):
         q = sa.select([owner.__table__])
@@ -127,7 +128,7 @@ class UpdateRequest:
                         sa.func.jsonb_build_object(
                             *itertools.chain(*updates.items())))
             else:
-                raise TypeError(f'{column.type} is not supported.')
+                raise TypeError('{} is not supported.'.format(column.type))
 
         opts = dict(return_model=False)
         if timeout is not DEFAULT:
@@ -362,6 +363,14 @@ class CRUDModel(Model):
     @classmethod
     def _init_table(cls, sub_cls):
         rv = Model._init_table(sub_cls)
+        for each_cls in sub_cls.__mro__[::-1]:
+            for k, v in each_cls.__dict__.items():
+                if isinstance(v, json_support.JSONProperty):
+                    if not hasattr(sub_cls, v.column_name):
+                        raise AttributeError(
+                            'Requires "{}" JSON[B] column.'.format(
+                                v.column_name))
+                    v.name = k
         if rv is not None:
             rv.__model__ = weakref.ref(sub_cls)
         return rv
