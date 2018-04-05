@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from .models import db, User, UserType, Friendship
+from .models import db, User, UserType, Friendship, Relation
 
 pytestmark = pytest.mark.asyncio
 
@@ -171,3 +171,11 @@ async def test_delete_multiple_primary_key(engine):
     await f.delete(bind=engine)
     f2 = await Friendship.get((u1.id, u2.id), bind=engine)
     assert not f2
+
+
+async def test_string_primary_key(engine):
+    relations = ['Colleagues', 'Friends', 'Lovers']
+    for r in relations:
+        await Relation.create(bind=engine, timeout=10, name=r)
+    r1 = await Relation.get(relations[0], bind=engine, timeout=10)
+    assert r1.name == relations[0]

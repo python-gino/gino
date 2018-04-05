@@ -250,105 +250,105 @@ class CRUDModel(Model):
     key is appended to the returning query clause. This model type is set as
     the execution option ``model`` in the returning clause, so by default the
     query yields instances of this model instead of database rows.
-    
+
     """
 
     update = _Update()
     """
     This ``update`` behaves quite different on model classes rather than model
     instances.
-    
+
     On model classes, ``update`` is an attribute of type
     :class:`~sqlalchemy.sql.expression.Update` for massive updates, for
     example::
-    
+
         await User.update.values(enabled=True).where(...).gino.status()
-    
+
     Like :attr:`.query`, the update query also has the ``model`` execution 
     option of this model, so if you use the
     :meth:`~sqlalchemy.sql.expression.Update.returning` clause, the query shall
     return model objects.
-    
+
     However on model instances, ``update()`` is a method which accepts keyword
     arguments only and returns an :class:`.UpdateRequest` to update this single
     model instance. The keyword arguments are pairs of attribute names and new
     values. This is the same as :meth:`.UpdateRequest.update`, feel free to
     read more about it. A normal usage example would be like this::
-    
+
         await user.update(name='new name', age=32).apply()
-    
+
     Here, the :meth:`await ... apply() <.UpdateRequest.apply>` executes the
     actual ``UPDATE`` SQL in the database, while ``user.update()`` only makes
     changes in the memory, and collect all changes into an
     :class:`.UpdateRequest` instance.
-    
+
     """
 
     delete = _Delete()
     """
     Similar to :meth:`.update`, this ``delete`` is also different on model
     classes than on model instances.
-    
+
     On model classes ``delete`` is an attribute of type
     :class:`~sqlalchemy.sql.expression.Delete` for massive deletes, for
     example::
-    
+
         await User.delete.where(User.enabled.is_(False)).gino.status()
-        
+
     Similarly you can add a :meth:`~sqlalchemy.sql.expression.Delete.returning`
     clause to the query and it shall return the deleted rows as model objects.
-    
+
     And on model instances, ``delete()`` is a method to remove the
     corresponding row in the database of this model instance. and returns the
     status returned from the database::
-    
+
         print(await user.delete())  # e.g. prints DELETE 1
-    
+
     .. note::
-    
+
         ``delete()`` only removes the row from database, it does not affect the
         current model instance.
-    
+
     :param bind: An optional :class:`~gino.engine.GinoEngine` if current
       metadata (:class:`~gino.api.Gino`) has no bound engine, or specifying a
       different :class:`~gino.engine.GinoEngine` to execute the ``DELETE``.
-      
+
     :param timeout: Seconds to wait for the database to finish executing,
       ``None`` for wait forever. By default it will use the ``timeout``
       execution option value if unspecified.
-    
+
     """
 
     select = _Select()
     """
     Build a query to retrieve only specified columns from this table.
-    
+
     This method accepts positional string arguments as names of attributes to
     retrieve, and returns a :class:`~sqlalchemy.sql.expression.Select` for
     query. The returning query object is always set with two execution options:
-    
+
     1. ``model`` is set to this model type
     2. ``return_model`` is set to ``False``
-    
+
     So that by default it always return rows instead of model instances, while
     column types can be inferred correctly by the ``model`` option.
-    
+
     For example::
-    
+
         async for row in User.select('id', 'name').gino.iterate():
             print(row['id'], row['name'])
-    
+
     If :meth:`.select` is invoked on a model instance, then a ``WHERE`` clause
     to locate this instance by its primary key is appended to the returning
     query clause. This is useful when you want to retrieve a latest value of a
     field on current model instance from database::
-    
+
         db_age = await user.select('age').gino.scalar()
-    
+
     .. seealso::
-    
+
         :meth:`~gino.engine.GinoConnection.execution_options`
-    
+
     """
 
     _update_request_cls = UpdateRequest
@@ -423,10 +423,10 @@ class CRUDModel(Model):
         :return: An instance of this model class, or ``None`` if no such row.
 
         """
-        if hasattr(ident, '__iter__'):
-            ident_ = list(ident)
-        else:
+        if not isinstance(ident, (list, tuple)):
             ident_ = [ident]
+        else:
+            ident_ = ident
         columns = cls.__table__.primary_key.columns
         if len(ident_) != len(columns):
             raise ValueError(

@@ -58,6 +58,12 @@ class Friendship(db.Model):
         return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)
 
 
+class Relation(db.Model):
+    __tablename__ = 'gino_relation'
+
+    name = db.Column(db.Text(), primary_key=True)
+
+
 def qsize(engine):
     # noinspection PyProtectedMember
     return engine.raw_pool._queue.qsize()
