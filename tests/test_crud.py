@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from .models import db, User, UserType, Friendship, Relation
+from .models import db, User, UserType, Friendship, Relation, PG_URL
 
 pytestmark = pytest.mark.asyncio
 
@@ -115,6 +115,64 @@ async def test_get_multiple_primary_key(engine):
     assert f
     assert f.my_id == u1.id
     assert f.friend_id == u2.id
+
+
+async def test_multiple_primary_key_order():
+    import gino
+
+    db1 = await gino.Gino(PG_URL)
+
+    class NameCard(db1.Model):
+        __tablename__ = 'name_cards'
+
+        first_name = db1.Column(db1.Unicode(), primary_key=True)
+        last_name = db1.Column(db1.Unicode(), primary_key=True)
+
+    await db1.gino.create_all()
+
+    try:
+        await NameCard.create(first_name='first', last_name='last')
+        nc = await NameCard.get(('first', 'last'))
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+        with pytest.raises(ValueError, match='expected 2, got 3'):
+            await NameCard.get(dict(a=1, first_name='first', last_name='last'))
+        with pytest.raises(KeyError, match='first_name'):
+            await NameCard.get(dict(first='first', last_name='last'))
+        nc = await NameCard.get(dict(first_name='first', last_name='last'))
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+        nc = await NameCard.get({0: 'first', 1: 'last'})
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+    finally:
+        await db1.gino.drop_all()
+        await db1.pop_bind().close()
+
+    db2 = await gino.Gino(PG_URL)
+
+    class NameCard(db2.Model):
+        __tablename__ = 'name_cards'
+
+        last_name = db2.Column(db2.Unicode(), primary_key=True)
+        first_name = db2.Column(db2.Unicode(), primary_key=True)
+
+    await db2.gino.create_all()
+
+    try:
+        await NameCard.create(first_name='first', last_name='last')
+        nc = await NameCard.get(('last', 'first'))
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+        nc = await NameCard.get(dict(first_name='first', last_name='last'))
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+        nc = await NameCard.get({1: 'first', 'last_name': 'last'})
+        assert nc.first_name == 'first'
+        assert nc.last_name == 'last'
+    finally:
+        await db2.gino.drop_all()
+        await db2.pop_bind().close()
 
 
 async def test_connection_as_bind(engine):
