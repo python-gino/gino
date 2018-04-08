@@ -154,6 +154,13 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
+0.6.3 (2018-04-08)
+^^^^^^^^^^^^^^^^^^
+
+* Added aiohttp support
+* Added support for calling ``create()`` on model instances (Contributed by Kinware in #178 #180)
+* Fixed ``get()`` by string, and misc environment issues (Contributed by Tony Wang in #191 193 #183 #184)
+
 0.6.2 (2018-03-24)
 ^^^^^^^^^^^^^^^^^^
 
