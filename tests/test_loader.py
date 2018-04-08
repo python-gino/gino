@@ -2,6 +2,7 @@ import random
 from datetime import datetime
 
 import pytest
+from async_generator import yield_, async_generator
 
 from .models import db, User, Team, Company
 
@@ -9,6 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
+@async_generator
 async def user(bind, random_name):
     c = await Company.create()
     t1 = await Team.create(company_id=c.id)
@@ -18,7 +20,7 @@ async def user(bind, random_name):
     t2.parent = t1
     t2.company = c
     t1.company = c
-    yield u
+    await yield_(u)
     await User.delete.gino.status()
     await Team.delete.gino.status()
     await Company.delete.gino.status()
