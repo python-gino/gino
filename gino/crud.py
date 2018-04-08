@@ -419,7 +419,9 @@ class CRUDModel(Model):
             user = await User.get(request.args.get('user_id'))
 
         :param ident: Value of the primary key. For composite primary keys this
-          should be a tuple of values for all keys in database order.
+          should be a tuple of values for all keys in database order, or a dict
+          of names (or position numbers in database order starting from zero)
+          of all primary keys to their values.
 
         :param bind: A :class:`~gino.engine.GinoEngine` to execute the
           ``INSERT`` statement with, or ``None`` (default) to use the bound
@@ -432,7 +434,7 @@ class CRUDModel(Model):
         :return: An instance of this model class, or ``None`` if no such row.
 
         """
-        if not isinstance(ident, (list, tuple)):
+        if not isinstance(ident, (list, tuple, dict)):
             ident_ = [ident]
         else:
             ident_ = ident
@@ -444,7 +446,11 @@ class CRUDModel(Model):
                     len(columns), len(ident_)))
         clause = cls.query
         for i, c in enumerate(columns):
-            clause = clause.where(c == ident_[i])
+            try:
+                val = ident_[i]
+            except KeyError:
+                val = ident_[c.name]
+            clause = clause.where(c == val)
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
         if bind is None:
