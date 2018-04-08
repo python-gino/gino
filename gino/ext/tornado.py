@@ -173,7 +173,7 @@ from ..strategies import GinoStrategy
 def _assert_not_negative(name):
     def inner(value):
         if value < 0:
-            raise ValueError(f'{name} should be non-negative')
+            raise ValueError(name + ' should be non-negative')
     return inner
 
 
@@ -281,13 +281,13 @@ class Application(tornado.web.Application):
 
     #: The database object associated with this application.
     #: Use :py:meth:`~.late_init()` to init this or set it manually.
-    db: Gino = None
+    db = None
 
     #: If ``True``, enables ``GinoRequestHandler`` to create lazy connections.
     #:
     #: See :py:attr:`~.GinoRequestHandler.use_connection_for_request`
     #: for more info.
-    use_connection_for_request: bool = True
+    use_connection_for_request = True
 
     async def late_init(self, db: Gino, *, loop=None, options=_options):
         """
@@ -321,7 +321,7 @@ class Application(tornado.web.Application):
 
         _enable_inherit(asyncio_loop)
 
-        self.db: Gino = db
+        self.db = db
         await db.set_bind(
             URL(
                 drivername=options['db_driver'],
@@ -348,8 +348,6 @@ class AsyncioRequestHandler(tornado.web.RequestHandler):
     method into ``asyncio.Task`` instances.
 
     """
-
-    application: tornado.web.Application
 
     async def _setup_connection(self):
         """
@@ -441,8 +439,6 @@ class GinoRequestHandler(AsyncioRequestHandler):
     this class manages lazy connections for each request.
 
     """
-
-    application: Application
 
     __db_connection = None
 

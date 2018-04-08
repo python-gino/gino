@@ -1,3 +1,5 @@
+import collections
+
 import sqlalchemy as sa
 
 
@@ -34,6 +36,17 @@ class ModelType(type):
                 "type object '{}' has no attribute '{}'".format(
                     self.__name__, item))
 
+    @classmethod
+    def __prepare__(mcs, name, bases, **kwargs):
+        return collections.OrderedDict()
+
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        rv = type.__new__(mcs, name, bases, namespace)
+        rv.__namespace__ = namespace
+        if rv.__table__ is None:
+            rv.__table__ = getattr(rv, '_init_table')(rv)
+        return rv
+
 
 class Model:
     __metadata__ = None
@@ -42,10 +55,6 @@ class Model:
 
     def __init__(self):
         self.__values__ = {}
-
-    def __init_subclass__(cls, **kwargs):
-        if cls.__table__ is None:
-            cls.__table__ = cls._init_table(cls)
 
     @classmethod
     def _init_table(cls, sub_cls):
@@ -56,7 +65,8 @@ class Model:
         columns = []
         updates = {}
         for each_cls in sub_cls.__mro__[::-1]:
-            for k, v in each_cls.__dict__.items():
+            for k, v in getattr(each_cls, '__namespace__',
+                                each_cls.__dict__).items():
                 if isinstance(v, sa.Column):
                     v = v.copy()
                     v.name = k

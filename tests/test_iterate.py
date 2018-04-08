@@ -6,7 +6,7 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def names(sa_engine):
+def names(sa_engine):
     rv = {'11', '22', '33'}
     sa_engine.execute(User.__table__.insert(),
                       [dict(nickname=name) for name in rv])

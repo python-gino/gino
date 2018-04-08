@@ -46,12 +46,18 @@ class AsyncSchemaGenerator(AsyncVisitor, SchemaGenerator):
         else:
             tables = list(metadata.tables.values())
 
-        collection = sort_tables_and_constraints(
-            [t for t in tables if (await self._can_create_table(t))])
+        tables_create = []
+        for t in tables:
+            if await self._can_create_table(t):
+                tables_create.append(t)
 
+        collection = sort_tables_and_constraints(tables_create)
+
+        seq_coll = []
         # noinspection PyProtectedMember
-        seq_coll = [s for s in metadata._sequences.values()
-                    if s.column is None and await self._can_create_sequence(s)]
+        for s in metadata._sequences.values():
+            if s.column is None and await self._can_create_sequence(s):
+                seq_coll.append(s)
 
         event_collection = [
             t for (t, fks) in collection if t is not None
@@ -148,8 +154,10 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
             tables = list(metadata.tables.values())
 
         try:
-            unsorted_tables = [t for t in tables if
-                               await self._can_drop_table(t)]
+            unsorted_tables = []
+            for t in tables:
+                if await self._can_drop_table(t):
+                    unsorted_tables.append(t)
             collection = list(reversed(
                 sort_tables_and_constraints(
                     unsorted_tables,
@@ -195,11 +203,10 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
                     )
                 )
 
-        seq_coll = [
-            s
-            for s in metadata._sequences.values()
-            if s.column is None and await self._can_drop_sequence(s)
-        ]
+        seq_coll = []
+        for s in metadata._sequences.values():
+            if s.column is None and await self._can_drop_sequence(s):
+                seq_coll.append(s)
 
         event_collection = [
             t for (t, fks) in collection if t is not None
@@ -356,7 +363,7 @@ class AsyncSchemaTypeMixin:
 
 
 async def _call_portable_instancemethod(fn, args, kw):
-    m = getattr(fn.target, f'{fn.name}_async', None)
+    m = getattr(fn.target, fn.name + '_async', None)
     if m is None:
         return fn(*args, **kw)
     else:

@@ -34,19 +34,19 @@ def app():
             users = await User.query.gino.all()
 
             for user in users:
-                url = self.application.reverse_url('user', user.id)
-                nickname = tornado.escape.xhtml_escape(user.nickname)
-                self.write(f'<a href="{url}">{nickname}</a><br/>')
+                self.write('<a href="{url}">{nickname}</a><br/>'.format(
+                    url=self.application.reverse_url('user', user.id),
+                    nickname=tornado.escape.xhtml_escape(user.nickname)))
 
     class GetUser(GinoRequestHandler):
         async def get(self, uid):
-            user: User = await User.get_or_404(int(uid))
-            self.write(f'Hi, {user.nickname}!')
+            user = await User.get_or_404(int(uid))
+            self.write('Hi, {}!'.format(user.nickname))
 
     class AddUser(GinoRequestHandler):
         async def post(self):
             user = await User.create(nickname=self.get_argument('name'))
-            self.write(f'Hi, {user.nickname}!')
+            self.write('Hi, {}!'.format(user.nickname))
 
     options = {
         'db_host': DB_ARGS['host'],

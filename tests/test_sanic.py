@@ -1,6 +1,7 @@
 import gino
 import sanic
 import pytest
+from async_generator import yield_, async_generator
 from sanic.response import text, json
 from gino.ext.sanic import Gino
 
@@ -9,6 +10,7 @@ from .models import DB_ARGS, PG_URL
 
 # noinspection PyShadowingNames
 @pytest.fixture
+@async_generator
 async def app():
     app = sanic.Sanic()
     app.config['DB_HOST'] = DB_ARGS['host']
@@ -60,7 +62,7 @@ async def app():
     try:
         try:
             await db.gino.create_all(e)
-            yield app
+            await yield_(app)
         finally:
             await db.gino.drop_all(e)
     finally:
@@ -78,7 +80,7 @@ def test(app):
     assert response.status == 404
 
     for method in '1234':
-        request, response = app.test_client.get(f'/users/1?method={method}')
+        request, response = app.test_client.get('/users/1?method=' + method)
         assert response.status == 404
 
     request, response = app.test_client.post('/users',

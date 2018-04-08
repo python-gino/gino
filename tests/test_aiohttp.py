@@ -1,6 +1,7 @@
 import gino
 import pytest
 from aiohttp import web
+from async_generator import yield_, async_generator
 from gino.ext.aiohttp import Gino
 
 from .models import DB_ARGS, PG_URL
@@ -10,6 +11,7 @@ pytestmark = pytest.mark.asyncio
 
 # noinspection PyShadowingNames
 @pytest.fixture
+@async_generator
 async def test_client():
     from aiohttp.test_utils import TestServer, TestClient
 
@@ -66,7 +68,7 @@ async def test_client():
         try:
             await db.gino.create_all(e)
             async with TestClient(TestServer(app)) as rv:
-                yield rv
+                await yield_(rv)
         finally:
             await db.gino.drop_all(e)
     finally:
@@ -84,7 +86,7 @@ async def test(test_client):
     assert response.status == 404
 
     for method in '1234':
-        response = await test_client.get(f'/users/1?method={method}')
+        response = await test_client.get('/users/1?method=' + method)
         assert response.status == 404
 
     response = await test_client.post('/users',
