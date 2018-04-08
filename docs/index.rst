@@ -29,7 +29,7 @@ SQLAlchemy_ core for Python asyncio_. Now (early 2018) GINO supports only one
 dialect asyncpg_.
 
 * Free software: BSD license
-* Requires: Python 3.6
+* Requires: Python 3.5
 * Source code: https://github.com/fantix/gino
 * Community: https://gitter.im/python-gino/Lobby
 
