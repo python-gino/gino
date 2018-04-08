@@ -2,8 +2,6 @@
 Engine and Connection
 =====================
 
-**THIS IS A WIP**
-
 :class:`~gino.engine.GinoEngine` is the core of GINO. It acts like a pool of
 connections but also does the work of assembling everyone together:
 
