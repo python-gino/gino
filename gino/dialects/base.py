@@ -5,6 +5,7 @@ from sqlalchemy import util
 
 # noinspection PyProtectedMember
 from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
+from ..loader import Loader
 
 DEFAULT = object()
 
@@ -216,14 +217,20 @@ class ExecutionContextOverride:
     def timeout(self):
         return self._compiled_first_opt('timeout', None)
 
+    @util.memoized_property
+    def loader(self):
+        return self._compiled_first_opt('loader', None)
+
     def process_rows(self, rows, return_model=True):
         # noinspection PyUnresolvedReferences
         rv = rows = super().get_result_proxy().process_rows(rows)
-        if self.model is not None and return_model and self.return_model:
+        loader = self.loader
+        if loader is None and self.model is not None:
+            loader = Loader.get(self.model)
+        if loader is not None and return_model and self.return_model:
             rv = []
             for row in rows:
-                obj = self.model()
-                obj.__values__.update(row)
+                obj = Loader.get(loader).do_load(row, None)
                 rv.append(obj)
         return rv
 

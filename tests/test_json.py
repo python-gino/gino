@@ -23,7 +23,7 @@ async def test_crud(bind):
     u = await User.create(nickname='fantix', birthday=now)
     u.age += 1
     assert await u.query.gino.model(None).first() == (
-        1, 'fantix', {'age': 18, 'birthday': now_str}, UserType.USER)
+        1, 'fantix', {'age': 18, 'birthday': now_str}, UserType.USER, None)
 
     u = await User.get(u.id)
     assert u.nickname == 'fantix'
@@ -46,7 +46,7 @@ async def test_crud(bind):
     assert isinstance(u.balance, float)
     assert await u.query.gino.model(None).first() == (
         1, 'fantix', dict(age=16, balance=100, birthday=now_str),
-        UserType.USER)
+        UserType.USER, None)
     assert await db.select([User.name]).where(
         User.id == u.id).gino.scalar() is None
 
@@ -56,7 +56,7 @@ async def test_crud(bind):
                    nickname='daisy').apply()
     assert await u.query.gino.model(None).first() == (
         1, 'daisy', dict(age=14, balance=200, name='daisy', birthday=now_str),
-        UserType.USER)
+        UserType.USER, None)
     assert u.to_dict() == dict(
         age=14,
         balance=200.0,
@@ -65,6 +65,7 @@ async def test_crud(bind):
         name='daisy',
         nickname='daisy',
         type=UserType.USER,
+        team_id=None,
     )
 
     # Deleting property doesn't affect database

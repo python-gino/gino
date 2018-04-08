@@ -1,5 +1,7 @@
 import os
 import enum
+import random
+import string
 from datetime import datetime
 
 from gino import Gino
@@ -15,6 +17,10 @@ DB_ARGS = dict(
 PG_URL = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
     **DB_ARGS)
 db = Gino()
+
+
+def random_name(length=8) -> str:
+    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
 
 class UserType(enum.Enum):
@@ -37,6 +43,7 @@ class User(db.Model):
     balance = db.IntegerProperty(default=0)
     birthday = db.DateTimeProperty(
         default=lambda i: datetime.utcfromtimestamp(0))
+    team_id = db.Column(db.ForeignKey('gino_teams.id'))
 
     @balance.after_get
     def balance(self, val):
@@ -62,6 +69,22 @@ class Relation(db.Model):
     __tablename__ = 'gino_relation'
 
     name = db.Column(db.Text(), primary_key=True)
+
+
+class Team(db.Model):
+    __tablename__ = 'gino_teams'
+
+    id = db.Column(db.BigInteger(), primary_key=True)
+    name = db.Column(db.Unicode(), default=random_name)
+    parent_id = db.Column(db.ForeignKey('gino_teams.id'))
+    company_id = db.Column(db.ForeignKey('gino_companies.id'))
+
+
+class Company(db.Model):
+    __tablename__ = 'gino_companies'
+
+    id = db.Column(db.BigInteger(), primary_key=True)
+    name = db.Column(db.Unicode(), default=random_name)
 
 
 def qsize(engine):

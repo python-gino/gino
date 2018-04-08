@@ -473,6 +473,28 @@ class GinoConnection:
         :param timeout: Seconds to wait for the query to finish. ``None`` for
           no time out (default).
 
+        :param loader: A loader expression to load the database rows into
+          specified objective structure. It can be either:
+
+          * A model class, so that the query will yield model instances of this
+            class. It is your responsibility to make sure all the columns of
+            this model is selected in the query.
+          * A :class:`~sqlalchemy.schema.Column` instance, so that each result
+            will be only a single value of this column. Please note, if you
+            want to achieve fetching the very first value, you should use
+            :meth:`~gino.engine.GinoConnection.first` instead of
+            :meth:`~gino.engine.GinoConnection.scalar`. However, using directly
+            :meth:`~gino.engine.GinoConnection.scalar` is a more direct way.
+          * A tuple nesting more loader expressions recursively.
+          * A :func:`callable` function that will be called for each row to
+            fully customize the result. Two positional arguments will be passed
+            to the function: the first is the :class:`row
+            <sqlalchemy.engine.RowProxy>` instance, the second is a context
+            object which is only present if nested else ``None``.
+          * A :class:`~gino.loader.Loader` instance directly.
+          * Anything else will be treated as literal values thus returned as
+            whatever they are.
+
         """
         return type(self)(self._dialect,
                           self._sa_conn.execution_options(**opt))

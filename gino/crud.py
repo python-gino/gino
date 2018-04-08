@@ -7,6 +7,7 @@ from sqlalchemy.sql import ClauseElement
 from . import json_support
 from .declarative import Model
 from .exceptions import NoSuchRowError
+from .loader import AliasLoader, ModelLoader
 
 DEFAULT = object()
 
@@ -197,6 +198,42 @@ class UpdateRequest:
                 value = getattr(self._instance, value_from)[key]
             method(k, value)
         return self
+
+
+class Alias:
+    """
+    Experimental proxy for table alias on model.
+
+    """
+    def __init__(self, model, *args, **kwargs):
+        self.model = model
+        self.alias = model.__table__.alias(*args, **kwargs)
+
+    def __getattr__(self, item):
+        rv = getattr(self.alias.columns, item,
+                     getattr(self.model, item,
+                             getattr(self.alias, item, DEFAULT)))
+        if rv is DEFAULT:
+            raise AttributeError
+        return rv
+
+    def __iter__(self):
+        return iter(self.alias.columns)
+
+    def __call__(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+    def load(self, *column_names, **relationships):
+        return AliasLoader(self, *column_names, **relationships)
+
+    def on(self, on_clause):
+        return self.load().on(on_clause)
+
+
+# noinspection PyProtectedMember
+@sa.inspection._inspects(Alias)
+def _inspect_alias(target):
+    return sa.inspection.inspect(target.alias)
 
 
 class CRUDModel(Model):
@@ -509,3 +546,99 @@ class CRUDModel(Model):
                 keys.add(key)
                 keys.discard(prop.column_name)
         return dict((k, getattr(self, k)) for k in keys)
+
+    @classmethod
+    def load(cls, *column_names, **relationships):
+        """
+        Populates a :class:`.loader.Loader` instance to be used by the
+        ``loader`` execution option in order to customize the loading behavior
+        to load specified fields into instances of this model.
+
+        The basic usage of this method is to provide the ``loader`` execution
+        option (if you are looking for reloading
+        the instance from database, check :meth:`.get` or :attr:`.query`) for a
+        given query.
+
+        This method takes both positional arguments and keyword arguments with
+        very different meanings. The positional arguments should be column
+        names as strings, specifying only these columns should be loaded into
+        the model instance (other values are discarded even if they are
+        retrieved from database). Meanwhile, the keyword arguments should be
+        loaders for instance attributes. For example::
+
+            u = await User.query.gino.load(User.load('id', 'name')).first()
+
+        .. tip::
+
+            ``gino.load`` is a shortcut for setting the execution option
+            ``loader``.
+
+        This will populate a ``User`` instance with only ``id`` and ``name``
+        values, all the rest are simply ``None`` even if the query actually
+        returned all the column values.
+
+        ::
+
+            q = User.join(Team).select()
+            u = await q.gino.load(User.load(team=Team)).first()
+
+        This will load two instances of model ``User`` and ``Team``, returning
+        the ``User`` instance with ``u.team`` set to the ``Team`` instance.
+
+        Both positional and keyword arguments can be used ath the same time. If
+        they are both omitted, like ``Team.load()``, it is equivalent to just
+        ``Team`` as a loader.
+
+        Additionally, a :class:`.loader.Loader` instance can also be used to
+        generate queries, as its structure is usually the same as the query::
+
+            u = await User.load(team=Team).query.gino.first()
+
+        This generates a query like this::
+
+            SELECT users.xxx, ..., teams.xxx, ...
+              FROM users LEFT JOIN teams
+                ON ...
+
+        The :class:`~.loader.Loader` delegates attributes on the ``query``, so
+        ``.query`` can be omitted. The ``LEFT JOIN`` is built-in behavior,
+        while the ``ON`` clause is generated based on foreign key. If there is
+        no foreign key, or the condition should be customized, you can use
+        this::
+
+            u = await User.load(team=Team.on(User.team_id == Team.id)).gino.first()
+
+        And you can use both :meth:`~.load` and :meth:`~.on` at the same time
+        in a chain, in whatever order suits you.
+
+        .. seealso::
+
+            :meth:`~gino.engine.GinoConnection.execution_options`
+
+        """
+        return ModelLoader(cls, *column_names, **relationships)
+
+    @classmethod
+    def on(cls, on_clause):
+        """
+        Customize the on-clause for the auto-generated outer join query.
+
+        .. note::
+
+            This has no effect when provided as the ``loader`` execution option
+            for a given query.
+
+        .. seealso::
+
+            :meth:`.load`
+
+        """
+        return cls.load().on(on_clause)
+
+    @classmethod
+    def alias(cls, *args, **kwargs):
+        """
+        Experimental proxy for table alias on model.
+
+        """
+        return Alias(cls, *args, **kwargs)
