@@ -63,6 +63,7 @@ class Model:
             return
 
         columns = []
+        inspected_args = []
         updates = {}
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in getattr(each_cls, '__namespace__',
@@ -72,6 +73,10 @@ class Model:
                     v.name = k
                     columns.append(v)
                     updates[k] = sub_cls.__attr_factory__(v)
+                elif isinstance(v, sa.Index):
+                    inspected_args.append(v)
+                elif sa.Constraint in v.__class__.__mro__:
+                    inspected_args.append(v)
 
         # handle __table_args__
         table_args = getattr(sub_cls, '__table_args__', None)
@@ -85,7 +90,7 @@ class Model:
                 args = table_args
 
         rv = sa.Table(table_name, sub_cls.__metadata__,
-                      *columns, *args, **table_kw)
+                      *columns, *inspected_args, *args, **table_kw)
         for k, v in updates.items():
             setattr(sub_cls, k, v)
         return rv

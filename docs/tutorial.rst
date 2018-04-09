@@ -117,8 +117,8 @@ suggests singular for model names, and plural for table names. Each
 the table, where its first parameter indicates the column type in database,
 while the rest is for other column attributes or constraints. You can find a
 mapping of database types to ``db`` types `here
-<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in SQLAlchemy
-document.
+<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in the SQLAlchemy
+documentation.
 
 .. note::
 
@@ -131,6 +131,26 @@ document.
 
 .. _asyncpg: https://github.com/MagicStack/asyncpg
 .. _SQLAlchemy: https://www.sqlalchemy.org/
+
+If you need constraints or indexes covering multiple columns these are also
+defined using properties in model classes. The property names must be unique,
+but are otherwise not used. Example::
+
+    class Booking(db.Model):
+        __tablename__ = 'bookings'
+
+       day = db.Column(db.Date)
+       booker = db.Column(db.String)
+       room = db.Column(db.String)
+
+       _pk = db.PrimaryKeyConstraint('day', 'booker', name='bookings_pkey')
+       _idx1 = db.Index('bookings_idx_day_room', 'day', 'room', unique=True)
+       _idx2 = db.Index('bookings_idx_booker_room', 'booker', 'room')
+
+It is also possible to define model constraints outside the model if that is
+preferred. For more details on constraints and indexes, see `here
+<http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the SQLAlchemy
+documentation.
 
 
 Get Connected
