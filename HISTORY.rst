@@ -154,6 +154,14 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
+0.6.4 (2018-04-16)
+^^^^^^^^^^^^^^^^^^
+
+* Added Python 3.5 support (#187)
+* Added support to use ``dict`` as ident for ``Model.get`` (#192)
+* Added relationship support (#13)
+* Added documentation on relationship and transaction
+
 0.6.3 (2018-04-08)
 ^^^^^^^^^^^^^^^^^^
 
