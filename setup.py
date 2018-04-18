@@ -48,7 +48,7 @@ setup(
     """,
     license="BSD license",
     zip_safe=False,
-    keywords='gino',
+    keywords='orm asyncio sqlalchemy asyncpg python3 sanic aiohttp tornado',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

@@ -33,9 +33,6 @@ dialect asyncpg_.
 * Source code: https://github.com/fantix/gino
 * Community: https://gitter.im/python-gino/Lobby
 
-If you were using GINO 0.5.x, please read `Migrating to GINO 0.6
-<history.html#migrating-to-gino-0-6>`_ first.
-
 This documentation is still under development. Please excuse the WIP pages.
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
