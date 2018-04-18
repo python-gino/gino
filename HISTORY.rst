@@ -2,6 +2,20 @@
 History
 =======
 
+GINO 0.7
+--------
+
+This is also version 1.0 beta 3.
+
+0.7.0 (2018-04-18)
+^^^^^^^^^^^^^^^^^^
+
+* Added Python 3.5 support (#187)
+* Added support to use ``dict`` as ident for ``Model.get`` (#192)
+* Added result loader (partial relationship support) (#13)
+* Added documentation on relationship and transaction (#146)
+
+
 GINO 0.6
 --------
 
@@ -157,10 +171,7 @@ object.
 0.6.4 (2018-04-16)
 ^^^^^^^^^^^^^^^^^^
 
-* Added Python 3.5 support (#187)
-* Added support to use ``dict`` as ident for ``Model.get`` (#192)
-* Added relationship support (#13)
-* Added documentation on relationship and transaction
+Abandoned version, please use 0.7.0 instead.
 
 0.6.3 (2018-04-08)
 ^^^^^^^^^^^^^^^^^^
