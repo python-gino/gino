@@ -168,6 +168,12 @@ underlying transaction object from database driver is available at
 ``tx.transaction`` - for asyncpg it is an ``asyncpg.transaction.Transaction``
 object.
 
+0.6.5 (2018-04-18)
+^^^^^^^^^^^^^^^^^^
+
+* Abandoned 0.6.4 and keep 0.6.x stable
+* Backported doc for transaction
+
 0.6.4 (2018-04-16)
 ^^^^^^^^^^^^^^^^^^
 
