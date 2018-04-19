@@ -147,10 +147,16 @@ but are otherwise not used. Example::
        _idx1 = db.Index('bookings_idx_day_room', 'day', 'room', unique=True)
        _idx2 = db.Index('bookings_idx_booker_room', 'booker', 'room')
 
-It is also possible to define model constraints outside the model if that is
-preferred. For more details on constraints and indexes, see `here
-<http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the SQLAlchemy
-documentation.
+It is also possible to define model constraints and indexes outside the model
+class if that is preferred. For more details on constraints and indexes, see
+`here <http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the
+SQLAlchemy documentation.
+
+Due to implementation limitations it is currently not possible to specify
+explicit constraints and indexes in classes that are meant to be subclassed.
+The same is true for constraints and indexes specified through the
+:attr:`~gino.declarative.Model.__table_args__` attribute. Please define
+constraints and indexes in leaf subclasses or outside model classes.
 
 
 Get Connected
