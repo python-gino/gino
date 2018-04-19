@@ -75,7 +75,7 @@ class Model:
                     updates[k] = sub_cls.__attr_factory__(v)
                 elif isinstance(v, sa.Index):
                     inspected_args.append(v)
-                elif sa.Constraint in v.__class__.__mro__:
+                elif isinstance(v, sa.Constraint):
                     inspected_args.append(v)
 
         # handle __table_args__

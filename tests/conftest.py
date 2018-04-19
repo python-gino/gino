@@ -24,6 +24,7 @@ async def engine(sa_engine):
     e = await gino.create_engine(PG_URL, echo=ECHO)
     await yield_(e)
     await e.close()
+    sa_engine.execute('DELETE FROM gino_user_settings')
     sa_engine.execute('DELETE FROM gino_users')
 
 
@@ -33,6 +34,7 @@ async def engine(sa_engine):
 async def bind(sa_engine):
     async with db.with_bind(PG_URL, echo=ECHO) as e:
         await yield_(e)
+    sa_engine.execute('DELETE FROM gino_user_settings')
     sa_engine.execute('DELETE FROM gino_users')
 
 
@@ -42,6 +44,7 @@ async def bind(sa_engine):
 async def asyncpg_pool(sa_engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         await yield_(rv)
+        await rv.execute('DELETE FROM gino_user_settings')
         await rv.execute('DELETE FROM gino_users')
 
 

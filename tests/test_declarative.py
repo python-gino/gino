@@ -1,8 +1,8 @@
 import pytest
-
 import gino
+from asyncpg.exceptions import UniqueViolationError, ForeignKeyViolationError, CheckViolationError
 
-from .models import User
+from .models import User, UserSetting
 
 pytestmark = pytest.mark.asyncio
 db = gino.Gino()
@@ -50,6 +50,31 @@ async def test_table_args():
     assert hasattr(Model.__table__.c, 'col1')
     assert hasattr(Model.__table__.c, 'col2')
     assert hasattr(Model.__table__.c, 'col3')
+
+
+async def test_inline_constraints_and_indexes(bind, engine):
+    u = await User.create(name='test')
+    us1 = await UserSetting.create(user_id=u.id, setting='skin', value='blue')
+
+    # PrimaryKeyConstraint
+    with pytest.raises(UniqueViolationError) as e:
+        await UserSetting.create(id=us1.id, user_id=u.id, setting='key1', value='val1')
+
+    # ForeignKeyConstraint
+    with pytest.raises(ForeignKeyViolationError) as e:
+        await UserSetting.create(user_id=42, setting='key2', value='val2')
+
+    # UniqueConstraint
+    with pytest.raises(UniqueViolationError) as e:
+        await UserSetting.create(user_id=u.id, setting='skin', value='duplicate-setting')
+
+    # CheckConstraint
+    with pytest.raises(CheckViolationError) as e:
+        await UserSetting.create(user_id=u.id, setting='key3', value='val3', col1=42)
+
+    # Index
+    status, result = await engine.status("SELECT * FROM pg_indexes WHERE indexname = 'col2_idx'")
+    assert status == 'SELECT 1'
 
 
 async def test_join_t112(engine):
