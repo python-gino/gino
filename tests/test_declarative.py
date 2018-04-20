@@ -1,6 +1,7 @@
 import pytest
 import gino
-from asyncpg.exceptions import UniqueViolationError, ForeignKeyViolationError, CheckViolationError
+from asyncpg.exceptions import (
+    UniqueViolationError, ForeignKeyViolationError, CheckViolationError)
 
 from .models import User, UserSetting
 
@@ -117,3 +118,11 @@ async def test_mixin():
     assert Thing.created is not Another.created
     assert Thing.created is Thing.__table__.c.created
     assert Another.created is Another.__table__.c.created
+
+
+# noinspection PyUnusedLocal
+async def test_inherit_constraint():
+    with pytest.raises(ValueError, match='already attached to another table'):
+        class IllegalUserSetting(UserSetting):
+            __table__ = None
+            __tablename__ = 'bad_gino_user_settings'

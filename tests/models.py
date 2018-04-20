@@ -86,6 +86,7 @@ class Company(db.Model):
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(), default=random_name)
 
+
 class UserSetting(db.Model):
     __tablename__ = 'gino_user_settings'
 
@@ -103,6 +104,7 @@ class UserSetting(db.Model):
     user_id_setting_unique = db.UniqueConstraint('user_id', 'setting')
     col1_check = db.CheckConstraint('col1 >= 1 AND col1 <= 5')
     col2_idx = db.Index('col2_idx', 'col2')
+
 
 def qsize(engine):
     # noinspection PyProtectedMember
