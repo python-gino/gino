@@ -1,6 +1,7 @@
 import collections
 
 import sqlalchemy as sa
+from sqlalchemy.exc import InvalidRequestError
 
 
 class ColumnAttribute:
@@ -63,6 +64,7 @@ class Model:
             return
 
         columns = []
+        inspected_args = []
         updates = {}
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in getattr(each_cls, '__namespace__',
@@ -72,6 +74,8 @@ class Model:
                     v.name = k
                     columns.append(v)
                     updates[k] = sub_cls.__attr_factory__(v)
+                elif isinstance(v, (sa.Index, sa.Constraint)):
+                    inspected_args.append(v)
 
         # handle __table_args__
         table_args = getattr(sub_cls, '__table_args__', None)
@@ -84,8 +88,19 @@ class Model:
             else:
                 args = table_args
 
-        rv = sa.Table(table_name, sub_cls.__metadata__,
-                      *columns, *args, **table_kw)
+        args = (*columns, *inspected_args, *args)
+        for item in args:
+            try:
+                _table = getattr(item, 'table', None)
+            except InvalidRequestError:
+                _table = None
+            if _table is not None:
+                raise ValueError(
+                    '{} is already attached to another table. Please do not '
+                    'use the same item twice. A common mistake is defining '
+                    'constraints and indices in a super class - we are working'
+                    ' on making it possible.')
+        rv = sa.Table(table_name, sub_cls.__metadata__, *args, **table_kw)
         for k, v in updates.items():
             setattr(sub_cls, k, v)
         return rv

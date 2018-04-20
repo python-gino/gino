@@ -87,6 +87,25 @@ class Company(db.Model):
     name = db.Column(db.Unicode(), default=random_name)
 
 
+class UserSetting(db.Model):
+    __tablename__ = 'gino_user_settings'
+
+    # No constraints defined on columns
+    id = db.Column(db.BigInteger())
+    user_id = db.Column(db.BigInteger())
+    setting = db.Column(db.Text())
+    value = db.Column(db.Text())
+    col1 = db.Column(db.Integer, default=1)
+    col2 = db.Column(db.Integer, default=2)
+
+    # Define indexes and constraints inline
+    id_pkey = db.PrimaryKeyConstraint('id')
+    user_id_fk = db.ForeignKeyConstraint(['user_id'], ['gino_users.id'])
+    user_id_setting_unique = db.UniqueConstraint('user_id', 'setting')
+    col1_check = db.CheckConstraint('col1 >= 1 AND col1 <= 5')
+    col2_idx = db.Index('col2_idx', 'col2')
+
+
 def qsize(engine):
     # noinspection PyProtectedMember
     return engine.raw_pool._queue.qsize()
