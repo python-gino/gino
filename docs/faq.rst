@@ -28,3 +28,14 @@ GINO `#113 <https://github.com/fantix/gino/pull/113>`_ to make join easier, so
 that you can use model classes directly as if they are tables in joining::
 
     results = await User.join(Book).select().gino.all()
+
+
+How to connect to database through SSL?
+---------------------------------------
+
+It depends on the dialect and database driver. For asyncpg, keyword arguments
+on :func:`asyncpg.connect() <asyncpg.connection.connect>` are directly
+available on :func:`~gino.create_engine` or :meth:`db.set_bind()
+<gino.api.Gino.set_bind>`. Therefore, enabling SSL is rather easy::
+
+    engine = await gino.create_engine(..., ssl=True)

@@ -380,3 +380,15 @@ async def test_release(engine):
     await conn3.release()
     assert engine.current_connection is None
     assert init_size == qsize(engine)
+
+
+async def test_ssl():
+    import ssl
+    import gino
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    e = await gino.create_engine(PG_URL, ssl=ctx)
+    await e.close()
