@@ -100,6 +100,24 @@ async def test_mixin():
     class Tracked:
         created = db.Column(db.DateTime(timezone=True))
 
+        @db.declared_attr
+        def unique_id(cls):
+            return db.Column(db.Integer())
+
+        @db.declared_attr
+        def unique_constraint(cls):
+            return db.UniqueConstraint('unique_id')
+
+        @db.declared_attr
+        def poly(cls):
+            if cls.__name__ == 'Thing':
+                return db.Column(db.Unicode())
+
+        @db.declared_attr
+        def __table_args__(cls):
+            if cls.__name__ == 'Thing':
+                return db.UniqueConstraint('poly'),
+
     class Audit(Tracked):
         pass
 
@@ -118,6 +136,24 @@ async def test_mixin():
     assert Thing.created is not Another.created
     assert Thing.created is Thing.__table__.c.created
     assert Another.created is Another.__table__.c.created
+
+    assert Thing.unique_id is not Another.unique_id
+    assert Thing.unique_id is Thing.__table__.c.unique_id
+    c1, c2 = [list(filter(lambda c: list(c.columns)[0].name == 'unique_id',
+                          m.__table__.constraints))[0]
+              for m in [Thing, Another]]
+    assert isinstance(c1, db.UniqueConstraint)
+    assert isinstance(c2, db.UniqueConstraint)
+    assert c1 is not c2
+
+    assert isinstance(Thing.poly, db.Column)
+    assert Another.poly is None
+    for c in Thing.__table__.constraints:
+        if list(c.columns)[0].name == 'poly':
+            assert isinstance(c, db.UniqueConstraint)
+            break
+    else:
+        assert False, 'Should not reach here'
 
 
 # noinspection PyUnusedLocal

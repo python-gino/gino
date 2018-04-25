@@ -6,7 +6,7 @@ from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
-from .declarative import declarative_base
+from .declarative import declarative_base, declared_attr
 from .schema import GinoSchemaVisitor, patch_schema
 from . import json_support
 
@@ -325,6 +325,7 @@ class Gino(sa.MetaData):
         if model_classes is None:
             model_classes = self.model_base_classes
         self._model = declarative_base(self, model_classes)
+        self.declared_attr = declared_attr
         for mod in json_support, sa:
             for key in mod.__all__:
                 if not hasattr(self, key) and key not in self.no_delegate:

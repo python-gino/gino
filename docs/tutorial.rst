@@ -152,11 +152,13 @@ class if that is preferred. For more details on constraints and indexes, see
 `here <http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the
 SQLAlchemy documentation.
 
-Due to implementation limitations it is currently not possible to specify
-explicit constraints and indexes in classes that are meant to be subclassed.
-The same is true for constraints and indexes specified through the
-:attr:`~gino.declarative.Model.__table_args__` attribute. Please define
-constraints and indexes in leaf subclasses or outside model classes.
+Due to implementation limitations it is currently not allowed to specify
+explicit constraints and indexes as direct attributes in classes that are meant
+to be subclassed. The same is true for constraints and indexes specified
+through the :attr:`~gino.declarative.Model.__table_args__` attribute. In order
+to e.g. define constraints in mixin classes,
+:func:`~gino.declarative.declared_attr` is required. Please feel free to read
+more about it in its API documentation.
 
 
 Get Connected

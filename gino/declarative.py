@@ -49,6 +49,52 @@ class ModelType(type):
         return rv
 
 
+def declared_attr(m):
+    """
+    Mark a class-level method as a factory of attribute.
+
+    This is intended to be used as decorators on class-level methods of a
+    :class:`~Model` class. When initializing the class as well as its
+    subclasses, the decorated factory method will be called for each class, the
+    returned result will be set on the class in place of the factory method
+    under the same name.
+
+    ``@declared_attr`` is implemented differently than
+    :class:`~sqlalchemy.ext.declarative.declared_attr` of SQLAlchemy, but they
+    are both more often used on mixins to dynamically declare indices or
+    constraints (also works for column and ``__table_args__``, or even normal
+    class attributes)::
+
+        class TrackedMixin:
+            created = db.Column(db.DateTime(timezone=True))
+
+            @db.declared_attr
+            def unique_id(cls):
+                return db.Column(db.Integer())
+
+            @db.declared_attr
+            def unique_constraint(cls):
+                return db.UniqueConstraint('unique_id')
+
+            @db.declared_attr
+            def poly(cls):
+                if cls.__name__ == 'Thing':
+                    return db.Column(db.Unicode())
+
+            @db.declared_attr
+            def __table_args__(cls):
+                if cls.__name__ == 'Thing':
+                    return db.UniqueConstraint('poly'),
+
+    .. note::
+
+        This doesn't work if the model already had a ``__table__``.
+
+    """
+    m.__declared_attr__ = True
+    return m
+
+
 class Model:
     __metadata__ = None
     __table__ = None
@@ -69,6 +115,8 @@ class Model:
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in getattr(each_cls, '__namespace__',
                                 each_cls.__dict__).items():
+                if callable(v) and getattr(v, '__declared_attr__', False):
+                    v = updates[k] = v(sub_cls)
                 if isinstance(v, sa.Column):
                     v = v.copy()
                     v.name = k
@@ -78,7 +126,8 @@ class Model:
                     inspected_args.append(v)
 
         # handle __table_args__
-        table_args = getattr(sub_cls, '__table_args__', None)
+        table_args = updates.get('__table_args__',
+                                 getattr(sub_cls, '__table_args__', None))
         args, table_kw = (), {}
         if isinstance(table_args, dict):
             table_kw = table_args
@@ -116,4 +165,4 @@ def inspect_model_type(target):
     return sa.inspection.inspect(target.__table__)
 
 
-__all__ = ['ColumnAttribute', 'Model', 'declarative_base']
+__all__ = ['ColumnAttribute', 'Model', 'declarative_base', 'declared_attr']
