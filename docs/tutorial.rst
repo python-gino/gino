@@ -296,7 +296,7 @@ objects from database as a list::
     # SELECT users.id, users.nickname FROM users
 
 Alternatively, you can use the ``gino`` extension on
-:attr:`~gino.crud.CRUDModel.query. This has exactly the same effect as above::
+:attr:`~gino.crud.CRUDModel.query`. This has exactly the same effect as above::
 
     all_users = await User.query.gino.all()
     # SQL:

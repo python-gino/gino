@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.6.1\n"
+"Project-Id-Version: GINO 0.7.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-19 21:13+0800\n"
+"POT-Creation-Date: 2018-04-19 10:35+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: fantix <fantix.king@gmail.com>, 2018\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
@@ -36,8 +36,8 @@ msgid "Free software: BSD license"
 msgstr "自由软件：BSD 许可"
 
 #: ../../index.rst:32
-msgid "Requires: Python 3.6"
-msgstr "依赖关系：Python 3.6"
+msgid "Requires: Python 3.5"
+msgstr "依赖关系：Python 3.5"
 
 #: ../../index.rst:33
 msgid "Source code: https://github.com/fantix/gino"
@@ -49,45 +49,37 @@ msgstr "联系我们：https://gitter.im/python-gino/Lobby"
 
 #: ../../index.rst:36
 msgid ""
-"If you were using GINO 0.5.x, please read `Migrating to GINO 0.6 "
-"<history.html#migrating-to-gino-0-6>`_ first."
-msgstr ""
-"如果您曾使用过 GINO 0.5.x，请先阅读 `升级至 GINO 0.6 <history.html#migrating-to-"
-"gino-0-6>`_。"
-
-#: ../../index.rst:39
-msgid ""
 "This documentation is still under development. Please excuse the WIP pages."
 msgstr "本文档尚未编写完毕，未完之处敬请见谅。"
 
-#: ../../index.rst:47
+#: ../../index.rst:44
 msgid "Translations"
 msgstr "翻译版本"
 
-#: ../../index.rst:49
+#: ../../index.rst:46
 msgid "`English <https://python-gino.readthedocs.io/>`_"
 msgstr "`英文 <https://python-gino.readthedocs.io/>`_"
 
-#: ../../index.rst:50
+#: ../../index.rst:47
 msgid "`Chinese <https://python-gino.readthedocs.io/zh/latest/>`_"
 msgstr "`中文 <https://python-gino.readthedocs.io/zh/latest/>`_"
 
-#: ../../index.rst:54
+#: ../../index.rst:51
 msgid "Contents"
 msgstr "目录"
 
-#: ../../index.rst:75
+#: ../../index.rst:73
 msgid "Module Documentation"
 msgstr "API 文档"
 
-#: ../../index.rst:77
+#: ../../index.rst:75
 msgid ":ref:`genindex`"
 msgstr ":ref:`genindex`"
 
-#: ../../index.rst:78
+#: ../../index.rst:76
 msgid ":ref:`modindex`"
 msgstr ":ref:`modindex`"
 
-#: ../../index.rst:79
+#: ../../index.rst:77
 msgid ":ref:`search`"
 msgstr ":ref:`search`"
