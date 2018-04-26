@@ -664,7 +664,7 @@ class GinoEngine:
     async def all(self, clause, *multiparams, **params):
         """
         Acquires a connection with ``reuse=True`` and runs
-        :meth:`~.GinoConnection.all` on it. ``reuse=True` means you can safely
+        :meth:`~.GinoConnection.all` on it. ``reuse=True`` means you can safely
         do this without borrowing more than one underlying connection::
 
             async with engine.acquire():

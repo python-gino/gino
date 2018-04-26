@@ -8,4 +8,6 @@ dependencies:
     - asyncpg
     - sanic
     - tornado
+    - aiohttp
     - sphinxcontrib-asyncio
+    - sphinx-rtd-theme>=0.3.0

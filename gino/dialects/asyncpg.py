@@ -311,6 +311,10 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
             return None
 
     async def set_isolation_level(self, connection, level):
+        """
+        Given an asyncpg connection, set its isolation level.
+
+        """
         level = level.replace('_', ' ')
         if level not in self._isolation_lookup:
             raise exc.ArgumentError(
@@ -324,6 +328,10 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         await connection.execute("COMMIT")
 
     async def get_isolation_level(self, connection):
+        """
+        Given an asyncpg connection, return its isolation level.
+
+        """
         val = await connection.fetchval('show transaction isolation level')
         return val.upper()
 

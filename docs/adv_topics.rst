@@ -65,7 +65,7 @@ PEP 550.
 Sanic Support
 -------------
 
-To integrate with Sanic_, a few configurations needs to be set in
+To integrate with Sanic, a few configurations needs to be set in
 ``app.config`` (with default value though):
 
 - DB_HOST: if not set, ``localhost``
