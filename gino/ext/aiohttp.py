@@ -120,15 +120,20 @@ class Gino(_Gino):
                 enable_inherit(app_.loop)
                 inherit_enabled[0] = True
 
-            await self.set_bind(
-                URL(
+            if config.get('dsn'):
+                dsn = config['dsn']
+            else:
+                dsn = URL(
                     drivername=config.setdefault('driver', 'asyncpg'),
                     host=config.setdefault('host', 'localhost'),
                     port=config.setdefault('port', 5432),
                     username=config.setdefault('user', 'postgres'),
                     password=config.setdefault('password', ''),
                     database=config.setdefault('database', 'postgres'),
-                ),
+                )
+
+            await self.set_bind(
+                dsn,
                 min_size=config.setdefault('pool_min_size', 5),
                 max_size=config.setdefault('pool_max_size', 10),
                 loop=app_.loop,
