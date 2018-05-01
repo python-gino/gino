@@ -322,15 +322,21 @@ class Application(tornado.web.Application):
         _enable_inherit(asyncio_loop)
 
         self.db = db
-        await db.set_bind(
-            URL(
+
+        if options.get('dsn'):
+            dsn = options['dsn']
+        else:
+            dsn = URL(
                 drivername=options['db_driver'],
                 host=options['db_host'],
                 port=options['db_port'],
                 username=options['db_user'],
                 password=options['db_password'],
                 database=options['db_database'],
-            ),
+            )
+
+        await db.set_bind(
+            dsn,
             min_size=options['db_pool_min_size'],
             max_size=options['db_pool_max_size'],
             max_inactive_connection_lifetime=(

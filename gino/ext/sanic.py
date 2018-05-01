@@ -105,15 +105,20 @@ class Gino(_Gino):
                 enable_inherit(loop)
                 inherit_enabled[0] = True
 
-            await self.set_bind(
-                URL(
+            if app.config.get('DB_DSN'):
+                dsn = app.config.DB_DSN
+            else:
+                dsn = URL(
                     drivername=app.config.setdefault('DB_DRIVER', 'asyncpg'),
                     host=app.config.setdefault('DB_HOST', 'localhost'),
                     port=app.config.setdefault('DB_PORT', 5432),
                     username=app.config.setdefault('DB_USER', 'postgres'),
                     password=app.config.setdefault('DB_PASSWORD', ''),
                     database=app.config.setdefault('DB_DATABASE', 'postgres'),
-                ),
+                )
+
+            await self.set_bind(
+                dsn,
                 min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
                 loop=loop,
