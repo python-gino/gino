@@ -323,7 +323,7 @@ class Application(tornado.web.Application):
 
         self.db = db
 
-        if options.get('dsn'):
+        if 'dsn' in options:
             dsn = options['dsn']
         else:
             dsn = URL(
