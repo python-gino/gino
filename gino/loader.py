@@ -60,7 +60,8 @@ class ModelLoader(Loader):
     def do_load(self, row, context):
         rv = self.model()
         for c in self.columns:
-            rv.__values__[c.name] = row[c]
+            if c in row:
+                rv.__values__[c.name] = row[c]
         for key, value in self.relationships.items():
             setattr(rv, key, value.do_load(row, rv))
         return rv

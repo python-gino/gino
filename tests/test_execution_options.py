@@ -59,15 +59,8 @@ async def test_query_ext(bind):
     assert not isinstance(row, User)
     assert row == (u.id, 'test', UserType.USER)
 
-    with pytest.raises(NoSuchColumnError):
-        await db.select(
-            [User.id, User.nickname, User.type]
-        ).gino.model(User).first()
     user = await db.select(
-        [User.id, User.nickname, User.type]
-    ).gino.load(
-        User.load('id', 'nickname', 'type')
-    ).first()
+        [User.id, User.nickname, User.type]).gino.model(User).first()
     assert isinstance(user, User)
     assert user.id is not None
     assert user.nickname == 'test'

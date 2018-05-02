@@ -49,6 +49,13 @@ async def test_model_load(user):
     assert u.nickname == user.nickname
 
 
+async def test_216_model_load_passive_partial(user):
+    u = await db.select([User.nickname]).gino.model(User).first()
+    assert isinstance(u, User)
+    assert u.id is None
+    assert u.nickname == user.nickname
+
+
 async def test_load_relationship(user):
     u = await User.outerjoin(Team).select().gino.load(
         User.load(team=Team)).first()
