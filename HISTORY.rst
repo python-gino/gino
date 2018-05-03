@@ -7,6 +7,14 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.1 (2018-05-03)
+^^^^^^^^^^^^^^^^^^
+
+* Added support for inline model constraints (Contributed by Kinware in #198)
+* Added docs and tests for using SSL (#202)
+* Added ``declared_attr`` (#204)
+* Allowed ``ModelLoader`` passively load partial model (#216)
+
 0.7.0 (2018-04-18)
 ^^^^^^^^^^^^^^^^^^
 
