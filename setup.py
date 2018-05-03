@@ -41,6 +41,7 @@ setup(
     packages=[p for p in find_packages() if p != 'tests'],
     include_package_data=True,
     install_requires=req_file('requirements.txt'),
+    python_requires='>=3.6',
     entry_points="""
     [sqlalchemy.dialects]
     postgresql.asyncpg = gino.dialects.asyncpg:AsyncpgDialect
@@ -57,6 +58,12 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
+    project_urls={
+        'Documentation': 'https://python-gino.readthedocs.io/',
+        'Funding': 'https://www.patreon.com/fantixking',
+        'Source': 'https://github.com/fantix/gino',
+        'Tracker': 'https://github.com/fantix/gino/issues',
+    },
     test_suite='tests',
     tests_require=test_requirements,
     setup_requires=setup_requirements,
