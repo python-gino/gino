@@ -168,3 +168,21 @@ intersphinx_mapping = dict(
     asyncpg=('https://magicstack.github.io/asyncpg/current/', None),
     python=('https://docs.python.org/3', None),
 )
+
+autoclass_content = 'both'
+
+
+def run_apidoc(_):
+    from sphinx.apidoc import main
+    import os
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    mod = os.path.join(cur_dir, '..', 'gino')
+    # https://github.com/sphinx-doc/sphinx/issues/4615
+    main(None, ['-e', '-o', cur_dir, mod, '--force'])
+    os.remove(os.path.join(cur_dir, 'modules.rst'))
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
