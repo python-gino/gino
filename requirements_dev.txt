@@ -20,6 +20,6 @@ tornado==4.5.3
 pytest-tornado==0.5.0
 Pygments==2.2.0
 sphinxcontrib-asyncio==0.2.0
-sphinx-rtd-theme==0.3.0
+sphinx-rtd-theme==0.3.1
 pytest-mock==1.10.0
 async_generator==1.9.0
