@@ -179,11 +179,19 @@ Contribute
 There are a few tasks in GitHub issues marked as ``help wanted``. Please feel
 free to take any of them and pull requests are greatly welcome.
 
-To run tests:
+To run tests (please read more in CONTRIBUTING.rst):
 
 .. code-block:: console
 
    $ python setup.py test
+
+Meanwhile, these are also very much appreciated:
+
+* Just use it, tap the star and spread the love :)
+* Tell me about your story: gino@decentfox.com
+* Report_ a bug/issue, or request for new features
+* `Hire me`_ or `hire us`_ for your work (coding, consulting, troubleshooting)
+* `Become a patron`_
 
 
 Credits
@@ -197,7 +205,8 @@ template.
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
 for offering me the opportunity to build this project. We are open for global
-software project outsourcing on Python, iOS and Android development.
+software project outsourcing on Python, iOS and Android development. And we are
+hiring_!
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
@@ -213,6 +222,11 @@ software project outsourcing on Python, iOS and Android development.
 .. _Tornado: http://www.tornadoweb.org/
 .. _English: https://python-gino.readthedocs.io/
 .. _Chinese: https://python-gino.readthedocs.io/zh/latest/
-.. _DecentFoX Studio: https://decentfox.com/
+.. _DecentFoX Studio: http://decentfox.com/
 .. _`Data Mapper Pattern`: https://en.wikipedia.org/wiki/Data_mapper_pattern
 .. _aiohttp: https://github.com/aio-libs/aiohttp
+.. _Report: https://github.com/fantix/gino/issues
+.. _`Hire me`: https://www.linkedin.com/in/fantix/
+.. _`hire us`: http://decentfox.com/
+.. _`Become a patron`: https://www.patreon.com/fantixking
+.. _hiring: https://www.zhipin.com/gongsi/c6e283cf57f2d9361nF92NS7GA~~.html
