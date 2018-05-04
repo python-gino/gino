@@ -52,6 +52,17 @@ Features
 * Rich PostgreSQL JSONB support
 
 
+Installation
+------------
+
+.. code-block:: console
+
+    pip install gino aiocontextvars
+
+(aiocontextvars_ is an optional dependency recommended for most users. It will
+be replaced_ by contextvars_, and it is not needed in upcoming `Python 3.7`_)
+
+
 Showcase
 --------
 
@@ -194,6 +205,12 @@ Meanwhile, these are also very much appreciated:
 * `Become a patron`_
 
 
+Projects using GINO
+-------------------
+
+* AintQ_ - asyncio task queue on PostgreSQL
+
+
 Credits
 -------
 
@@ -230,3 +247,8 @@ hiring_!
 .. _`hire us`: http://decentfox.com/
 .. _`Become a patron`: https://www.patreon.com/fantixking
 .. _hiring: https://www.zhipin.com/gongsi/c6e283cf57f2d9361nF92NS7GA~~.html
+.. _aiocontextvars: https://github.com/fantix/aiocontextvars
+.. _contextvars: https://github.com/MagicStack/contextvars
+.. _replaced: https://github.com/MagicStack/contextvars/issues/2
+.. _`Python 3.7`: https://docs.python.org/3.7/library/contextvars.html
+.. _AintQ: https://github.com/fantix/aintq

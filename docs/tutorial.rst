@@ -34,6 +34,14 @@ Installation
     over and over again. It is highly recommended for most projects, unless you
     truly need a bare environment and handle connections manually.
 
+.. important::
+
+    aiocontextvars_ will be replaced by `contextvars
+    <https://github.com/MagicStack/contextvars>`_ once it `supports asyncio
+    <https://github.com/MagicStack/contextvars/issues/2>`_. And neither will be
+    needed in Python 3.7 which is delivered with a builtin `contextvars
+    <https://docs.python.org/3.7/library/contextvars.html>`_ module.
+
 .. _aiocontextvars: https://github.com/fantix/aiocontextvars
 
 
