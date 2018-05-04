@@ -170,6 +170,7 @@ async def test_scalar_return_none(bind):
 
 
 async def test_asyncpg_0120(bind, mocker):
+    # for asyncpg 0.12.0
     assert await bind.first('rollback') is None
 
     orig = getattr(asyncpg.Connection, '_do_execute')

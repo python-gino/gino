@@ -129,9 +129,26 @@ class _ReusingDBAPIConnection(_BaseDBAPIConnection):
         pass
 
 
+# noinspection PyPep8Naming,PyMethodMayBeStatic
+class _bypass_no_param:
+    def keys(self):
+        return []
+
+
+_bypass_no_param = _bypass_no_param()
+
+
 # noinspection PyAbstractClass
 class _SAConnection(Connection):
-    pass
+    def _execute_context(self, dialect, constructor,
+                         statement, parameters,
+                         *args):
+        if parameters == [_bypass_no_param]:
+            constructor = getattr(self.dialect.execution_ctx_cls,
+                                  constructor.__name__ + '_prepared',
+                                  constructor)
+        return super()._execute_context(dialect, constructor, statement,
+                                        parameters, *args)
 
 
 # noinspection PyAbstractClass
@@ -502,6 +519,10 @@ class GinoConnection:
     async def _run_visitor(self, visitorcallable, element, **kwargs):
         await visitorcallable(self.dialect, self,
                               **kwargs).traverse_single(element)
+
+    async def prepare(self, clause):
+        return await self._execute(
+            clause, (_bypass_no_param,), {}).prepare(clause)
 
 
 class GinoEngine:
