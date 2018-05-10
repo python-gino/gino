@@ -239,12 +239,12 @@ hiring_!
 .. _Tornado: http://www.tornadoweb.org/
 .. _English: https://python-gino.readthedocs.io/
 .. _Chinese: https://python-gino.readthedocs.io/zh/latest/
-.. _DecentFoX Studio: http://decentfox.com/
+.. _DecentFoX Studio: https://decentfox.com/
 .. _`Data Mapper Pattern`: https://en.wikipedia.org/wiki/Data_mapper_pattern
 .. _aiohttp: https://github.com/aio-libs/aiohttp
 .. _Report: https://github.com/fantix/gino/issues
 .. _`Hire me`: https://www.linkedin.com/in/fantix/
-.. _`hire us`: http://decentfox.com/
+.. _`hire us`: https://decentfox.com/
 .. _`Become a patron`: https://www.patreon.com/fantixking
 .. _hiring: https://www.zhipin.com/gongsi/c6e283cf57f2d9361nF92NS7GA~~.html
 .. _aiocontextvars: https://github.com/fantix/aiocontextvars

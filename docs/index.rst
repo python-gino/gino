@@ -59,8 +59,6 @@ Contents
    transaction
    crud
    relationship
-   sanic
-   tornado
    adv_topics
    faq
    api
