@@ -26,7 +26,7 @@ class DBAPICursor:
     def description(self):
         raise NotImplementedError
 
-    async def prepare(self, query, timeout):
+    async def prepare(self, context, clause=None):
         raise NotImplementedError
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
@@ -67,16 +67,60 @@ class Transaction:
 
 
 class PreparedStatement:
-    def __init__(self):
+    def __init__(self, clause=None):
         self.context = None
+        self.clause = clause
 
     def iterate(self, *params, **kwargs):
         return _PreparedIterableCursor(self, params, kwargs)
+
+    async def _do_execute(self, multiparams, params, one=False,
+                          return_model=True, status=False):
+        ctx = self.context.connection.execute(
+            self.clause, *multiparams, **params).context
+        if ctx.executemany:
+            raise ValueError('PreparedStatement does not support multiple '
+                             'parameters.')
+        assert ctx.statement == self.context.statement, (
+            'Prepared statement generated different SQL with parameters')
+        params = []
+        for val in ctx.parameters[0]:
+            params.append(val)
+        msg, rows = await self._execute(params, one)
+        if status:
+            return msg
+        item = self.context.process_rows(rows, return_model=return_model)
+        if one:
+            if item:
+                item = item[0]
+            else:
+                item = None
+        return item
+
+    async def all(self, *multiparams, **params):
+        return await self._do_execute(multiparams, params)
+
+    async def first(self, *multiparams, **params):
+        return await self._do_execute(multiparams, params, one=True)
+
+    async def scalar(self, *multiparams, **params):
+        rv = await self._do_execute(multiparams, params, one=True,
+                                    return_model=False)
+        if rv:
+            return rv[0]
+        else:
+            return None
+
+    async def status(self, *multiparams, **params):
+        return await self._do_execute(multiparams, params, status=True)
 
     def _get_iterator(self, *params, **kwargs):
         raise NotImplementedError
 
     async def _get_cursor(self, *params, **kwargs):
+        raise NotImplementedError
+
+    async def _execute(self, params, one):
         raise NotImplementedError
 
 
@@ -100,9 +144,7 @@ class _IterableCursor:
         self._context = context
 
     async def _iterate(self):
-        prepared = await self._context.cursor.prepare(self._context.statement,
-                                                      self._context.timeout)
-        prepared.context = self._context
+        prepared = await self._context.cursor.prepare(self._context)
         return prepared.iterate(*self._context.parameters[0],
                                 timeout=self._context.timeout)
 
@@ -173,6 +215,9 @@ class _ResultProxy:
             raise ValueError('too many multiparams')
         return _IterableCursor(self._context)
 
+    async def prepare(self, clause):
+        return await self._context.cursor.prepare(self._context, clause)
+
     def _soft_close(self):
         pass
 
@@ -236,6 +281,88 @@ class ExecutionContextOverride:
 
     def get_result_proxy(self):
         return _ResultProxy(self)
+
+    @classmethod
+    def _init_compiled_prepared(cls, dialect, connection, dbapi_connection,
+                                compiled, parameters):
+        self = cls.__new__(cls)
+        self.root_connection = connection
+        self._dbapi_connection = dbapi_connection
+        self.dialect = connection.dialect
+
+        self.compiled = compiled
+
+        # this should be caught in the engine before
+        # we get here
+        assert compiled.can_execute
+
+        self.execution_options = compiled.execution_options.union(
+            connection._execution_options)
+
+        self.result_column_struct = (
+            compiled._result_columns, compiled._ordered_columns,
+            compiled._textual_ordered_columns)
+
+        self.unicode_statement = util.text_type(compiled)
+        if not dialect.supports_unicode_statements:
+            self.statement = self.unicode_statement.encode(
+                self.dialect.encoding)
+        else:
+            self.statement = self.unicode_statement
+
+        self.isinsert = compiled.isinsert
+        self.isupdate = compiled.isupdate
+        self.isdelete = compiled.isdelete
+        self.is_text = compiled.isplaintext
+
+        self.executemany = False
+
+        self.cursor = self.create_cursor()
+
+        if self.isinsert or self.isupdate or self.isdelete:
+            self.is_crud = True
+            self._is_explicit_returning = bool(compiled.statement._returning)
+            self._is_implicit_returning = bool(
+                compiled.returning and not compiled.statement._returning)
+
+        if self.dialect.positional:
+            self.parameters = [dialect.execute_sequence_format()]
+        else:
+            self.parameters = [{}]
+        self.compiled_parameters = [{}]
+
+        return self
+
+    @classmethod
+    def _init_statement_prepared(cls, dialect, connection, dbapi_connection,
+                                 statement, parameters):
+        """Initialize execution context for a string SQL statement."""
+
+        self = cls.__new__(cls)
+        self.root_connection = connection
+        self._dbapi_connection = dbapi_connection
+        self.dialect = connection.dialect
+        self.is_text = True
+
+        # plain text statement
+        self.execution_options = connection._execution_options
+
+        if self.dialect.positional:
+            self.parameters = [dialect.execute_sequence_format()]
+        else:
+            self.parameters = [{}]
+
+        self.executemany = False
+
+        if not dialect.supports_unicode_statements and \
+                isinstance(statement, util.text_type):
+            self.unicode_statement = statement
+            self.statement = dialect._encoder(statement)[0]
+        else:
+            self.statement = self.unicode_statement = statement
+
+        self.cursor = self.create_cursor()
+        return self
 
 
 class AsyncDialectMixin:

@@ -413,7 +413,8 @@ class CRUDModel(Model):
         return rv
 
     @classmethod
-    async def _create_without_instance(cls, bind=None, timeout=DEFAULT, **values):
+    async def _create_without_instance(cls, bind=None, timeout=DEFAULT,
+                                       **values):
         return await cls(**values)._create(bind=bind, timeout=timeout)
 
     async def _create(self, bind=None, timeout=DEFAULT):

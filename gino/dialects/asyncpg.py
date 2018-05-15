@@ -99,8 +99,8 @@ class AsyncpgCursor(base.Cursor):
 
 
 class PreparedStatement(base.PreparedStatement):
-    def __init__(self, prepared):
-        super().__init__()
+    def __init__(self, prepared, clause=None):
+        super().__init__(clause)
         self._prepared = prepared
 
     def _get_iterator(self, *params, **kwargs):
@@ -111,6 +111,17 @@ class PreparedStatement(base.PreparedStatement):
         iterator = await self._prepared.cursor(*params, **kwargs)
         return AsyncpgCursor(self.context, iterator)
 
+    async def _execute(self, params, one):
+        if one:
+            rv = await self._prepared.fetchrow(*params)
+            if rv is None:
+                rv = []
+            else:
+                rv = [rv]
+        else:
+            rv = await self._prepared.fetch(*params)
+        return self._prepared.get_statusmsg(), rv
+
 
 class DBAPICursor(base.DBAPICursor):
     def __init__(self, dbapi_conn):
@@ -118,7 +129,8 @@ class DBAPICursor(base.DBAPICursor):
         self._attributes = None
         self._status = None
 
-    async def prepare(self, query, timeout):
+    async def prepare(self, context, clause=None):
+        timeout = context.timeout
         if timeout is None:
             conn = await self._conn.acquire(timeout=timeout)
         else:
@@ -126,12 +138,14 @@ class DBAPICursor(base.DBAPICursor):
             conn = await self._conn.acquire(timeout=timeout)
             after = time.monotonic()
             timeout -= after - before
-        prepared = await conn.prepare(query, timeout=timeout)
+        prepared = await conn.prepare(context.statement, timeout=timeout)
         try:
             self._attributes = prepared.get_attributes()
         except TypeError:  # asyncpg <= 0.12.0
             self._attributes = []
-        return PreparedStatement(prepared)
+        rv = PreparedStatement(prepared, clause)
+        rv.context = context
+        return rv
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
         if timeout is None:
