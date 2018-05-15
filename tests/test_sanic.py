@@ -9,15 +9,9 @@ from .models import DB_ARGS, PG_URL
 
 
 # noinspection PyShadowingNames
-@pytest.fixture
-@async_generator
-async def app():
+async def _app(config):
     app = sanic.Sanic()
-    app.config['DB_HOST'] = DB_ARGS['host']
-    app.config['DB_PORT'] = DB_ARGS['port']
-    app.config['DB_USER'] = DB_ARGS['user']
-    app.config['DB_PASSWORD'] = DB_ARGS['password']
-    app.config['DB_DATABASE'] = DB_ARGS['database']
+    app.config.update(config)
 
     db = Gino(app)
 
@@ -69,13 +63,39 @@ async def app():
         await e.close()
 
 
-def test_index_returns_200(app):
+@pytest.fixture
+@async_generator
+async def app():
+    await _app({
+        'DB_HOST': DB_ARGS['host'],
+        'DB_PORT': DB_ARGS['port'],
+        'DB_USER': DB_ARGS['user'],
+        'DB_PASSWORD': DB_ARGS['password'],
+        'DB_DATABASE': DB_ARGS['database'],
+    })
+
+
+@pytest.fixture
+@async_generator
+async def app_dsn():
+    await _app({'DB_DSN': PG_URL})
+
+
+def _test_index_returns_200(app):
     request, response = app.test_client.get('/')
     assert response.status == 200
     assert response.text == 'Hello, world!'
 
 
-def test(app):
+def test_index_returns_200(app):
+    _test_index_returns_200(app)
+
+
+def test_index_returns_200_dsn(app_dsn):
+    _test_index_returns_200(app_dsn)
+
+
+def _test(app):
     request, response = app.test_client.get('/users/1')
     assert response.status == 404
 
@@ -91,3 +111,11 @@ def test(app):
     request, response = app.test_client.get('/users/1')
     assert response.status == 200
     assert response.json == dict(id=1, nickname='fantix')
+
+
+def test(app):
+    _test(app)
+
+
+def test_dsn(app_dsn):
+    _test(app_dsn)

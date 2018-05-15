@@ -82,6 +82,8 @@ class Gino(_Gino):
     * ``user`` - database server user, default is ``postgres``.
     * ``password`` - database server password, default is empty.
     * ``database`` - database name, default is ``postgres``.
+    * ``dsn`` - a SQLAlchemy database URL to create the engine, its existence
+      will replace all previous connect arguments.
     * ``pool_min_size`` - the initial number of connections of the db pool.
     * ``pool_max_size`` - the maximum number of connections in the db pool.
 

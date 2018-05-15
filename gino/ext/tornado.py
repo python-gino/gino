@@ -61,6 +61,8 @@ the standard ``tornado.options`` module:
 - ``'db_user'`` -- if not set, ``postgres``;
 - ``'db_password'`` -- if not set, empty string;
 - ``'db_database'`` -- if not set, ``postgres``;
+- ``dsn`` -- a SQLAlchemy database URL to create the engine, its existence
+  will replace all previous connect arguments.
 - ``'db_pool_min_size'`` -- number of connection the pool will be initialized
   with. Default is ``5``;
 - ``'db_pool_max_size'`` -- max number of connections in the pool.

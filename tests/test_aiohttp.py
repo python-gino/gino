@@ -10,14 +10,12 @@ pytestmark = pytest.mark.asyncio
 
 
 # noinspection PyShadowingNames
-@pytest.fixture
-@async_generator
-async def test_client():
+async def _test_client(config):
     from aiohttp.test_utils import TestServer, TestClient
 
     db = Gino()
     app = web.Application(middlewares=[db])
-    app['config'] = dict(gino=DB_ARGS.copy())
+    app['config'] = dict(gino=config)
     db.init_app(app)
 
     class User(db.Model):
@@ -75,13 +73,33 @@ async def test_client():
         await e.close()
 
 
-async def test_index_returns_200(test_client):
+@pytest.fixture
+@async_generator
+async def test_client():
+    await _test_client(DB_ARGS.copy())
+
+
+@pytest.fixture
+@async_generator
+async def test_client_dsn():
+    await _test_client(dict(dsn=PG_URL))
+
+
+async def _test_index_returns_200(test_client):
     response = await test_client.get('/')
     assert response.status == 200
     assert await response.text() == 'Hello, world!'
 
 
-async def test(test_client):
+async def test_index_returns_200(test_client):
+    await _test_index_returns_200(test_client)
+
+
+async def test_index_returns_200_dsn(test_client_dsn):
+    await _test_index_returns_200(test_client_dsn)
+
+
+async def _test(test_client):
     response = await test_client.get('/users/1')
     assert response.status == 404
 
@@ -97,3 +115,11 @@ async def test(test_client):
     response = await test_client.get('/users/1')
     assert response.status == 200
     assert await response.json() == dict(id=1, nickname='fantix')
+
+
+async def test(test_client):
+    await _test(test_client)
+
+
+async def test_dsn(test_client_dsn):
+    await _test(test_client_dsn)

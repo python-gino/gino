@@ -19,6 +19,7 @@ Contributors
 * Ádám Barancsuk <adam.barancsuk@gmail.com>
 * Sergey Kovalev <s_kovalev@wargaming.net>
 * jonahfang
+* Yurii Shtrikker <nbb.unitto@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
