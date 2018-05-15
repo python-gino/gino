@@ -82,6 +82,8 @@ class Gino(_Gino):
     * ``user`` - database server user, default is ``postgres``.
     * ``password`` - database server password, default is empty.
     * ``database`` - database name, default is ``postgres``.
+    * ``dsn`` - a SQLAlchemy database URL to create the engine, its existence
+      will replace all previous connect arguments.
     * ``pool_min_size`` - the initial number of connections of the db pool.
     * ``pool_max_size`` - the maximum number of connections in the db pool.
 
@@ -120,15 +122,20 @@ class Gino(_Gino):
                 enable_inherit(app_.loop)
                 inherit_enabled[0] = True
 
-            await self.set_bind(
-                URL(
+            if config.get('dsn'):
+                dsn = config['dsn']
+            else:
+                dsn = URL(
                     drivername=config.setdefault('driver', 'asyncpg'),
                     host=config.setdefault('host', 'localhost'),
                     port=config.setdefault('port', 5432),
                     username=config.setdefault('user', 'postgres'),
                     password=config.setdefault('password', ''),
                     database=config.setdefault('database', 'postgres'),
-                ),
+                )
+
+            await self.set_bind(
+                dsn,
                 min_size=config.setdefault('pool_min_size', 5),
                 max_size=config.setdefault('pool_max_size', 10),
                 loop=app_.loop,

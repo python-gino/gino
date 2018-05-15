@@ -61,6 +61,8 @@ the standard ``tornado.options`` module:
 - ``'db_user'`` -- if not set, ``postgres``;
 - ``'db_password'`` -- if not set, empty string;
 - ``'db_database'`` -- if not set, ``postgres``;
+- ``dsn`` -- a SQLAlchemy database URL to create the engine, its existence
+  will replace all previous connect arguments.
 - ``'db_pool_min_size'`` -- number of connection the pool will be initialized
   with. Default is ``5``;
 - ``'db_pool_max_size'`` -- max number of connections in the pool.
@@ -322,15 +324,21 @@ class Application(tornado.web.Application):
         _enable_inherit(asyncio_loop)
 
         self.db = db
-        await db.set_bind(
-            URL(
+
+        if 'dsn' in options:
+            dsn = options['dsn']
+        else:
+            dsn = URL(
                 drivername=options['db_driver'],
                 host=options['db_host'],
                 port=options['db_port'],
                 username=options['db_user'],
                 password=options['db_password'],
                 database=options['db_database'],
-            ),
+            )
+
+        await db.set_bind(
+            dsn,
             min_size=options['db_pool_min_size'],
             max_size=options['db_pool_max_size'],
             max_inactive_connection_lifetime=(
