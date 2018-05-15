@@ -28,6 +28,12 @@ async def test_compiled_and_bindparam(bind):
         with pytest.raises(ValueError, match='does not support multiple'):
             await get.all([dict(uid=1), dict(uid=2)])
 
+        delete = await conn.prepare(
+            User.delete.where(User.nickname == db.bindparam('name')))
+        for name in '12345':
+            msg = await delete.status(name=name)
+            assert msg == 'DELETE 1'
+
 
 async def test_statement(engine):
     async with engine.acquire() as conn:

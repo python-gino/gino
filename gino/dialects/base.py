@@ -75,19 +75,20 @@ class PreparedStatement:
         return _PreparedIterableCursor(self, params, kwargs)
 
     async def _do_execute(self, multiparams, params, one=False,
-                          return_model=True):
+                          return_model=True, status=False):
         ctx = self.context.connection.execute(
             self.clause, *multiparams, **params).context
         if ctx.executemany:
             raise ValueError('PreparedStatement does not support multiple '
                              'parameters.')
-        assert ctx.statement == self.context.statement, 'Please report a bug'
+        assert ctx.statement == self.context.statement, (
+            'Prepared statement generated different SQL with parameters')
         params = []
         for val in ctx.parameters[0]:
-            if asyncio.iscoroutine(val):
-                val = await val
             params.append(val)
-        rows = await self._execute(params, one)
+        msg, rows = await self._execute(params, one)
+        if status:
+            return msg
         item = self.context.process_rows(rows, return_model=return_model)
         if one:
             if item:
@@ -109,6 +110,9 @@ class PreparedStatement:
             return rv[0]
         else:
             return None
+
+    async def status(self, *multiparams, **params):
+        return await self._do_execute(multiparams, params, status=True)
 
     def _get_iterator(self, *params, **kwargs):
         raise NotImplementedError

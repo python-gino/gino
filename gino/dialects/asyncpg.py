@@ -115,11 +115,12 @@ class PreparedStatement(base.PreparedStatement):
         if one:
             rv = await self._prepared.fetchrow(*params)
             if rv is None:
-                return []
+                rv = []
             else:
-                return [rv]
+                rv = [rv]
         else:
-            return await self._prepared.fetch(*params)
+            rv = await self._prepared.fetch(*params)
+        return self._prepared.get_statusmsg(), rv
 
 
 class DBAPICursor(base.DBAPICursor):
