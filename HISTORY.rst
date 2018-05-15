@@ -7,6 +7,12 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.2 (2018-05-15)
+^^^^^^^^^^^^^^^^^^
+
+* Added prepared statement support (#14)
+* Added dsn in extension config (Contributed by Yurii Shtrikker in #215)
+
 0.7.1 (2018-05-03)
 ^^^^^^^^^^^^^^^^^^
 
