@@ -77,6 +77,13 @@ class UpdateRequest:
         self._values = {}
         self._props = {}
         self._literal = True
+
+        # even though `self._clause` is used only once, it is necessary to
+        # preserve the primary key values here, because we need to locate the
+        # "old" row in database if the primary key is updated by this class.
+        # However there should be a better way to preserve primary key values,
+        # instead of creating a whole query clause, because `Model.update()` is
+        # used at `Model.__init__()`, which might be called quite frequently.
         self._clause = self._instance.append_where_primary_key(
             type(self._instance).update)
 
