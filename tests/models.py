@@ -62,6 +62,7 @@ class Relation(db.Model):
     __tablename__ = 'gino_relation'
 
     name = db.Column(db.Text(), primary_key=True)
+    logo = db.Column(db.LargeBinary())
 
 
 def qsize(engine):
