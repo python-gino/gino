@@ -85,6 +85,7 @@ class Company(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(), default=random_name)
+    logo = db.Column(db.LargeBinary())
 
 
 class UserSetting(db.Model):

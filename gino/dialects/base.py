@@ -14,6 +14,11 @@ class BaseDBAPI:
     paramstyle = 'numeric'
     Error = Exception
 
+    # noinspection PyPep8Naming
+    @staticmethod
+    def Binary(x):
+        return x
+
 
 class DBAPICursor:
     def execute(self, statement, parameters):
