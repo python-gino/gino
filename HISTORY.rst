@@ -7,6 +7,11 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.3 (2018-05-19)
+^^^^^^^^^^^^^^^^^^
+
+* Fix for failing binary type (#225)
+
 0.7.2 (2018-05-15)
 ^^^^^^^^^^^^^^^^^^
 
