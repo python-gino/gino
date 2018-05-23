@@ -171,3 +171,44 @@ async def test_literal(user):
     assert isinstance(row[-2], datetime)
     assert isinstance(row[-1], datetime)
     assert row[-1] <= row[-2]
+
+
+async def test_load_one_to_many(user):
+    # noinspection PyListCreation
+    uids = [user.id]
+    uids.append((await User.create(nickname='1', team_id=user.team.id)).id)
+    uids.append((await User.create(nickname='1', team_id=user.team.id)).id)
+    uids.append((await User.create(nickname='2',
+                                   team_id=user.team.parent.id)).id)
+    query = User.outerjoin(Team).outerjoin(Company).select()
+    companies = await query.gino.load(
+        Company.distinct(Company.id).load(
+            add_team=Team.load(add_member=User).distinct(Team.id))).all()
+    assert len(companies) == 1
+    company = companies[0]
+    assert isinstance(company, Company)
+    assert company.id == user.team.company_id
+    assert company.name == user.team.company.name
+    assert len(company.teams) == 2
+    for team in company.teams:
+        if team.id == user.team.id:
+            assert len(team.members) == 3
+            for u in team.members:
+                if u.nickname == user.nickname:
+                    assert isinstance(u, User)
+                    assert u.id == user.id
+                    uids.remove(u.id)
+                if u.nickname in {'1', '2'}:
+                    uids.remove(u.id)
+        else:
+            assert len(team.members) == 1
+            uids.remove(list(team.members)[0].id)
+    assert uids == []
+
+    # test distinct many-to-one
+    query = User.outerjoin(Team).select().where(Team.id == user.team.id)
+    users = await query.gino.load(
+        User.load(team=Team.distinct(Team.id))).all()
+    assert len(users) == 3
+    assert users[0].team is users[1].team
+    assert users[0].team is users[2].team

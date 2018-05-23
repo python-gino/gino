@@ -278,10 +278,13 @@ class ExecutionContextOverride:
         if loader is None and self.model is not None:
             loader = Loader.get(self.model)
         if loader is not None and return_model and self.return_model:
+            ctx = {}
             rv = []
+            loader = Loader.get(loader)
             for row in rows:
-                obj = Loader.get(loader).do_load(row, None)
-                rv.append(obj)
+                obj, distinct = loader.do_load(row, ctx)
+                if distinct:
+                    rv.append(obj)
         return rv
 
     def get_result_proxy(self):

@@ -79,6 +79,18 @@ class Team(db.Model):
     parent_id = db.Column(db.ForeignKey('gino_teams.id'))
     company_id = db.Column(db.ForeignKey('gino_companies.id'))
 
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self._members = set()
+
+    @property
+    def members(self):
+        return self._members
+
+    @members.setter
+    def add_member(self, user):
+        self._members.add(user)
+
 
 class Company(db.Model):
     __tablename__ = 'gino_companies'
@@ -86,6 +98,18 @@ class Company(db.Model):
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(), default=random_name)
     logo = db.Column(db.LargeBinary())
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self._teams = set()
+
+    @property
+    def teams(self):
+        return self._teams
+
+    @teams.setter
+    def add_team(self, team):
+        self._teams.add(team)
 
 
 class UserSetting(db.Model):

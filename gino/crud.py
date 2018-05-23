@@ -645,6 +645,15 @@ class CRUDModel(Model):
         return cls.load().on(on_clause)
 
     @classmethod
+    def distinct(cls, *columns):
+        """
+        Experimental loader feature to yield only distinct instances by given
+        columns.
+
+        """
+        return cls.load().distinct(*columns)
+
+    @classmethod
     def alias(cls, *args, **kwargs):
         """
         Experimental proxy for table alias on model.

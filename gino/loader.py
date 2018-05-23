@@ -49,6 +49,7 @@ class Loader:
 class ModelLoader(Loader):
     def __init__(self, model, *column_names, **extras):
         self.model = model
+        self._distinct = None
         if column_names:
             self.columns = [getattr(model, name) for name in column_names]
         else:
@@ -57,14 +58,32 @@ class ModelLoader(Loader):
                            for key, value in extras.items())
         self.on_clause = None
 
-    def do_load(self, row, context):
+    def _do_load(self, row):
         rv = self.model()
         for c in self.columns:
             if c in row:
                 rv.__values__[c.name] = row[c]
-        for key, value in self.extras.items():
-            setattr(rv, key, value.do_load(row, rv))
         return rv
+
+    def do_load(self, row, context):
+        distinct = True
+        if self._distinct:
+            if context is None:
+                context = {}
+            ctx = context.setdefault(self._distinct, {})
+            key = tuple(row[col] for col in self._distinct)
+            rv = ctx.get(key)
+            if rv is None:
+                rv = self._do_load(row)
+                ctx[key] = rv
+            else:
+                distinct = False
+        else:
+            rv = self._do_load(row)
+
+        for key, value in self.extras.items():
+            setattr(rv, key, value.do_load(row, context)[0])
+        return rv, distinct
 
     def get_columns(self):
         yield from self.columns
@@ -91,6 +110,10 @@ class ModelLoader(Loader):
         self.on_clause = on_clause
         return self
 
+    def distinct(self, *columns):
+        self._distinct = columns
+        return self
+
 
 class AliasLoader(ModelLoader):
     def __init__(self, alias, *column_names, **extras):
@@ -102,7 +125,7 @@ class ColumnLoader(Loader):
         self.column = column
 
     def do_load(self, row, context):
-        return row[self.column]
+        return row[self.column], True
 
 
 class TupleLoader(Loader):
@@ -110,7 +133,8 @@ class TupleLoader(Loader):
         self.loaders = (self.get(value) for value in values)
 
     def do_load(self, row, context):
-        return tuple(loader.do_load(row, context) for loader in self.loaders)
+        return tuple(loader.do_load(row, context)[0]
+                     for loader in self.loaders), True
 
 
 class CallableLoader(Loader):
@@ -118,7 +142,7 @@ class CallableLoader(Loader):
         self.func = func
 
     def do_load(self, row, context):
-        return self.func(row, context)
+        return self.func(row, context), True
 
 
 class ValueLoader(Loader):
@@ -126,4 +150,4 @@ class ValueLoader(Loader):
         self.value = value
 
     def do_load(self, row, context):
-        return self.value
+        return self.value, True
