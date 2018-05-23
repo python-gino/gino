@@ -64,33 +64,44 @@ Ready to contribute? Here's how to set up `gino` for local development.
 
     $ git clone git@github.com:your_name_here/gino.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Create a branch for local development::
 
-    $ mkvirtualenv gino
     $ cd gino/
-    $ python setup.py develop
-
-4. Create a branch for local development::
-
     $ git checkout -b name-of-your-bugfix-or-feature
 
-   Now you can make your changes locally.
+Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+4. Create virtual environment. Example for virtualenvwrapper::
+
+    $ mkvirtualenv gino
+
+5. Activate the environment and install requirements::
+
+    $ pip install -r requirements_dev.txt
+
+6. When you're done making changes, check that your changes pass syntax checks::
 
     $ flake8 gino tests
-    $ python setup.py test or py.test
+
+7. And tests (including other Python versions with tox).
+For tests you you will need running database server (see "Tips" section below for configuration details)::
+
+    $ pytest tests
     $ tox
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+8. For docs run::
 
-6. Commit your changes and push your branch to GitHub::
+    $ make docs
+
+It will build and open up docs in your browser.
+
+9. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+10. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
@@ -121,5 +132,21 @@ creating a new database and user using 'psql' or similar::
 
 Then run the tests like so::
 
-    export DB_USER=gino DB_PASS=gino DB_NAME=gino
-    py.test
+    $ export DB_USER=gino DB_PASS=gino DB_NAME=gino
+    $ py.test
+
+Here is an example for db server in docker.
+Terminal 1 (server)::
+
+    $ docker run --rm -it -p 5433:5432 postgres:10
+
+Terminal 2 (client)::
+
+    $ psql -h localhost -p 5433 -U postgres
+
+Now run create role/database commands described above.
+
+Terminal 3 (python)::
+
+    $ export DB_USER=gino DB_PASS=gino DB_NAME=gino DB_PORT=5433
+    $ pytest tests/test_aiohttp.py
