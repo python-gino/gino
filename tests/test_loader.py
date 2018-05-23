@@ -212,3 +212,19 @@ async def test_load_one_to_many(user):
     assert len(users) == 3
     assert users[0].team is users[1].team
     assert users[0].team is users[2].team
+
+
+async def test_distinct_none(bind):
+    u = await User.create()
+
+    query = User.outerjoin(Team).select().where(User.id == u.id)
+    loader = User.load(team=Team)
+
+    u = await query.gino.load(loader).first()
+    assert u.team.id is None
+
+    query = User.outerjoin(Team).select().where(User.id == u.id)
+    loader = User.load(team=Team.distinct(Team.id))
+
+    u = await query.gino.load(loader).first()
+    assert not hasattr(u, 'team')

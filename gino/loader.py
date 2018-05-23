@@ -72,6 +72,8 @@ class ModelLoader(Loader):
                 context = {}
             ctx = context.setdefault(self._distinct, {})
             key = tuple(row[col] for col in self._distinct)
+            if key == (None,) * len(key):
+                return None, None
             rv = ctx.get(key)
             if rv is None:
                 rv = self._do_load(row)
@@ -82,7 +84,9 @@ class ModelLoader(Loader):
             rv = self._do_load(row)
 
         for key, value in self.extras.items():
-            setattr(rv, key, value.do_load(row, context)[0])
+            value, distinct_ = value.do_load(row, context)
+            if distinct_ is not None:
+                setattr(rv, key, value)
         return rv, distinct
 
     def get_columns(self):
