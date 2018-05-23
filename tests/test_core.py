@@ -20,7 +20,7 @@ async def test_engine_only():
         Column('fullname', String),
     )
 
-    addresses = Table(
+    Table(
         'addresses', metadata,
         Column('id', Integer, primary_key=True),
         Column('user_id', None, ForeignKey('users.id')),
@@ -50,7 +50,7 @@ async def test_core():
         db.Column('fullname', db.String),
     )
 
-    addresses = db.Table(
+    db.Table(
         'addresses', db,
         db.Column('id', db.Integer, primary_key=True),
         db.Column('user_id', None, db.ForeignKey('users.id')),

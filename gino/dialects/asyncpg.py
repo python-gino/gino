@@ -4,7 +4,12 @@ import time
 
 import asyncpg
 from sqlalchemy import util, exc, sql
-from sqlalchemy.dialects.postgresql import *
+from sqlalchemy.dialects.postgresql import (
+    CreateEnumType,
+    DropEnumType,
+    JSON,
+    JSONB
+)
 from sqlalchemy.dialects.postgresql.base import (
     ENUM,
     PGCompiler,

@@ -1,6 +1,6 @@
 import pytest
 
-from .models import db, PG_URL, User
+from .models import PG_URL, User
 
 pytestmark = pytest.mark.asyncio
 

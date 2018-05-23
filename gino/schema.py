@@ -1,6 +1,21 @@
 # noinspection PyProtectedMember
+from sqlalchemy import exc, util
 from sqlalchemy.sql.base import _bind_or_error
-from sqlalchemy.sql.ddl import *
+from sqlalchemy.sql.ddl import (
+    AddConstraint,
+    CreateIndex,
+    CreateSequence,
+    CreateTable,
+    DropConstraint,
+    DropIndex,
+    DropSequence,
+    DropTable,
+    SchemaDropper,
+    SchemaGenerator,
+    SetColumnComment,
+    SetTableComment,
+    sort_tables_and_constraints,
+)
 from sqlalchemy.types import SchemaType
 
 
@@ -27,18 +42,17 @@ class AsyncSchemaGenerator(AsyncVisitor, SchemaGenerator):
     async def _can_create_sequence(self, sequence):
         effective_schema = self.connection.schema_for_object(sequence)
 
-        return self.dialect.supports_sequences and \
-               (
-                   (not self.dialect.sequences_optional or
-                    not sequence.optional) and
-                   (
-                       not self.checkfirst or
-                       not await self.dialect.has_sequence(
-                           self.connection,
-                           sequence.name,
-                           schema=effective_schema)
-                   )
-               )
+        return self.dialect.supports_sequences and (
+            (not self.dialect.sequences_optional or
+             not sequence.optional) and
+            (
+                not self.checkfirst or
+                not await self.dialect.has_sequence(
+                    self.connection,
+                    sequence.name,
+                    schema=effective_schema)
+            )
+        )
 
     async def visit_metadata(self, metadata):
         if self.tables is not None:
@@ -163,8 +177,7 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
                     unsorted_tables,
                     filter_fn=lambda constraint: False
                     if not self.dialect.supports_alter
-                       or constraint.name is None
-                    else None
+                    or constraint.name is None else None
                 )
             ))
         except exc.CircularDependencyError as err2:
@@ -188,13 +201,12 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
                     exc.CircularDependencyError(
                         err2.args[0],
                         err2.cycles, err2.edges,
-                        msg="Can't sort tables for DROP; an "
-                            "unresolvable foreign key "
-                            "dependency exists between tables: %s.  Please ensure "
-                            "that the ForeignKey and ForeignKeyConstraint objects "
-                            "involved in the cycle have "
-                            "names so that they can be dropped using "
-                            "DROP CONSTRAINT."
+                        msg="Can't sort tables for DROP; an unresolvable "
+                            "foreign key dependency exists between tables: %s."
+                            "  Please ensure that the ForeignKey and "
+                            "ForeignKeyConstraint objects involved in the "
+                            "cycle have names so that they can be dropped "
+                            "using DROP CONSTRAINT."
                             % (
                                 ", ".join(
                                     sorted([t.fullname for t in err2.cycles]))
@@ -241,15 +253,15 @@ class AsyncSchemaDropper(AsyncVisitor, SchemaDropper):
 
     async def _can_drop_sequence(self, sequence):
         effective_schema = self.connection.schema_for_object(sequence)
-        return self.dialect.supports_sequences and \
-               ((not self.dialect.sequences_optional or
-                 not sequence.optional) and
-                (not self.checkfirst or
-                 await self.dialect.has_sequence(
-                     self.connection,
-                     sequence.name,
-                     schema=effective_schema))
-                )
+        return self.dialect.supports_sequences and (
+            (not self.dialect.sequences_optional or
+             not sequence.optional) and
+            (not self.checkfirst or
+             await self.dialect.has_sequence(
+                 self.connection,
+                 sequence.name,
+                 schema=effective_schema))
+        )
 
     async def visit_index(self, index):
         await self.connection.status(DropIndex(index))

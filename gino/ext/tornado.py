@@ -13,7 +13,8 @@ It consists of two parts, each of them is optional.
     :py:class:`gino.ext.tornado.AsyncioRequestHandler`
     as a base class for all of your handlers.
 
-    See `integrate GINO with application and request handlers`_ for more details.
+    See `integrate GINO with application and request handlers`_ for more
+    details.
 
 
 Provide tornado-specific methods on models
@@ -42,11 +43,12 @@ Inherit your request handlers from
 :py:class:`gino.ext.tornado.AsyncioRequestHandler` to enable task locals
 support.
 
-Inherit your request handlers from :py:class:`gino.ext.tornado.GinoRequestHandler`
-to enable active connection management.
-Note that :py:class:`gino.ext.tornado.GinoRequestHandler` requires your application
-to have a ``db`` property with ``acquire`` coroutine so its best to use it
-with :py:class:`gino.ext.tornado.Application`.
+Inherit your request handlers from
+:py:class:`gino.ext.tornado.GinoRequestHandler` to enable active connection
+management.
+Note that :py:class:`gino.ext.tornado.GinoRequestHandler` requires your
+application to have a ``db`` property with ``acquire`` coroutine so its best to
+use it with :py:class:`gino.ext.tornado.Application`.
 
 
 Settings defined by this extension
@@ -165,7 +167,7 @@ try:
     # noinspection PyPackageRequirements
     from aiocontextvars import enable_inherit as _enable_inherit
 except ImportError:
-    _enable_inherit = lambda: None
+    _enable_inherit = lambda: None  # NOQA
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
@@ -388,8 +390,9 @@ class AsyncioRequestHandler(tornado.web.RequestHandler):
         """
         An actual asyncio-compatible implementation on the ``_execute``.
 
-        This function just takes the original generator ``_execute.__wrapped__``
-        and manages to pass its futures to the underlying asyncio loop.
+        This function just takes the original generator
+        ``_execute.__wrapped__`` and manages to pass its futures to the
+        underlying asyncio loop.
 
         It also calls ``_setup_connection`` and ``_teardown_connection``
         methods and manages all errors that happen there.
@@ -422,7 +425,7 @@ class AsyncioRequestHandler(tornado.web.RequestHandler):
                     # noinspection PyBroadException
                     try:
                         data = await coro
-                    except:
+                    except:  # NOQA
                         exc_info = sys.exc_info()
             finally:
                 await self._teardown_connection()

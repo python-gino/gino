@@ -1,7 +1,6 @@
 import asyncio
 
 import pytest
-from sqlalchemy.exc import NoSuchColumnError
 
 from .models import db, User, UserType
 

@@ -58,23 +58,27 @@ async def test_inline_constraints_and_indexes(bind, engine):
     us1 = await UserSetting.create(user_id=u.id, setting='skin', value='blue')
 
     # PrimaryKeyConstraint
-    with pytest.raises(UniqueViolationError) as e:
-        await UserSetting.create(id=us1.id, user_id=u.id, setting='key1', value='val1')
+    with pytest.raises(UniqueViolationError):
+        await UserSetting.create(id=us1.id, user_id=u.id, setting='key1',
+                                 value='val1')
 
     # ForeignKeyConstraint
-    with pytest.raises(ForeignKeyViolationError) as e:
+    with pytest.raises(ForeignKeyViolationError):
         await UserSetting.create(user_id=42, setting='key2', value='val2')
 
     # UniqueConstraint
-    with pytest.raises(UniqueViolationError) as e:
-        await UserSetting.create(user_id=u.id, setting='skin', value='duplicate-setting')
+    with pytest.raises(UniqueViolationError):
+        await UserSetting.create(user_id=u.id, setting='skin',
+                                 value='duplicate-setting')
 
     # CheckConstraint
-    with pytest.raises(CheckViolationError) as e:
-        await UserSetting.create(user_id=u.id, setting='key3', value='val3', col1=42)
+    with pytest.raises(CheckViolationError):
+        await UserSetting.create(user_id=u.id, setting='key3', value='val3',
+                                 col1=42)
 
     # Index
-    status, result = await engine.status("SELECT * FROM pg_indexes WHERE indexname = 'col2_idx'")
+    status, result = await engine.status(
+        "SELECT * FROM pg_indexes WHERE indexname = 'col2_idx'")
     assert status == 'SELECT 1'
 
 

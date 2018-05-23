@@ -309,7 +309,7 @@ class CRUDModel(Model):
 
         await User.update.values(enabled=True).where(...).gino.status()
 
-    Like :attr:`.query`, the update query also has the ``model`` execution 
+    Like :attr:`.query`, the update query also has the ``model`` execution
     option of this model, so if you use the
     :meth:`~sqlalchemy.sql.expression.Update.returning` clause, the query shall
     return model objects.
@@ -614,7 +614,8 @@ class CRUDModel(Model):
         no foreign key, or the condition should be customized, you can use
         this::
 
-            u = await User.load(team=Team.on(User.team_id == Team.id)).gino.first()
+            u = await User.load(
+                team=Team.on(User.team_id == Team.id)).gino.first()
 
         And you can use both :meth:`~.load` and :meth:`~.on` at the same time
         in a chain, in whatever order suits you.

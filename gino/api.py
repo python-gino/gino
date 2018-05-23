@@ -258,40 +258,40 @@ class Gino(sa.MetaData):
     model_base_classes = (CRUDModel,)
     """
     Overridable default model classes to build the :attr:`Model`.
-    
+
     Default is :class:`(CRUDModel, ) <gino.crud.CRUDModel>`.
-    
+
     """
 
     query_executor = GinoExecutor
     """
-    The overridable ``gino`` extension class on 
+    The overridable ``gino`` extension class on
     :class:`~sqlalchemy.sql.expression.Executable`.
-    
+
     This class will be set as the getter method of the property ``gino`` on
     :class:`~sqlalchemy.sql.expression.Executable` and its subclasses, if
-    ``ext`` and ``query_ext`` arguments are both ``True``. Default is 
+    ``ext`` and ``query_ext`` arguments are both ``True``. Default is
     :class:`GinoExecutor`.
-    
+
     """
 
     schema_visitor = GinoSchemaVisitor
     """
-    The overridable ``gino`` extension class on 
+    The overridable ``gino`` extension class on
     :class:`~sqlalchemy.schema.SchemaItem`.
-    
+
     This class will be set as the getter method of the property ``gino`` on
     :class:`~sqlalchemy.schema.SchemaItem` and its subclasses, if ``ext`` and
-    ``schema_ext`` arguments are both ``True``. Default is 
+    ``schema_ext`` arguments are both ``True``. Default is
     :class:`~gino.schema.GinoSchemaVisitor`.
-    
+
     """
 
     no_delegate = {'create_engine', 'engine_from_config'}
     """
     A set of symbols from :mod:`sqlalchemy` which is not delegated by
     :class:`Gino`.
-    
+
     """
 
     def __init__(self, bind=None, model_classes=None, query_ext=True,
