@@ -122,7 +122,9 @@ some resource (time) for Thread 2. But Thread 1 also needed CPU time to finish
 its processing at the same time, so in turn after a while the OS had to pause
 Thread 2 and resume Thread 1. Depending on the size of the task, such turns may
 happen several times, so that every thread may have a fair chance to run. It is
-something like this::
+something like this:
+
+.. code-block:: none
 
     Thread 1: I wanna run!
     OS: Okay, here you go...
@@ -145,7 +147,9 @@ coroutine should run. The event manager may only trigger the next coroutine to
 run, after the previous coroutine yields control to wait for an event (e.g.
 wait for an HTTP response). This approach to achieve concurrency is called
 `cooperative multitasking
-<https://en.wikipedia.org/wiki/Cooperative_multitasking>`_. It's like this::
+<https://en.wikipedia.org/wiki/Cooperative_multitasking>`_. It's like this:
+
+.. code-block:: none
 
     Coroutine 1: Let me know when event A arrives. I'm done here before that.
     Event manager: Okay. What about you, coroutine 2?
