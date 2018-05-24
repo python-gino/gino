@@ -37,10 +37,10 @@ Installation
 .. important::
 
     aiocontextvars_ will be replaced by `contextvars
-    <https://github.com/MagicStack/contextvars>`_ once it `supports asyncio
+    <https://github.com/MagicStack/contextvars>`__ once it `supports asyncio
     <https://github.com/MagicStack/contextvars/issues/2>`_. And neither will be
     needed in Python 3.7 which is delivered with a builtin `contextvars
-    <https://docs.python.org/3.7/library/contextvars.html>`_ module.
+    <https://docs.python.org/3.7/library/contextvars.html>`__ module.
 
 .. _aiocontextvars: https://github.com/fantix/aiocontextvars
 
@@ -125,7 +125,7 @@ suggests singular for model names, and plural for table names. Each
 the table, where its first parameter indicates the column type in database,
 while the rest is for other column attributes or constraints. You can find a
 mapping of database types to ``db`` types `here
-<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in the SQLAlchemy
+<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`__ in the SQLAlchemy
 documentation.
 
 .. note::
@@ -157,7 +157,7 @@ but are otherwise not used. Example::
 
 It is also possible to define model constraints and indexes outside the model
 class if that is preferred. For more details on constraints and indexes, see
-`here <http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the
+`here <http://docs.sqlalchemy.org/en/latest/core/constraints.html>`__ in the
 SQLAlchemy documentation.
 
 Due to implementation limitations it is currently not allowed to specify
@@ -192,7 +192,7 @@ Then we tell our ``db`` object to connect to this database::
 If this runs successfully, then you are connected to the newly created database.
 Here ``asyncpg`` indicates the database dialect and driver to use, ``localhost``
 is where the server is, and ``gino`` is the name of the database. Check
-`here <https://docs.sqlalchemy.org/en/latest/core/engines.html>`_ for more
+`here <https://docs.sqlalchemy.org/en/latest/core/engines.html>`__ for more
 information about how to compose this database URL.
 
 .. note::
@@ -324,7 +324,7 @@ Now let's add some filters. For example, find all users with ID lower than 10::
     # SQL (parameter: 10):
     # SELECT users.id, users.nickname FROM users WHERE users.id < $1
 
-Read more `here <https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`_
+Read more `here <https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`__
 about writing queries, because the query object is exactly from SQLAlchemy core.
 
 .. warning::

@@ -70,6 +70,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	rm docs/modules.rst
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+	@echo "open file://`pwd`/docs/_build/html/index.html"
 	$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes
