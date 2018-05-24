@@ -39,3 +39,20 @@ available on :func:`~gino.create_engine` or :meth:`db.set_bind()
 <gino.api.Gino.set_bind>`. Therefore, enabling SSL is rather easy::
 
     engine = await gino.create_engine(..., ssl=True)
+
+
+Transaction cannot rollback changes?
+------------------------------------
+
+As for now, make sure `aiocontextvars
+<https://github.com/fantix/aiocontextvars>`_ is installed in order to use
+contextual transactions like this::
+
+    async with db.transaction():
+        await MyModel.create(name='xxx')
+
+Or else if you'd prefer not to install an additional dependency, you'll have to
+modify the code to explicitly use the correct connection::
+
+    async with db.transaction() as tx:
+        await MyModel.create(name='xxx', bind=tx.connection)
