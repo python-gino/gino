@@ -1,6 +1,8 @@
 * GINO version:
 * Python version:
-* Operating System:
+* asyncpg version:
+* aiocontextvars version:
+* PostgreSQL version:
 
 ### Description
 
