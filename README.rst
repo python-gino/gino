@@ -209,6 +209,7 @@ Projects using GINO
 -------------------
 
 * AintQ_ - asyncio task queue on PostgreSQL
+* ExchangeratesAPI_ - Foreign exchange rates API with currency conversion
 
 
 Credits
@@ -252,3 +253,4 @@ hiring_!
 .. _replaced: https://github.com/MagicStack/contextvars/issues/2
 .. _`Python 3.7`: https://docs.python.org/3.7/library/contextvars.html
 .. _AintQ: https://github.com/fantix/aintq
+.. _ExchangeratesAPI: https://github.com/madisvain/exchangeratesapi
