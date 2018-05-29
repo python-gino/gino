@@ -24,6 +24,8 @@ class _Create:
 
 class _Query:
     def __get__(self, instance, owner):
+        # noinspection PyProtectedMember
+        owner._check_abstract()
         q = sa.select([owner.__table__])
         if instance is not None:
             q = instance.append_where_primary_key(q)
@@ -44,6 +46,8 @@ class _Select:
 class _Update:
     def __get__(self, instance, owner):
         if instance is None:
+            # noinspection PyProtectedMember
+            owner._check_abstract()
             q = owner.__table__.update()
             return q.execution_options(model=weakref.ref(owner))
         else:
@@ -54,6 +58,8 @@ class _Update:
 class _Delete:
     def __get__(self, instance, owner):
         if instance is None:
+            # noinspection PyProtectedMember
+            owner._check_abstract()
             q = owner.__table__.delete()
             return q.execution_options(model=weakref.ref(owner))
         else:
@@ -77,15 +83,10 @@ class UpdateRequest:
         self._values = {}
         self._props = {}
         self._literal = True
-
-        # even though `self._clause` is used only once, it is necessary to
-        # preserve the primary key values here, because we need to locate the
-        # "old" row in database if the primary key is updated by this class.
-        # However there should be a better way to preserve primary key values,
-        # instead of creating a whole query clause, because `Model.update()` is
-        # used at `Model.__init__()`, which might be called quite frequently.
-        self._clause = self._instance.append_where_primary_key(
-            type(self._instance).update)
+        if instance.__table__ is None:
+            self._pk_values = None
+        else:
+            self._pk_values = _PrimaryKeyValues(instance)
 
     def _set(self, key, value):
         self._values[key] = value
@@ -109,6 +110,10 @@ class UpdateRequest:
         :return: ``self`` for chaining calls.
 
         """
+        if self._pk_values is None:
+            raise TypeError(
+                'GINO model {} is abstract, no table is defined'.format(
+                    self._instance.__class__.__name__))
         cls = type(self._instance)
         values = self._values.copy()
 
@@ -141,7 +146,9 @@ class UpdateRequest:
         opts = dict(return_model=False)
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
-        clause = self._clause.values(
+        clause = self._pk_values.append_where_primary_key(
+            type(self._instance).update
+        ).values(
             **values,
         ).returning(
             *[getattr(cls, key) for key in values],
@@ -213,6 +220,8 @@ class Alias:
 
     """
     def __init__(self, model, *args, **kwargs):
+        # noinspection PyProtectedMember
+        model._check_abstract()
         self.model = model
         self.alias = model.__table__.alias(*args, **kwargs)
 
@@ -241,6 +250,18 @@ class Alias:
 @sa.inspection._inspects(Alias)
 def _inspect_alias(target):
     return sa.inspection.inspect(target.alias)
+
+
+class _PrimaryKeyValues:
+    def __init__(self, instance):
+        self._values = {}
+        for c in instance.__table__.primary_key.columns:
+            self._values[c] = getattr(instance, c.name)
+
+    def append_where_primary_key(self, q):
+        for c, v in self._values.items():
+            q = q.where(c == v)
+        return q
 
 
 class CRUDModel(Model):
@@ -427,6 +448,8 @@ class CRUDModel(Model):
     async def _create(self, bind=None, timeout=DEFAULT):
         # handle JSON properties
         cls = type(self)
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        cls._check_abstract()
         keys = set(self.__profile__.keys() if self.__profile__ else [])
         for key in keys:
             cls.__dict__.get(key).save(self)
@@ -479,6 +502,8 @@ class CRUDModel(Model):
         :return: An instance of this model class, or ``None`` if no such row.
 
         """
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        cls._check_abstract()
         if not isinstance(ident, (list, tuple, dict)):
             ident_ = [ident]
         else:
@@ -517,15 +542,15 @@ class CRUDModel(Model):
             await user.query.gino.first()
 
         """
-        for c in self.__table__.primary_key.columns:
-            q = q.where(c == getattr(self, c.name))
-        return q
+        return _PrimaryKeyValues(self).append_where_primary_key(q)
 
     def _update(self, **values):
         return self._update_request_cls(self).update(**values)
 
     async def _delete(self, bind=None, timeout=DEFAULT):
         cls = type(self)
+        # noinspection PyUnresolvedReferences,PyProtectedMember
+        cls._check_abstract()
         clause = self.append_where_primary_key(cls.delete)
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)

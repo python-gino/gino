@@ -166,3 +166,59 @@ async def test_inherit_constraint():
         class IllegalUserSetting(UserSetting):
             __table__ = None
             __tablename__ = 'bad_gino_user_settings'
+
+
+async def test_abstract_model_error():
+    class ConcreteModel(db.Model):
+        __tablename__ = 'some_table'
+
+        c = db.Column(db.Unicode())
+
+    class AbstractModel(db.Model):
+        pass
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        ConcreteModel.join(AbstractModel)
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        AbstractModel.join(ConcreteModel)
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        db.select(AbstractModel)
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        db.select([AbstractModel])
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        # noinspection PyStatementEffect
+        AbstractModel.query
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        # noinspection PyStatementEffect
+        AbstractModel.update
+
+    am = AbstractModel()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        await am.create()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        await am.delete()
+
+    req = am.update()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        await req.apply()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        # noinspection PyStatementEffect
+        AbstractModel.delete
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        AbstractModel.alias()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        AbstractModel.alias()
+
+    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+        await AbstractModel.get(1)

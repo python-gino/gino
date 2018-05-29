@@ -23,13 +23,20 @@ class ColumnAttribute:
 
 
 class ModelType(type):
+    def _check_abstract(self):
+        if self.__table__ is None:
+            raise TypeError('GINO model {} is abstract, no table is '
+                            'defined.'.format(self.__name__))
+
     def __iter__(self):
+        self._check_abstract()
         # noinspection PyUnresolvedReferences
         return iter(self.__table__.columns)
 
     def __getattr__(self, item):
         try:
             if item in {'insert', 'join', 'outerjoin', 'gino'}:
+                self._check_abstract()
                 return getattr(self.__table__, item)
             raise AttributeError
         except AttributeError:
@@ -162,6 +169,7 @@ def declarative_base(metadata, model_classes=(Model,), name='Model'):
 # noinspection PyProtectedMember
 @sa.inspection._inspects(ModelType)
 def inspect_model_type(target):
+    target._check_abstract()
     return sa.inspection.inspect(target.__table__)
 
 
