@@ -55,8 +55,10 @@ def app():
         'db_password': DB_ARGS['password'],
         'db_database': DB_ARGS['database'],
     }
+    opts = tornado.options.options
     for option, value in options.items():
-        setattr(tornado.options.options, option, value)
+        # noinspection PyProtectedMember
+        opts._options[opts._normalize_name(option)].parse(value)
     app = Application([
         tornado.web.URLSpec(r'/', AllUsers, name='index'),
         tornado.web.URLSpec(r'/user/(?P<uid>[0-9]+)', GetUser, name='user'),
