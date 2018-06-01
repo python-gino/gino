@@ -27,20 +27,20 @@ option ``loader`` with a new :class:`~gino.loader.ModelLoader` instance::
     from gino.loader import ModelLoader
 
     query = db.select([User])
-    query = query.execution_option(loader=ModelLoader(User))
+    query = query.execution_options(loader=ModelLoader(User))
     users = await query.gino.all()
 
 The :class:`~gino.loader.ModelLoader` would then load each database row into a
 ``User`` object. As this is frequently used, GINO made it a shortcut::
 
     query = db.select([User])
-    query = query.execution_option(loader=User.load())
+    query = query.execution_options(loader=User.load())
     users = await query.gino.all()
 
 And another shortcut::
 
     query = db.select([User])
-    query = query.execution_option(loader=User)
+    query = query.execution_options(loader=User)
     users = await query.gino.all()
 
 .. tip::
