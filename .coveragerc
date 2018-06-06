@@ -10,3 +10,4 @@ exclude_lines =
     Should not reach here
     def __repr__
     raise NotImplementedError
+    except ImportError
