@@ -23,11 +23,15 @@ deploy:
     python: 3.6
     repo: fantix/gino
     tags: true
-install: pip install -U tox-travis
+install: pip install -U tox-travis coverage coveralls
 language: python
 python:
 - 3.5
 - 3.6
 script: tox
+after_success:
+  - coverage combine
+  - coverage report
+  - coveralls
 services:
 - postgresql

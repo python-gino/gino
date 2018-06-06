@@ -4,6 +4,7 @@ source =
 omit =
     .tox/*
     travis_pypi_setup.py
+    setup.py
 [report]
 exclude_lines =
     pragma: no cover
