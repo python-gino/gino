@@ -36,7 +36,7 @@ if sys.version_info >= (3, 6):
             q = User.query.where(User.id == uid)
             if method == '1':
                 return (await q.gino.first_or_404()).to_dict()
-            elif method == '2':
+            elif method == '2' and ctx:
                 return (await ctx.connection.first_or_404(q)).to_dict()
             elif method == '3':
                 return (await db.bind.first_or_404(q)).to_dict()
@@ -55,7 +55,8 @@ if sys.version_info >= (3, 6):
             await u.query.gino.first_or_404()
             await db.first_or_404(u.query)
             await db.bind.first_or_404(u.query)
-            await ctx.connection.first_or_404(u.query)
+            if ctx:
+                await ctx.connection.first_or_404(u.query)
             return u.to_dict()
 
         @app.route('/users', methods=['POST'])
@@ -69,12 +70,12 @@ if sys.version_info >= (3, 6):
                 data = json.loads(await websocket.receive())
                 action = data.get('action')
                 if action == 'add':
-                    new_user = await _add_user(websocket, data.get('name'))
+                    new_user = await _add_user(None, data.get('name'))
                     await websocket.send(json.dumps(new_user))
                 elif action == 'get':
                     try:
                         user = await _get_user(
-                            websocket, int(data.get('id')), data.get('method'))
+                            None, int(data.get('id')), data.get('method'))
                     except NotFound:
                         await websocket.send(json.dumps({'error': 'not found'}))
                     else:

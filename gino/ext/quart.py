@@ -1,7 +1,7 @@
 import asyncio
 
 # noinspection PyPackageRequirements
-from quart import Quart, request, websocket
+from quart import Quart, request
 # noinspection PyPackageRequirements
 from quart.exceptions import NotFound
 from sqlalchemy.engine.url import URL
@@ -80,9 +80,8 @@ class Gino(_Gino):
 
         await request.connection.release(permanent=False)
 
-    or for websocket
-
-        await websocket.connection.release(permanent=False)
+    This doesn't apply to websocket, because websocket is usually a long
+    connection, so it's not efficient to hold the connection.
 
     """
     model_base_classes = _Gino.model_base_classes + (QuartModelMixin,)
@@ -105,18 +104,6 @@ class Gino(_Gino):
                 if conn is not None:
                     await conn.release()
                     del request.connection
-                return response
-
-            @app.before_websocket
-            async def before_websocket():
-                websocket.connection = await self.acquire(lazy=True)
-
-            @app.after_websocket
-            async def after_websocket(response):
-                conn = getattr(websocket, 'connection', None)
-                if conn is not None:
-                    await conn.release()
-                    del websocket.connection
                 return response
 
         @app.before_first_request
