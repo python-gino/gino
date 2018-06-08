@@ -1,8 +1,9 @@
-import gino
-import sanic
-import pytest
 from async_generator import yield_, async_generator
+import pytest
+import sanic
 from sanic.response import text, json
+
+import gino
 from gino.ext.sanic import Gino
 
 from .models import DB_ARGS, PG_URL
@@ -96,10 +97,7 @@ def test_index_returns_200_dsn(app_dsn):
 
 
 def _test(app):
-    request, response = app.test_client.get('/users/1')
-    assert response.status == 404
-
-    for method in '1234':
+    for method in '01234':
         request, response = app.test_client.get('/users/1?method=' + method)
         assert response.status == 404
 
@@ -108,9 +106,10 @@ def _test(app):
     assert response.status == 200
     assert response.json == dict(id=1, nickname='fantix')
 
-    request, response = app.test_client.get('/users/1')
-    assert response.status == 200
-    assert response.json == dict(id=1, nickname='fantix')
+    for method in '01234':
+        request, response = app.test_client.get('/users/1?method=' + method)
+        assert response.status == 200
+        assert response.json == dict(id=1, nickname='fantix')
 
 
 def test(app):
