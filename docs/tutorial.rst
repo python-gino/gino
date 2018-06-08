@@ -387,7 +387,7 @@ retrieve operations we just tried. ::
     await user.update(nickname='daisy').apply()
     # SQL (parameters: 'daisy', 1):
     # UPDATE users SET nickname=$1 WHERE users.id = $2 RETURNING users.nickname
-    print(user.name)  # daisy
+    print(user.nickname)  # daisy
 
     # get its name again
     name = await User.select('nickname').where(
