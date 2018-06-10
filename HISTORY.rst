@@ -7,6 +7,14 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.4 (2018-06-10)
+^^^^^^^^^^^^^^^^^^
+
+* Added aiocontextvars as required dependency required for Python 3.5 and 3.6 (#228)
+* Added Quart support (#213)
+* Fixed Tornado options parsing (#231)
+* Improve coding style and test coverage
+
 0.7.3 (2018-05-19)
 ^^^^^^^^^^^^^^^^^^
 
