@@ -92,34 +92,6 @@ async def test_reuse(engine):
     assert qsize(engine) == init_size
 
 
-async def test_no_reuse(mocker):
-    class NotExist:
-        # noinspection PyPep8Naming
-        @property
-        def ContextVar(self):
-            raise ImportError
-
-    mocker.patch.dict('sys.modules', {'contextvars': NotExist(),
-                                      'aiocontextvars': NotExist()})
-
-    import gino
-    engine = await gino.create_engine(PG_URL)
-    ctx = getattr(engine, '_ctx')
-    assert ctx.name == 'gino'
-    assert ctx.default is None
-    with pytest.raises(LookupError):
-        ctx.delete()
-
-    init_size = qsize(engine)
-    async with engine.acquire(reuse=True) as conn1:
-        assert qsize(engine) == init_size - 1
-        async with engine.acquire(reuse=True) as conn2:
-            assert qsize(engine) == init_size - 2
-            assert conn1 is not conn2
-        assert qsize(engine) == init_size - 1
-    assert qsize(engine) == init_size
-
-
 async def test_compile(engine):
     stmt, params = engine.compile(User.query.where(User.id == 3))
     assert params[0] == 3

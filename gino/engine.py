@@ -10,37 +10,12 @@ from sqlalchemy.sql import schema
 from .transaction import GinoTransaction
 
 
-def _get_context_var():
-    try:
-        # noinspection PyPackageRequirements
-        from contextvars import ContextVar
-    except ImportError:
-        try:
-            # noinspection PyPackageRequirements
-            from aiocontextvars import ContextVar
-        except ImportError:
-            class ContextVar:
-                def __init__(self, name, default=None):
-                    self._name = name
-                    self._default = default
-
-                @property
-                def name(self):
-                    return self._name
-
-                @property
-                def default(self):
-                    return self._default
-
-                def get(self, default=None):
-                    raise LookupError
-
-                def set(self, val):
-                    pass
-
-                def delete(self):
-                    raise LookupError
-    return ContextVar
+if sys.version_info >= (3, 7):
+    # noinspection PyPackageRequirements,PyUnresolvedReferences
+    from contextvars import ContextVar
+else:
+    # noinspection PyPackageRequirements
+    from aiocontextvars import ContextVar
 
 
 class _BaseDBAPIConnection:
@@ -554,7 +529,7 @@ class GinoEngine:
         self._dialect = dialect
         self._pool = pool
         self._loop = loop
-        self._ctx = _get_context_var()('gino')
+        self._ctx = ContextVar('gino')
 
     @property
     def dialect(self):
