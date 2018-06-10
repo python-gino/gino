@@ -30,8 +30,7 @@ python:
 - 3.6
 script: tox
 after_success:
-  - coverage combine
-  - coverage report
-  - coveralls
+- if [[ $TRAVIS_PYTHON_VERSION = "3.6" ]]; then coverage report; fi
+- if [[ $TRAVIS_PYTHON_VERSION = "3.6" ]]; then coveralls; fi
 services:
 - postgresql
