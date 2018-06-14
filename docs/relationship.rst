@@ -281,11 +281,11 @@ example through the :class:`~gino.loader.CallableLoader`::
             parent_id = row[Parent.id]
             parent = parents.get(parent_id, None)
             if parent is None:
-                parent = parent_loader.do_load(row, ctx)
+                parent, distinct = parent_loader.do_load(row, ctx)
                 parent.children = []
                 parents[parent_id] = parent
             if row[Child.id] is not None:
-                child = child_loader.do_load(row, ctx)
+                child, distinct = child_loader.do_load(row, ctx)
                 child.parent = parent  # two-way reference
                 parent.children.append(child)
 
