@@ -217,7 +217,7 @@ And subloaders can be nested::
     loader = Grandson.load(parent=subloader.on(Grandson.parent_id == Child.id))
 
 By now, GINO supports only loading many-to-one joined query. To modify a
-relationship, just modify the reference column.
+relationship, just modify the reference column values.
 
 
 Self Referencing
@@ -265,31 +265,127 @@ The generated SQL looks like this:
 Other Relationships
 -------------------
 
-GINO does not have the ability to reduce a result set yet, so by now
-one-to-many, many-to-many and one-to-one relationships have to be done
-manually. You can do this in many different ways, the topic is out of scope.
-But let's try to load a one-to-many relationship of the same child-parent
-example through the :class:`~gino.loader.CallableLoader`::
+GINO 0.7.4 introduced an experimental distinct feature to reduce a result set
+with loaders, combining rows under specified conditions. This made it possible
+to build one-to-many relationships. Using the same parent-child example above,
+we could load distinct parents with all their children::
 
-    async def main():
-        parents = {}
+    class Parent(db.Model):
+        __tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key=True)
 
-        parent_loader = Parent.load()
-        child_loader = Child.load()
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self._children = set()
 
-        def loader(row, ctx):
-            parent_id = row[Parent.id]
-            parent = parents.get(parent_id, None)
-            if parent is None:
-                parent, distinct = parent_loader.do_load(row, ctx)
-                parent.children = []
-                parents[parent_id] = parent
-            if row[Child.id] is not None:
-                child, distinct = child_loader.do_load(row, ctx)
-                child.parent = parent  # two-way reference
-                parent.children.append(child)
+        @property
+        def children(self):
+            return self._children
 
-        await Parent.outerjoin(Child).select().gino.load(loader).all()
+        @children.setter
+        def add_child(self, child):
+            self._children.add(child)
 
-        for parent in parents.values():
-            print(f'Parent: {parent.id}, children: {len(parent.children)}')
+
+    class Child(db.Model):
+        __tablename__ = 'children'
+        id = db.Column(db.Integer, primary_key=True)
+        parent_id = db.Column(db.Integer, db.ForeignKey('parents.id'))
+
+
+    query = Child.outerjoin(Parent).select()
+    parents = await query.gino.load(
+        Parent.distinct(Parent.id).load(add_child=Child)).all()
+
+Here the query is still child outer-joining parent, but the loader is loading
+parent instances with distinct IDs only, while storing all their children
+through the ``add_child`` setter property. In detail for each row, a parent
+instance is firstly loaded if no parent instance with the same ID was loaded
+previously, or the same parent instance will be reused. Then a child instance
+is loaded from the same row, and fed to the possibly reused parent instance by
+``parent.add_child = new_child``.
+
+Distinct loaders can be nested to load hierarchical data, but it cannot be used
+as a query builder to automatically generate queries.
+
+GINO provides no additional support for one-to-one relationship - the user
+should make sure that the query produces rows of distinct instance pairs, and
+load them with regular GINO model loaders. When in doubt, the distinct feature
+can be used on both sides, but you'll have to manually deal with the conflict
+if more than one related instances are found. For example, we could keep only
+the last child for each parent::
+
+    class Parent(db.Model):
+        __tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key=True)
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self._child = None
+
+        @property
+        def child(self):
+            return self._child
+
+        @child.setter
+        def child(self, child):
+            self._child = child
+
+
+    class Child(db.Model):
+        __tablename__ = 'children'
+        id = db.Column(db.Integer, primary_key=True)
+        parent_id = db.Column(db.Integer, db.ForeignKey('parents.id'))
+
+
+    query = Child.outerjoin(Parent).select()
+    parents = await query.gino.load(
+        Parent.distinct(Parent.id).load(child=Child.distinct(Child.id))).all()
+
+
+Similarly, you can build many-to-many relationships in the same way::
+
+    class Parent(db.Model):
+        __tablename__ = 'parents'
+        id = db.Column(db.Integer, primary_key=True)
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self._children = set()
+
+        @property
+        def children(self):
+            return self._children
+
+        @children.setter
+        def add_child(self, child):
+            self._children.add(child)
+            child._parents.add(self)
+
+
+    class Child(db.Model):
+        __tablename__ = 'children'
+        id = db.Column(db.Integer, primary_key=True)
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self._parents = set()
+
+        @property
+        def parents(self):
+            return self._parents
+
+
+    class ParentXChild(db.Model):
+        __tablename__ = 'parents_x_children'
+
+        parent_id = db.Column(db.Integer, db.ForeignKey('parents.id'))
+        child_id = db.Column(db.Integer, db.ForeignKey('children.id'))
+
+
+    query = Parent.outerjoin(ParentXChild).outerjoin(Child).select()
+    parents = await query.gino.load(
+        Parent.distinct(Parent.id).load(add_child=Child.distinct(Child.id))).all()
+
+Likewise, there is for now no way to modify the relationships automatically,
+you'll have to manually create, delete or modify ``ParentXChild`` instances.

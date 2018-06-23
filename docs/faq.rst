@@ -56,3 +56,7 @@ modify the code to explicitly use the correct connection::
 
     async with db.transaction() as tx:
         await MyModel.create(name='xxx', bind=tx.connection)
+
+.. tip::
+
+    Since GINO 0.7.4, ``aiocontextvars`` became a required dependency.
