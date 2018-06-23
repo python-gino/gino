@@ -186,6 +186,10 @@ instance. Still the same example rewritten in GINO ORM::
             print(await User.query.gino.all())
             # Outputs: [<User object at 0x10a8ba860>]
 
+.. important::
+
+    The ``__tablename__`` is a mandatory field to define a concrete model.
+
 As you can see, the declaration is pretty much the same as before. Underlying
 they are identical, declaring two tables in ``db``. The ``class`` style is just
 more declarative. Instead of ``users.c.name``, you can now access the column by
