@@ -190,9 +190,11 @@ Then we tell our ``db`` object to connect to this database::
     asyncio.get_event_loop().run_until_complete(main())
 
 If this runs successfully, then you are connected to the newly created database.
-Here ``asyncpg`` indicates the database dialect and driver to use, ``localhost``
-is where the server is, and ``gino`` is the name of the database. Check
-`here <https://docs.sqlalchemy.org/en/latest/core/engines.html>`__ for more
+Here ``postgresql`` indicates the database dialect to use (the default driver
+is ``asyncpg``, you can explicitly specify that with ``postgresql+asyncpg://``,
+or simply ``asyncpg://``), ``localhost`` is where the server is, and ``gino``
+is the name of the database. Check `here
+<https://docs.sqlalchemy.org/en/latest/core/engines.html>`__ for more
 information about how to compose this database URL.
 
 .. note::
