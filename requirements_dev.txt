@@ -3,9 +3,7 @@ pip==10.0.1
 
 bumpversion==0.5.3
 wheel==0.31.1
-watchdog==0.8.3
 cryptography==2.2.2
-PyYAML==4.1
 psycopg2-binary==2.7.5
 sanic==0.7.0
 aiohttp==3.3.2
