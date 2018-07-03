@@ -20,7 +20,7 @@ deploy:
       VGRrZElJZUpjWVpFRDgxbDRZcS8vb0h5K1Vsb1NZd1RFMHM5QlFaVmVhN3Urakk1ZzEyYXdmSUkr
       MGM5YUI3cEN6Y2ZhNXdGNkJHdkVNQlg5c3ZCYkZEY1dpR3NJeDloRWJLTkQ5T1hjTy8ycWFRcG89
   true:
-    python: 3.6
+    python: 3.7
     repo: fantix/gino
     tags: true
 install: pip install -U tox-travis coverage coveralls
@@ -28,9 +28,12 @@ language: python
 python:
 - 3.5
 - 3.6
+- 3.7
+dist: xenial
+sudo: required
 script: tox
 after_success:
-- if [[ $TRAVIS_PYTHON_VERSION = "3.6" ]]; then coverage report; fi
-- if [[ $TRAVIS_PYTHON_VERSION = "3.6" ]]; then coveralls; fi
+- if [[ $TRAVIS_PYTHON_VERSION = "3.7" ]]; then coverage report; fi
+- if [[ $TRAVIS_PYTHON_VERSION = "3.7" ]]; then coveralls; fi
 services:
 - postgresql
