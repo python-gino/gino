@@ -167,7 +167,7 @@ try:
     # noinspection PyPackageRequirements
     from aiocontextvars import enable_inherit as _enable_inherit
 except ImportError:
-    _enable_inherit = lambda: None  # NOQA
+    _enable_inherit = lambda _: None  # NOQA
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
