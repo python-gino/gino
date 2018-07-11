@@ -14,7 +14,7 @@ quart==0.6.3;python_version>="3.6"
 # tests
 coverage==4.5.1
 flake8==3.5.0
-tox==3.0.0
+tox==3.1.1
 pytest==3.6.3
 pytest-runner==4.2
 pytest-asyncio==0.8.0
