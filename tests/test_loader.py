@@ -228,3 +228,13 @@ async def test_distinct_none(bind):
 
     u = await query.gino.load(loader).first()
     assert not hasattr(u, 'team')
+
+
+async def test_tuple_loader_279(user):
+    from gino.loader import TupleLoader
+    query = db.select([User, Team])
+    async with db.transaction():
+        async for row in query.gino.load((User, Team)).iterate():
+            assert len(row) == 2
+        async for row in query.gino.load(TupleLoader((User, Team))).iterate():
+            assert len(row) == 2
