@@ -134,7 +134,7 @@ class ColumnLoader(Loader):
 
 class TupleLoader(Loader):
     def __init__(self, values):
-        self.loaders = (self.get(value) for value in values)
+        self.loaders = tuple(self.get(value) for value in values)
 
     def do_load(self, row, context):
         return tuple(loader.do_load(row, context)[0]
