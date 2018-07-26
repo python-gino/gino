@@ -11,7 +11,7 @@ GINO
 .. image:: https://img.shields.io/coveralls/github/fantix/gino/master.svg
         :target: https://coveralls.io/github/fantix/gino?branch=master
 
-.. image:: https://img.shields.io/readthedocs/python-gino/stable.svg
+.. image:: https://img.shields.io/readthedocs/python-gino/latest.svg
         :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
