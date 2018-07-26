@@ -7,6 +7,14 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.5 (2018-07-26)
+^^^^^^^^^^^^^^^^^^
+
+* Added friendly error message when using abstract models by mistake (#224)
+* Supported Python 3.7 (Contributed by Tony Wang in #265)
+* Updated documentation
+* Fixed a bug in TupleLoader (Contributed by Pavol Vargovcik in #279 #280)
+
 0.7.4 (2018-06-10)
 ^^^^^^^^^^^^^^^^^^
 

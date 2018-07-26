@@ -22,6 +22,7 @@ Contributors
 * Yurii Shtrikker <nbb.unitto@gmail.com>
 * Nicolas Crocfer <ncrocfer@gmail.com>
 * Denys Badzo <badzyo360@gmail.com>
+* Pavol Vargovcik <pavol.vargovcik@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
