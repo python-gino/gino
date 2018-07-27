@@ -240,7 +240,7 @@ async def test_tuple_loader_279(user):
             assert len(row) == 2
 
 
-async def test_281_none_as_none(user):
+async def test_none_as_none_281(user):
     import gino
 
     if gino.__version__ < '0.9':

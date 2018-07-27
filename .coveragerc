@@ -12,3 +12,4 @@ exclude_lines =
     def __repr__
     raise NotImplementedError
     except ImportError
+    if gino.__version__ >= '0.8.0':
