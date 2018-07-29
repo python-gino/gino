@@ -133,7 +133,8 @@ async def test_index_returns_200_dsn(app_dsn):
 async def _test(app):
     test_client = app.test_client()
     for method in '01234':
-        response = await test_client.get('/users/1?method=' + method)
+        response = await test_client.get(
+            '/users/1', query_string={'method': method})
         assert response.status_code == 404
 
     response = await test_client.post('/users', form=dict(name='fantix'))
@@ -141,7 +142,8 @@ async def _test(app):
     assert await response.get_json() == dict(id=1, nickname='fantix')
 
     for method in '01234':
-        response = await test_client.get('/users/1?method=' + method)
+        response = await test_client.get(
+            '/users/1', query_string={'method': method})
         assert response.status_code == 200
         assert await response.get_json() == dict(id=1, nickname='fantix')
 
