@@ -1,3 +1,5 @@
+import warnings
+
 from sqlalchemy import select
 from sqlalchemy.schema import Column
 
@@ -46,6 +48,9 @@ class Loader:
         return getattr(self.query, item)
 
 
+_none = object()
+
+
 class ModelLoader(Loader):
     def __init__(self, model, *column_names, **extras):
         self.model = model
@@ -57,12 +62,20 @@ class ModelLoader(Loader):
         self.extras = dict((key, self.get(value))
                            for key, value in extras.items())
         self.on_clause = None
+        self._none_as_none = None
 
-    def _do_load(self, row):
+    def _do_load(self, row, *, none_as_none=None):
+        if none_as_none is None:
+            none_as_none = self._none_as_none
+        if none_as_none is None:
+            warnings.warn(
+                'The none_as_none feature will be enabled by default in 0.8',
+                DeprecationWarning)
+        values = dict((c.name, row[c]) for c in self.columns if c in row)
+        if none_as_none and all((v is None) for v in values.values()):
+            return None
         rv = self.model()
-        for c in self.columns:
-            if c in row:
-                rv.__values__[c.name] = row[c]
+        rv.__values__.update(values)
         return rv
 
     def do_load(self, row, context):
@@ -72,22 +85,23 @@ class ModelLoader(Loader):
                 context = {}
             ctx = context.setdefault(self._distinct, {})
             key = tuple(row[col] for col in self._distinct)
-            if key == (None,) * len(key):
-                return None, None
-            rv = ctx.get(key)
-            if rv is None:
-                rv = self._do_load(row)
+            rv = ctx.get(key, _none)
+            if rv is _none:
+                rv = self._do_load(row, none_as_none=True)
                 ctx[key] = rv
             else:
                 distinct = False
         else:
             rv = self._do_load(row)
 
-        for key, value in self.extras.items():
-            value, distinct_ = value.do_load(row, context)
-            if distinct_ is not None:
-                setattr(rv, key, value)
-        return rv, distinct
+        if rv is None:
+            return None, None
+        else:
+            for key, value in self.extras.items():
+                value, distinct_ = value.do_load(row, context)
+                if distinct_ is not None:
+                    setattr(rv, key, value)
+            return rv, distinct
 
     def get_columns(self):
         yield from self.columns
@@ -116,6 +130,14 @@ class ModelLoader(Loader):
 
     def distinct(self, *columns):
         self._distinct = columns
+        return self
+
+    def none_as_none(self, enabled=True):
+        if not enabled:
+            warnings.warn(
+                'The none_as_none feature will be always enabled in 0.9',
+                PendingDeprecationWarning)
+        self._none_as_none = enabled
         return self
 
 

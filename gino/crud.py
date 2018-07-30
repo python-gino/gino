@@ -679,6 +679,10 @@ class CRUDModel(Model):
         return cls.load().distinct(*columns)
 
     @classmethod
+    def none_as_none(cls, enabled=True):
+        return cls.load().none_as_none(enabled)
+
+    @classmethod
     def alias(cls, *args, **kwargs):
         """
         Experimental proxy for table alias on model.

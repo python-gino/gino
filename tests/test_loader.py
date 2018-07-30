@@ -238,3 +238,27 @@ async def test_tuple_loader_279(user):
             assert len(row) == 2
         async for row in query.gino.load(TupleLoader((User, Team))).iterate():
             assert len(row) == 2
+
+
+async def test_none_as_none_281(user):
+    import gino
+
+    if gino.__version__ < '0.9':
+        query = Team.outerjoin(User).select()
+        loader = Team, User.none_as_none()
+        assert any(row[1] is None
+                   for row in await query.gino.load(loader).all())
+
+        loader = Team.distinct(Team.id).load(add_member=User.none_as_none())
+        assert any(not team.members
+                   for team in await query.gino.load(loader).all())
+
+    if gino.__version__ >= '0.8.0':
+        query = Team.outerjoin(User).select()
+        loader = Team, User
+        assert any(row[1] is None
+                   for row in await query.gino.load(loader).all())
+
+        loader = Team.distinct(Team.id).load(add_member=User)
+        assert any(not team.members
+                   for team in await query.gino.load(loader).all())
