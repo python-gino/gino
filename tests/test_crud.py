@@ -237,3 +237,41 @@ async def test_string_primary_key(engine):
         await Relation.create(bind=engine, timeout=10, name=r)
     r1 = await Relation.get(relations[0], bind=engine, timeout=10)
     assert r1.name == relations[0]
+
+
+async def test_lookup_287(bind):
+    from gino.exceptions import NoSuchRowError
+
+    class Game(db.Model):
+        __tablename__ = 'games'
+        game_id = db.Column(db.String(32), unique=True)
+        channel_id = db.Column(db.String(1), default='A')
+
+    await Game.gino.create()
+    try:
+        game_1 = await Game.create(game_id='1', channel_id='X')
+        game_2 = await Game.create(game_id='2', channel_id='Y')
+        uq = game_1.update(game_id='3')
+        with pytest.raises(TypeError,
+                           match='Model Game has no table, primary key'):
+            await uq.apply()
+        with pytest.raises(LookupError,
+                           match='Instance-level CRUD operations not allowed'):
+            await game_2.delete()
+        with pytest.raises(LookupError,
+                           match='Instance-level CRUD operations not allowed'):
+            await game_2.query.gino.all()
+        with pytest.raises(LookupError,
+                           match='Instance-level CRUD operations not allowed'):
+            await game_2.select('game_id')
+
+        assert game_1.game_id == '3'
+        assert await Game.select('game_id').gino.all() == [('1',), ('2',)]
+
+        Game.lookup = lambda self: Game.game_id == self.game_id
+        with pytest.raises(NoSuchRowError):
+            await game_1.update(channel_id='Z').apply()
+        await game_2.update(channel_id='Z').apply()
+        assert await Game.select('channel_id').gino.all() == [('X',), ('Z',)]
+    finally:
+        await Game.gino.drop()

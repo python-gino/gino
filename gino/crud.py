@@ -28,7 +28,7 @@ class _Query:
         owner._check_abstract()
         q = sa.select([owner.__table__])
         if instance is not None:
-            q = instance.append_where_primary_key(q)
+            q = q.where(instance.lookup())
         return q.execution_options(model=weakref.ref(owner))
 
 
@@ -37,7 +37,7 @@ class _Select:
         def select(*args):
             q = sa.select([getattr(owner, x) for x in args])
             if instance is not None:
-                q = instance.append_where_primary_key(q)
+                q = q.where(instance.lookup())
             return q.execution_options(model=weakref.ref(owner),
                                        return_model=False)
         return select
@@ -78,15 +78,18 @@ class UpdateRequest:
     specific model instance and its database row.
 
     """
-    def __init__(self, instance):
+    def __init__(self, instance, lookup=True):
         self._instance = instance
         self._values = {}
         self._props = {}
         self._literal = True
-        if instance.__table__ is None:
-            self._pk_values = None
-        else:
-            self._pk_values = _PrimaryKeyValues(instance)
+        self._locator = None
+        if lookup and instance.__table__ is not None:
+            try:
+                self._locator = instance.lookup()
+            except LookupError:
+                # apply() will fail anyway, but still allow updates()
+                pass
 
     def _set(self, key, value):
         self._values[key] = value
@@ -110,9 +113,9 @@ class UpdateRequest:
         :return: ``self`` for chaining calls.
 
         """
-        if self._pk_values is None:
+        if self._locator is None:
             raise TypeError(
-                'GINO model {} is abstract, no table is defined'.format(
+                'Model {} has no table, primary key or custom lookup()'.format(
                     self._instance.__class__.__name__))
         cls = type(self._instance)
         values = self._values.copy()
@@ -146,8 +149,8 @@ class UpdateRequest:
         opts = dict(return_model=False)
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
-        clause = self._pk_values.append_where_primary_key(
-            type(self._instance).update
+        clause = type(self._instance).update.where(
+            self._locator,
         ).values(
             **values,
         ).returning(
@@ -250,18 +253,6 @@ class Alias:
 @sa.inspection._inspects(Alias)
 def _inspect_alias(target):
     return sa.inspection.inspect(target.alias)
-
-
-class _PrimaryKeyValues:
-    def __init__(self, instance):
-        self._values = {}
-        for c in instance.__table__.primary_key.columns:
-            self._values[c] = getattr(instance, c.name)
-
-    def append_where_primary_key(self, q):
-        for c, v in self._values.items():
-            q = q.where(c == v)
-        return q
 
 
 class CRUDModel(Model):
@@ -422,8 +413,7 @@ class CRUDModel(Model):
     def __init__(self, **values):
         super().__init__()
         self.__profile__ = None
-        # noinspection PyCallingNonCallable
-        self.update(**values)
+        self._update_request_cls(self, False).update(**values)
 
     @classmethod
     def _init_table(cls, sub_cls):
@@ -541,8 +531,34 @@ class CRUDModel(Model):
 
             await user.query.gino.first()
 
+        .. deprecated:: 0.7.6
+            Use :meth:`lookup` instead.
+
         """
-        return _PrimaryKeyValues(self).append_where_primary_key(q)
+        return q.where(self.lookup())  # pragma: no cover
+
+    def lookup(self):
+        """
+        Generate where-clause expression to locate this model instance.
+
+        By default this method uses current values of all primary keys, and you
+        can override it to behave differently. All instance-level CRUD
+        operations depend on this method internally.
+
+        :return:
+
+        .. versionadded:: 0.7.6
+
+        """
+        exps = []
+        for c in self.__table__.primary_key.columns:
+            exps.append(c == getattr(self, c.name))
+        if exps:
+            return sa.and_(*exps)
+        else:
+            raise LookupError('Instance-level CRUD operations not allowed on '
+                              'models without primary keys or lookup(), please'
+                              ' use model-level CRUD operations instead.')
 
     def _update(self, **values):
         return self._update_request_cls(self).update(**values)
@@ -551,7 +567,7 @@ class CRUDModel(Model):
         cls = type(self)
         # noinspection PyUnresolvedReferences,PyProtectedMember
         cls._check_abstract()
-        clause = self.append_where_primary_key(cls.delete)
+        clause = cls.delete.where(self.lookup())
         if timeout is not DEFAULT:
             clause = clause.execution_options(timeout=timeout)
         if bind is None:
