@@ -78,13 +78,13 @@ class UpdateRequest:
     specific model instance and its database row.
 
     """
-    def __init__(self, instance, lookup=True):
+    def __init__(self, instance):
         self._instance = instance
         self._values = {}
         self._props = {}
         self._literal = True
         self._locator = None
-        if lookup and instance.__table__ is not None:
+        if instance.__table__ is not None:
             try:
                 self._locator = instance.lookup()
             except LookupError:
@@ -413,7 +413,7 @@ class CRUDModel(Model):
     def __init__(self, **values):
         super().__init__()
         self.__profile__ = None
-        self._update_request_cls(self, False).update(**values)
+        self._update_request_cls(self).update(**values)
 
     @classmethod
     def _init_table(cls, sub_cls):
@@ -532,7 +532,7 @@ class CRUDModel(Model):
             await user.query.gino.first()
 
         .. deprecated:: 0.7.6
-            Use :meth:`lookup` instead.
+            Use :meth:`.lookup` instead.
 
         """
         return q.where(self.lookup())  # pragma: no cover
@@ -542,8 +542,11 @@ class CRUDModel(Model):
         Generate where-clause expression to locate this model instance.
 
         By default this method uses current values of all primary keys, and you
-        can override it to behave differently. All instance-level CRUD
-        operations depend on this method internally.
+        can override it to behave differently. Most instance-level CRUD
+        operations depend on this method internally. Particularly while
+        :meth:`.lookup` is called in :meth:`.update`, the where condition is
+        used in :meth:`.UpdateRequest.apply`, so that queries like ``UPDATE ...
+        SET id = NEW WHERE id = OLD`` could work correctly.
 
         :return:
 
