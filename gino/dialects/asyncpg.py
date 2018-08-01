@@ -4,7 +4,8 @@ import time
 
 import asyncpg
 from sqlalchemy import util, exc, sql
-from sqlalchemy.dialects.postgresql import (
+from sqlalchemy.dialects.postgresql import (  # noqa: F401
+    ARRAY,
     CreateEnumType,
     DropEnumType,
     JSON,
