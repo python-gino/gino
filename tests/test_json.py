@@ -47,23 +47,24 @@ async def test_crud(bind):
     assert await u.query.gino.model(None).first() == (
         1, 'fantix', dict(age=16, balance=100, birthday=now_str),
         UserType.USER, None)
-    assert await db.select([User.name]).where(
+    assert await db.select([User.realname]).where(
         User.id == u.id).gino.scalar() is None
 
     # Reload and test updating both JSON and regular property
     u = await User.get(u.id)
-    await u.update(age=User.age - 2, balance=200.15, name='daisy',
-                   nickname='daisy').apply()
+    await u.update(age=User.age - 2, balance=200.15, realname='daisy',
+                   nickname='daisy.nick').apply()
     assert await u.query.gino.model(None).first() == (
-        1, 'daisy', dict(age=14, balance=200, name='daisy', birthday=now_str),
+        1, 'daisy.nick',
+        dict(age=14, balance=200, realname='daisy', birthday=now_str),
         UserType.USER, None)
     assert u.to_dict() == dict(
         age=14,
         balance=200.0,
         birthday=now,
         id=1,
-        name='daisy',
-        nickname='daisy',
+        nickname='daisy.nick',
+        realname='daisy',
         type=UserType.USER,
         team_id=None,
     )
@@ -118,12 +119,12 @@ async def test_non_jsonb(bind):
 # noinspection PyUnusedLocal
 async def test_reload(bind):
     u = await User.create()
-    await u.update(name=db.cast('888', db.Unicode)).apply()
-    assert u.name == '888'
+    await u.update(realname=db.cast('888', db.Unicode)).apply()
+    assert u.realname == '888'
     await u.update(profile=None).apply()
-    assert u.name == '888'
-    User.__dict__['name'].reload(u)
-    assert u.name is None
+    assert u.realname == '888'
+    User.__dict__['realname'].reload(u)
+    assert u.realname is None
 
 
 # noinspection PyUnusedLocal

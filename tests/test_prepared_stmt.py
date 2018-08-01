@@ -13,7 +13,7 @@ async def test_compiled_and_bindparam(bind):
             *User).execution_options(loader=User))
         users = {}
         for name in '12345':
-            u = await ins.first(nickname=name)
+            u = await ins.first(name=name)
             assert u.nickname == name
             users[u.id] = u
         get = await conn.prepare(

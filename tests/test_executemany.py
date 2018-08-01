@@ -8,12 +8,11 @@ pytestmark = pytest.mark.asyncio
 # noinspection PyUnusedLocal
 async def test_status(bind):
     statement, params = db.compile(User.insert(),
-                                   [dict(nickname='1'), dict(nickname='2')])
-    assert statement == ('INSERT INTO gino_users (nickname, type) '
+                                   [dict(name='1'), dict(name='2')])
+    assert statement == ('INSERT INTO gino_users (name, type) '
                          'VALUES ($1, $2)')
     assert params == (('1', 'USER'), ('2', 'USER'))
-    result = await User.insert().gino.status(dict(nickname='1'),
-                                             dict(nickname='2'))
+    result = await User.insert().gino.status(dict(name='1'), dict(name='2'))
     assert result is None
     assert len(await User.query.gino.all()) == 2
 

@@ -22,10 +22,10 @@ class Hook:
 
 
 class JSONProperty:
-    def __init__(self, default=None, column_name='profile'):
+    def __init__(self, default=None, prop_name='profile'):
         self.name = None
         self.default = default
-        self.column_name = column_name
+        self.prop_name = prop_name
         self.expression = Hook(self)
         self.after_get = Hook(self)
         self.before_set = Hook(self)
@@ -33,7 +33,7 @@ class JSONProperty:
     def __get__(self, instance, owner):
         if instance is None:
             exp = self.make_expression(
-                getattr(owner, self.column_name)[self.name])
+                getattr(owner, self.prop_name)[self.name])
             return self.expression.call(owner, exp)
         val = self.get_profile(instance).get(self.name, NONE)
         if val is NONE:
@@ -54,16 +54,16 @@ class JSONProperty:
         if instance.__profile__ is None:
             props = type(instance).__dict__
             instance.__profile__ = {}
-            for key, value in (getattr(instance, self.column_name, None)
+            for key, value in (getattr(instance, self.prop_name, None)
                                or {}).items():
                 instance.__profile__[key] = props[key].decode(value)
         return instance.__profile__
 
     def save(self, instance, value=NONE):
-        profile = getattr(instance, self.column_name, None)
+        profile = getattr(instance, self.prop_name, None)
         if profile is None:
             profile = {}
-            setattr(instance, self.column_name, profile)
+            setattr(instance, self.prop_name, profile)
         if value is NONE:
             value = instance.__profile__[self.name]
         if not isinstance(value, sa.sql.ClauseElement):
@@ -74,7 +74,7 @@ class JSONProperty:
     def reload(self, instance):
         if instance.__profile__ is None:
             return
-        profile = getattr(instance, self.column_name, None) or {}
+        profile = getattr(instance, self.prop_name, None) or {}
         value = profile.get(self.name, NONE)
         if value is NONE:
             instance.__profile__.pop(self.name, None)

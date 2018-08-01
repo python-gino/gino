@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from sqlalchemy.sql import ClauseElement
 
 from . import json_support
-from .declarative import Model
+from .declarative import Model, InvertDict
 from .exceptions import NoSuchRowError
 from .loader import AliasLoader, ModelLoader
 
@@ -78,7 +78,7 @@ class UpdateRequest:
     specific model instance and its database row.
 
     """
-    def __init__(self, instance):
+    def __init__(self, instance: 'CRUDModel'):
         self._instance = instance
         self._values = {}
         self._props = {}
@@ -124,7 +124,7 @@ class UpdateRequest:
         json_updates = {}
         for prop, value in self._props.items():
             value = prop.save(self._instance, value)
-            updates = json_updates.setdefault(prop.column_name, {})
+            updates = json_updates.setdefault(prop.prop_name, {})
             if self._literal:
                 updates[prop.name] = value
             else:
@@ -133,18 +133,18 @@ class UpdateRequest:
                 elif not isinstance(value, ClauseElement):
                     value = sa.cast(value, sa.Unicode)
                 updates[sa.cast(prop.name, sa.Unicode)] = value
-        for column_name, updates in json_updates.items():
-            column = getattr(cls, column_name)
+        for prop_name, updates in json_updates.items():
+            prop = getattr(cls, prop_name)
             from .dialects.asyncpg import JSONB
-            if isinstance(column.type, JSONB):
+            if isinstance(prop.type, JSONB):
                 if self._literal:
-                    values[column_name] = column.concat(updates)
+                    values[prop_name] = prop.concat(updates)
                 else:
-                    values[column_name] = column.concat(
+                    values[prop_name] = prop.concat(
                         sa.func.jsonb_build_object(
                             *itertools.chain(*updates.items())))
             else:
-                raise TypeError('{} is not supported.'.format(column.type))
+                raise TypeError('{} is not supported.'.format(prop.type))
 
         opts = dict(return_model=False)
         if timeout is not DEFAULT:
@@ -152,7 +152,7 @@ class UpdateRequest:
         clause = type(self._instance).update.where(
             self._locator,
         ).values(
-            **values,
+            **self._instance._get_sa_values(values),
         ).returning(
             *[getattr(cls, key) for key in values],
         ).execution_options(**opts)
@@ -161,7 +161,9 @@ class UpdateRequest:
         row = await bind.first(clause)
         if not row:
             raise NoSuchRowError()
-        self._instance.__values__.update(row)
+        for k, v in row.items():
+            self._instance.__values__[
+                self._instance._column_name_map.invert_get(k)] = v
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -409,6 +411,7 @@ class CRUDModel(Model):
     """
 
     _update_request_cls = UpdateRequest
+    _column_name_map = InvertDict()
 
     def __init__(self, **values):
         super().__init__()
@@ -421,10 +424,10 @@ class CRUDModel(Model):
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in each_cls.__dict__.items():
                 if isinstance(v, json_support.JSONProperty):
-                    if not hasattr(sub_cls, v.column_name):
+                    if not hasattr(sub_cls, v.prop_name):
                         raise AttributeError(
                             'Requires "{}" JSON[B] column.'.format(
-                                v.column_name))
+                                v.prop_name))
                     v.name = k
         if rv is not None:
             rv.__model__ = weakref.ref(sub_cls)
@@ -440,12 +443,12 @@ class CRUDModel(Model):
         cls = type(self)
         # noinspection PyUnresolvedReferences,PyProtectedMember
         cls._check_abstract()
-        keys = set(self.__profile__.keys() if self.__profile__ else [])
-        for key in keys:
+        profile_keys = set(self.__profile__.keys() if self.__profile__ else [])
+        for key in profile_keys:
             cls.__dict__.get(key).save(self)
         # initialize default values
         for key, prop in cls.__dict__.items():
-            if key in keys:
+            if key in profile_keys:
                 continue
             if isinstance(prop, json_support.JSONProperty):
                 if prop.default is None or prop.after_get.method is not None:
@@ -458,14 +461,24 @@ class CRUDModel(Model):
         if timeout is not DEFAULT:
             opts['timeout'] = timeout
         # noinspection PyArgumentList
-        q = cls.__table__.insert().values(**self.__values__).returning(
-            *cls).execution_options(**opts)
+        q = cls.__table__.insert().values(
+            **self._get_sa_values(self.__values__)
+        ).returning(
+            *cls
+        ).execution_options(**opts)
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(q)
-        self.__values__.update(row)
+        for k, v in row.items():
+            self.__values__[self._column_name_map.invert_get(k)] = v
         self.__profile__ = None
         return self
+
+    def _get_sa_values(self, instance_values: dict) -> dict:
+        values = {}
+        for k, v in instance_values.items():
+            values[self._column_name_map[k]] = v
+        return values
 
     @classmethod
     async def get(cls, ident, bind=None, timeout=DEFAULT):
@@ -592,11 +605,12 @@ class CRUDModel(Model):
 
         """
         cls = type(self)
-        keys = set(c.name for c in cls)
+        # noinspection PyTypeChecker
+        keys = set(cls._column_name_map.invert_get(c.name) for c in cls)
         for key, prop in cls.__dict__.items():
             if isinstance(prop, json_support.JSONProperty):
                 keys.add(key)
-                keys.discard(prop.column_name)
+                keys.discard(prop.prop_name)
         return dict((k, getattr(self, k)) for k in keys)
 
     @classmethod

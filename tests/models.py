@@ -31,14 +31,14 @@ class User(db.Model):
     __tablename__ = 'gino_users'
 
     id = db.Column(db.BigInteger(), primary_key=True)
-    nickname = db.Column(db.Unicode(), default='noname')
-    profile = db.Column(JSONB(), nullable=False, server_default='{}')
+    nickname = db.Column('name', db.Unicode(), default='noname')
+    profile = db.Column('props', JSONB(), nullable=False, server_default='{}')
     type = db.Column(
         db.Enum(UserType),
         nullable=False,
         default=UserType.USER,
     )
-    name = db.StringProperty()
+    realname = db.StringProperty()
     age = db.IntegerProperty(default=18)
     balance = db.IntegerProperty(default=0)
     birthday = db.DateTimeProperty(
