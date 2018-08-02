@@ -251,10 +251,15 @@ async def test_lookup_287(bind):
     try:
         game_1 = await Game.create(game_id='1', channel_id='X')
         game_2 = await Game.create(game_id='2', channel_id='Y')
+
+        # ordinary update should be fine
         uq = game_1.update(game_id='3')
+
         with pytest.raises(TypeError,
                            match='Model Game has no table, primary key'):
+            # but applying the updates to DB should fail
             await uq.apply()
+
         with pytest.raises(LookupError,
                            match='Instance-level CRUD operations not allowed'):
             await game_2.delete()
@@ -265,7 +270,9 @@ async def test_lookup_287(bind):
                            match='Instance-level CRUD operations not allowed'):
             await game_2.select('game_id')
 
+        # previous ordinary update still in effect
         assert game_1.game_id == '3'
+
         assert await Game.select('game_id').gino.all() == [('1',), ('2',)]
 
         Game.lookup = lambda self: Game.game_id == self.game_id

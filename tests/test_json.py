@@ -93,11 +93,9 @@ async def test_non_jsonb(bind):
     class News(db.Model):
         __tablename__ = 'news'
 
+        id = db.Column(db.Integer(), primary_key=True)
         profile = db.Column(JSON(), nullable=False, server_default='{}')
         visits = db.IntegerProperty(default=0)
-
-        def lookup(self):
-            return True
 
     await News.gino.create()
     try:
