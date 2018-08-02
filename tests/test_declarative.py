@@ -207,7 +207,7 @@ async def test_abstract_model_error():
 
     req = am.update()
 
-    with pytest.raises(TypeError, match='AbstractModel is abstract'):
+    with pytest.raises(TypeError, match='AbstractModel has no table'):
         await req.apply()
 
     with pytest.raises(TypeError, match='AbstractModel is abstract'):
