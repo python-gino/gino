@@ -8,7 +8,7 @@ psycopg2-binary==2.7.5
 sanic==0.7.0
 aiohttp==3.3.2
 tornado==4.5.3
-async_generator==1.9.0
+async_generator==1.10
 quart==0.6.4;python_version>="3.6"
 
 # tests
