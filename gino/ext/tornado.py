@@ -63,6 +63,7 @@ the standard ``tornado.options`` module:
 - ``'db_user'`` -- if not set, ``postgres``;
 - ``'db_password'`` -- if not set, empty string;
 - ``'db_database'`` -- if not set, ``postgres``;
+- ``'db_echo'`` -- whether to enable SQLAlchemy echo mode, defaults to False.
 - ``dsn`` -- a SQLAlchemy database URL to create the engine, its existence
   will replace all previous connect arguments.
 - ``'db_pool_min_size'`` -- number of connection the pool will be initialized
@@ -187,6 +188,7 @@ _define('db_port', 5432, int, group='database')
 _define('db_user', 'postgres', str, group='database')
 _define('db_password', 'password', str, group='database')
 _define('db_database', 'postgres', str, group='database')
+_define('db_echo', False, bool, group='database')
 _define('db_pool_min_size', 5, int, group='database',
         callback=_assert_not_negative('db_pool_min_size'))
 _define('db_pool_max_size', 10, int, group='database',
@@ -341,6 +343,7 @@ class Application(tornado.web.Application):
 
         await db.set_bind(
             dsn,
+            echo=options['db_echo'],
             min_size=options['db_pool_min_size'],
             max_size=options['db_pool_max_size'],
             max_inactive_connection_lifetime=(

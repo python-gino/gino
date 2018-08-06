@@ -124,6 +124,7 @@ class Gino(_Gino):
 
             await self.set_bind(
                 dsn,
+                echo=app.config.setdefault('DB_ECHO', False),
                 min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
                 loop=asyncio.get_event_loop(),
