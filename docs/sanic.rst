@@ -22,6 +22,7 @@ Supported configurations:
 - DB_USER
 - DB_PASSWORD
 - DB_DATABASE
+- DB_ECHO
 - DB_POOL_MIN_SIZE
 - DB_POOL_MAX_SIZE
 - DB_USE_CONNECTION_FOR_REQUEST
@@ -75,6 +76,7 @@ To integrate with Sanic, a few configurations needs to be set in
 - DB_USER: if not set, ``postgres``
 - DB_PASSWORD: if not set, empty string
 - DB_DATABASE: if not set, ``postgres``
+- DB_ECHO: if not set, ``False``
 - DB_POOL_MIN_SIZE: if not set, 5
 - DB_POOL_MAX_SIZE: if not set, 10
 
