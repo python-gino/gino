@@ -1,4 +1,5 @@
 import pytest
+from asyncpg.transaction import TransactionState
 
 from .models import db, User, qsize
 
@@ -249,3 +250,12 @@ async def test_base_exception(engine):
         except Exception:
             assert False, 'Should not reach here'
         assert False, 'Should not reach here'
+
+
+async def test_rollback_failed_transaction(engine):
+    # for transaction whose state is rolled back or failed, rollback() won't
+    # have any effect and shouldn't throw exceptions
+    for state in (TransactionState.ROLLEDBACK, TransactionState.FAILED):
+        async with engine.transaction() as tx:
+            tx._tx._tx._state = state
+            tx.raise_rollback()
