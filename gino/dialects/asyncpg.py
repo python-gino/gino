@@ -291,10 +291,6 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
     cursor_cls = DBAPICursor
-    dbapi_type_map = {
-        114: JSON(),
-        3802: JSONB(),
-    }
     init_kwargs = set(itertools.chain(
         *[inspect.getfullargspec(f).kwonlydefaults.keys() for f in
           [asyncpg.create_pool, asyncpg.connect]]))

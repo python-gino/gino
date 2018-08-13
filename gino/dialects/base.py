@@ -2,12 +2,15 @@ import asyncio
 import weakref
 
 from sqlalchemy import util
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
 # noinspection PyProtectedMember
 from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
 from ..loader import Loader
 
 DEFAULT = object()
+JSON_COLTYPE = 114
+JSONB_COLTYPE = 3802
 
 
 class BaseDBAPI:
@@ -371,6 +374,13 @@ class ExecutionContextOverride:
 
         self.cursor = self.create_cursor()
         return self
+
+    def get_result_processor(self, type_, colname, coltype):
+        if coltype == JSON_COLTYPE:
+            return JSON().result_processor(self.dialect, coltype)
+        if coltype == JSONB_COLTYPE:
+            return JSONB().result_processor(self.dialect, coltype)
+        return super().get_result_processor(type_, colname, coltype)
 
 
 class AsyncDialectMixin:
