@@ -3,7 +3,6 @@ import itertools
 import time
 
 import asyncpg
-from asyncpg.transaction import TransactionState
 from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.postgresql import (  # noqa: F401
     ARRAY,
@@ -243,10 +242,6 @@ class Transaction(base.Transaction):
         await self._tx.commit()
 
     async def rollback(self):
-        # noinspection PyProtectedMember
-        if self._tx._state in (TransactionState.FAILED,
-                               TransactionState.ROLLEDBACK):
-            return
         await self._tx.rollback()
 
 

@@ -173,7 +173,6 @@ class GinoTransaction:
             try:
                 await self._tx.commit()
             except Exception:
-                await self._tx.rollback()
                 raise
         else:
             await self._tx.rollback()

@@ -1,5 +1,4 @@
 import pytest
-from asyncpg.transaction import TransactionState
 
 from .models import db, User, qsize
 
@@ -44,6 +43,9 @@ async def test_connection_ctx(bind, mocker):
             'asyncpg.transaction.Transaction.commit').side_effect = IndexError
         with pytest.raises(IndexError):
             await tx.__aexit__(None, None, None)
+        # clean up, and to simulate commit failed
+        mocker.stopall()
+        await tx._tx.rollback()
         assert await get_name() == 'commit'
     assert await get_name() == 'commit'
 
@@ -252,10 +254,12 @@ async def test_base_exception(engine):
         assert False, 'Should not reach here'
 
 
-async def test_rollback_failed_transaction(engine):
-    # for transaction whose state is rolled back or failed, rollback() won't
-    # have any effect and shouldn't throw exceptions
-    for state in (TransactionState.ROLLEDBACK, TransactionState.FAILED):
-        async with engine.transaction() as tx:
-            tx._tx._tx._state = state
-            tx.raise_rollback()
+async def test_no_rollback_on_commit_fail(engine, mocker):
+    mocker.patch(
+        'asyncpg.transaction.Transaction.commit').side_effect = IndexError
+    async with engine.acquire() as conn:
+        tx = await conn.transaction().__aenter__()
+        rollback = mocker.patch.object(tx._tx, 'rollback')
+        with pytest.raises(IndexError):
+            await tx.__aexit__(None, None, None)
+        assert not rollback.called
