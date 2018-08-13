@@ -167,13 +167,8 @@ class GinoTransaction:
 
     async def __aexit__(self, ex_type, ex, ex_tb):
         is_break = ex_type is _Break
-        if is_break and ex.commit:
-            ex_type = None
-        if ex_type is None:
-            try:
-                await self._tx.commit()
-            except Exception:
-                raise
+        if is_break and ex.commit or ex_type is None:
+            await self._tx.commit()
         else:
             await self._tx.rollback()
         if is_break and ex.tx is self:
