@@ -3,7 +3,7 @@ pip==18.0
 
 bumpversion==0.5.3
 wheel==0.31.1
-cryptography==2.3
+cryptography==2.3.1
 psycopg2-binary==2.7.5
 sanic==0.7.0
 aiohttp==3.3.2
