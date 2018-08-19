@@ -3,10 +3,11 @@ import logging
 from datetime import datetime
 
 import asyncpg
-import pytest
-import sqlalchemy as sa
-from sqlalchemy.exc import ObjectNotExecutableError
 from asyncpg.exceptions import InvalidCatalogNameError
+from gino import UninitializedError
+import pytest
+from sqlalchemy.exc import ObjectNotExecutableError
+import sqlalchemy as sa
 
 from .models import db, User, PG_URL, qsize
 
@@ -181,7 +182,8 @@ async def test_async_metadata():
     db_ = await gino.Gino(PG_URL)
     assert isinstance((await db_.scalar('select now()')), datetime)
     await db_.pop_bind().close()
-    assert db.bind is None
+    with pytest.raises(UninitializedError):
+        db.bind.first()
 
 
 # noinspection PyUnreachableCode

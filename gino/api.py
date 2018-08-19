@@ -7,6 +7,7 @@ from sqlalchemy.sql.schema import SchemaItem
 
 from .crud import CRUDModel
 from .declarative import declarative_base, declared_attr
+from .exceptions import UninitializedError
 from .schema import GinoSchemaVisitor, patch_schema
 from . import json_support
 
@@ -361,6 +362,9 @@ class Gino(sa.MetaData):
         :class:`~sqlalchemy.engine.url.URL`).
 
         """
+        if self._bind is None:
+            return _PlaceHolder(
+                UninitializedError('Gino engine is not initialized.'))
         return self._bind
 
     # noinspection PyMethodOverriding,PyAttributeOutsideInit
@@ -483,3 +487,20 @@ class Gino(sa.MetaData):
 
         """
         return self.bind.transaction(*args, **kwargs)
+
+
+class _PlaceHolder:
+    __slots__ = '_exception'
+
+    def __init__(self, exception):
+        self._exception = exception
+
+    def __getattribute__(self, item):
+        if item == '_exception':
+            return super().__getattribute__(item)
+        raise self._exception
+
+    def __setattr__(self, key, value):
+        if key == '_exception':
+            return super().__setattr__(key, value)
+        raise UninitializedError(self._exception)
