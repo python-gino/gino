@@ -4,6 +4,8 @@ import random
 import string
 from datetime import datetime
 
+import pytest
+
 from gino import Gino
 from gino.dialects.asyncpg import JSONB
 
@@ -19,6 +21,7 @@ PG_URL = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
 db = Gino()
 
 
+@pytest.fixture
 def random_name(length=8) -> str:
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
