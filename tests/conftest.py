@@ -46,6 +46,3 @@ async def asyncpg_pool(sa_engine):
         await yield_(rv)
         await rv.execute('DELETE FROM gino_user_settings')
         await rv.execute('DELETE FROM gino_users')
-
-
-pytest.fixture(random_name)
