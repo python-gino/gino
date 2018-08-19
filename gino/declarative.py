@@ -7,18 +7,18 @@ from .exceptions import GinoException
 
 
 class ColumnAttribute:
-    def __init__(self, name, column):
-        self.name = name
+    def __init__(self, prop_name, column):
+        self.prop_name = prop_name
         self.column = column
 
     def __get__(self, instance, owner):
         if instance is None:
             return self.column
         else:
-            return instance.__values__.get(self.name)
+            return instance.__values__.get(self.prop_name)
 
     def __set__(self, instance, value):
-        instance.__values__[self.name] = value
+        instance.__values__[self.prop_name] = value
 
     def __delete__(self, instance):
         raise AttributeError('Cannot delete value.')
@@ -36,7 +36,7 @@ class InvertDict(dict):
             self._inverted_dict[v] = k
 
     def __setitem__(self, key, value):
-        if value in self._inverted_dict:
+        if value in self._inverted_dict and self._inverted_dict[value] != key:
             raise GinoException(
                 'Column name {} already maps to {}'.format(
                     value, self._inverted_dict[value]))

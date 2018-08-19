@@ -102,10 +102,10 @@ async def test_non_jsonb(bind):
     try:
         news = await News.create()
         assert news.visits == 0
-        with pytest.raises(TypeError, match='JSON is not supported.'):
+        with pytest.raises(TypeError, match='JSON is not supported'):
             await news.update(visits=News.visits + 10).apply()
         assert news.visits == 0
-        with pytest.raises(TypeError, match='JSON is not supported.'):
+        with pytest.raises(TypeError, match='JSON is not supported'):
             await news.update(visits=10).apply()
         assert news.visits == 10
         assert await news.select('visits').gino.scalar() == 0
@@ -185,7 +185,7 @@ async def test_t291(bind):
         profile1 = db.Column(JSON(), nullable=False, server_default='{}')
 
         bool = db.BooleanProperty()
-        bool1 = db.BooleanProperty(column_name='profile1')
+        bool1 = db.BooleanProperty(prop_name='profile1')
 
     await PropsTest.gino.create()
     try:

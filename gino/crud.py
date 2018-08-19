@@ -88,7 +88,7 @@ class UpdateRequest:
             try:
                 self._locator = instance.lookup()
             except LookupError:
-                # apply() will fail anyway, but still allow updates()
+                # apply() will fail anyway, but still allow update()
                 pass
 
     def _set(self, key, value):
@@ -144,7 +144,9 @@ class UpdateRequest:
                         sa.func.jsonb_build_object(
                             *itertools.chain(*updates.items())))
             else:
-                raise TypeError('{} is not supported.'.format(prop.type))
+                raise TypeError('{} is not supported to update json '
+                                'properties in Gino. Please consider using '
+                                'JSONB.'.format(prop.type))
 
         opts = dict(return_model=False)
         if timeout is not DEFAULT:

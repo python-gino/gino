@@ -229,6 +229,7 @@ async def test_invert_dict():
     with pytest.raises(gino.GinoException,
                        match=r'Column name c1 already maps to \w+'):
         InvertDict({'col1': 'c1', 'col2': 'c1'})
+
     with pytest.raises(gino.GinoException,
                        match=r'Column name c1 already maps to \w+'):
         d = InvertDict()
@@ -236,6 +237,8 @@ async def test_invert_dict():
         d['col2'] = 'c1'
 
     d = InvertDict()
+    d['col1'] = 'c1'
+    # it works for same key/value pair
     d['col1'] = 'c1'
     d['col2'] = 'c2'
     assert d.invert_get('c1') == 'col1'
