@@ -1,5 +1,6 @@
 import random
 
+from gino.exceptions import UninitializedError
 import pytest
 
 from .models import db, PG_URL, User
@@ -30,8 +31,11 @@ async def test_unbind(asyncpg_pool):
     await test_create(None)
     await db.pop_bind().close()
     db.bind = None
-    with pytest.raises(AttributeError):
+    with pytest.raises(UninitializedError):
         await test_create(None)
+    # test proper exception when engine is not initialized
+    with pytest.raises(UninitializedError):
+        db.bind.first = lambda x: 1
 
 
 async def test_db_api(bind, random_name):

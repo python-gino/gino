@@ -1,3 +1,4 @@
+from gino import UninitializedError
 import pytest
 
 from .models import db, User
@@ -74,7 +75,7 @@ async def test_bind(bind, names):
 async def test_basic(engine, names):
     result = set()
     async with engine.transaction() as tx:
-        with pytest.raises(AttributeError, match='iterate'):
+        with pytest.raises(UninitializedError):
             await db.iterate(User.query)
         result = set()
         async for u in tx.connection.iterate(User.query):
