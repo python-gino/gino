@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
@@ -22,5 +22,195 @@ msgid "Schema Declaration"
 msgstr ""
 
 #: ../../schema.rst:5
-msgid "**THIS IS A WIP**"
+msgid ""
+"There are 3 ways to declare your database schema to be used with GINO. "
+"Because GINO is built on top of SQLAlchemy core, either way you are actually"
+" declaring SQLAlchemy :class:`~sqlalchemy.schema.Table`."
+msgstr ""
+
+#: ../../schema.rst:11
+msgid "GINO Engine"
+msgstr ""
+
+#: ../../schema.rst:13
+msgid ""
+"This is the minimized way to use GINO - using only "
+":class:`~gino.engine.GinoEngine` (and :class:`~gino.engine.GinoConnection` "
+"too), everything else are vanilla SQLAlchemy core. This is useful when you "
+"have legacy code written in SQLAlchemy core, in need of porting to asyncio. "
+"For new code please use the other two."
+msgstr ""
+
+#: ../../schema.rst:19
+msgid ""
+"For example, the table declaration is the same as SQLAlchemy core `tutorial "
+"<https://docs.sqlalchemy.org/en/latest/core/tutorial.html>`_::"
+msgstr ""
+
+#: ../../schema.rst:44
+msgid ""
+"When using GINO Engine only, it is usually your own business to create the "
+"tables with either :meth:`~sqlalchemy.schema.MetaData.create_all` on a "
+"normal non-async SQLAlchemy engine, or using Alembic. However it is still "
+"possible to be done with GINO if it had to::"
+msgstr ""
+
+#: ../../schema.rst:56
+msgid "Then, construct queries, in SQLAlchemy core too::"
+msgstr ""
+
+#: ../../schema.rst:60
+msgid ""
+"So far, everything is still in SQLAlchemy. Now let's get connected and "
+"execute the insert::"
+msgstr ""
+
+#: ../../schema.rst:70
+msgid ""
+"Here :func:`~gino.create_engine` creates a :class:`~gino.engine.GinoEngine`,"
+" then :meth:`~gino.engine.GinoEngine.acquire` checks out a "
+":class:`~gino.engine.GinoConnection`, and "
+":meth:`~gino.engine.GinoConnection.status` executes the insert and returns "
+"the status text. This works similarly as SQLAlchemy "
+":meth:`~sqlalchemy.engine.Connection.execute` - they take the same "
+"parameters but return a bit differently. There are also other similar query "
+"APIs:"
+msgstr ""
+
+#: ../../schema.rst:78
+msgid ""
+":meth:`~gino.engine.GinoConnection.all` returns a list of "
+":class:`~sqlalchemy.engine.RowProxy`"
+msgstr ""
+
+#: ../../schema.rst:80
+msgid ""
+":meth:`~gino.engine.GinoConnection.first` returns one "
+":class:`~sqlalchemy.engine.RowProxy`, or ``None``"
+msgstr ""
+
+#: ../../schema.rst:82
+msgid ""
+":meth:`~gino.engine.GinoConnection.scalar` returns a single value, or "
+"``None``"
+msgstr ""
+
+#: ../../schema.rst:84
+msgid ""
+":meth:`~gino.engine.GinoConnection.iterate` returns an asynchronous iterator"
+" which yields :class:`~sqlalchemy.engine.RowProxy`"
+msgstr ""
+
+#: ../../schema.rst:87
+msgid "Please go to their API for more information."
+msgstr ""
+
+#: ../../schema.rst:91
+msgid "GINO Core"
+msgstr ""
+
+#: ../../schema.rst:93
+msgid ""
+"In previous scenario, :class:`~gino.engine.GinoEngine` must not be set to "
+":attr:`metadata.bind <sqlalchemy.schema.MetaData.bind>` because it is not a "
+"regular SQLAlchemy Engine thus it won't work correctly. For this, GINO "
+"provides a subclass of :class:`~sqlalchemy.schema.MetaData` as "
+":class:`~gino.api.Gino`, usually instantiated globally under the name of "
+"``db``. It can be used as a normal :class:`~sqlalchemy.schema.MetaData` "
+"still offering some conveniences:"
+msgstr ""
+
+#: ../../schema.rst:100
+msgid "It delegates most public types you can access on ``sqlalchemy``"
+msgstr ""
+
+#: ../../schema.rst:101
+msgid ""
+"It works with both normal SQLAlchemy engine and asynchronous GINO engine"
+msgstr ""
+
+#: ../../schema.rst:102
+msgid ""
+"It exposes all query APIs on :class:`~gino.engine.GinoConnection` level"
+msgstr ""
+
+#: ../../schema.rst:103
+msgid ""
+"It injects two ``gino`` extensions on SQLAlchemy query clauses and schema "
+"items, allowing short inline execution like ``users.select().gino.all()``"
+msgstr ""
+
+#: ../../schema.rst:105
+msgid "It is also the entry for the third scenario, see later"
+msgstr ""
+
+#: ../../schema.rst:107
+msgid "Then we can achieve previous scenario with less code like this::"
+msgstr ""
+
+#: ../../schema.rst:139
+msgid ""
+"Similar to SQLAlchemy core and ORM, this is GINO core. All tables and "
+"queries are still made of SQLAlchemy whose rules still apply, but "
+"``sqlalchemy`` seems never imported. This is useful when ORM is unwanted."
+msgstr ""
+
+#: ../../schema.rst:145
+msgid ""
+"`asyncpgsa <https://github.com/CanopyTax/asyncpgsa/>`_ does the same thing, "
+"but in a conceptually reversed way - instead of having asyncpg work for "
+"SQLAlchemy, it made SQLAlchemy work for asyncpg (GINO used to be in that way"
+" too because GINO is inspired by asyncpgsa). Either way works fine, it's "
+"just a matter of taste of whose API style to use, SQLAlchemy or asyncpg."
+msgstr ""
+
+#: ../../schema.rst:153
+msgid "GINO ORM"
+msgstr ""
+
+#: ../../schema.rst:155
+msgid ""
+"If you want to further reduce the length of code, and taking a bit risk of "
+"implicity, welcome to the ORM world. Even though GINO made itself not quite "
+"a traditional ORM by being simple and explict to safely work with asyncio, "
+"common ORM concepts are still valid - a table is a model class, a row is a "
+"model instance. Still the same example rewritten in GINO ORM::"
+msgstr ""
+
+#: ../../schema.rst:191
+msgid "The ``__tablename__`` is a mandatory field to define a concrete model."
+msgstr ""
+
+#: ../../schema.rst:193
+msgid ""
+"As you can see, the declaration is pretty much the same as before. "
+"Underlying they are identical, declaring two tables in ``db``. The ``class``"
+" style is just more declarative. Instead of ``users.c.name``, you can now "
+"access the column by ``User.name``. The implicitly created "
+":class:`~sqlalchemy.schema.Table` is available at ``User.__table__`` and "
+"``Address.__table__``. You can use anything that works in GINO core here."
+msgstr ""
+
+#: ../../schema.rst:202
+msgid ""
+"``db.Model`` is a dynamically created parent class for your models. It is "
+"associated with the ``db`` on initialization, therefore the table is put in "
+"the very ``db`` when you declare your model class."
+msgstr ""
+
+#: ../../schema.rst:206
+msgid ""
+"Things become different when it comes to CRUD. You can use model level "
+"methods to directly :meth:`~gino.crud.CRUDModel.create` a model instance, "
+"instead of inserting a new row. Or :meth:`~gino.crud.CRUDModel.delete` a "
+"model instance without needing to specify the where clause manually. Query "
+"returns model instances instead of :class:`~sqlalchemy.engine.RowProxy`, and"
+" row values are directly available as attributes on model instances. See "
+"also: :doc:`/crud`."
+msgstr ""
+
+#: ../../schema.rst:213
+msgid ""
+"After all, :class:`~gino.engine.GinoEngine` is always in use. Next let's dig"
+" more into it."
 msgstr ""

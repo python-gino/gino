@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
@@ -22,6 +22,60 @@ msgid "gino.dialects.asyncpg module"
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:1
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.ENUM`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:1
+msgid "Construct an :class:`~.postgresql.ENUM`."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:3
+msgid ""
+"Arguments are the same as that of :class:`.types.Enum`, but also including "
+"the following parameters."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:0
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCompiler:0
+msgid "Parameters"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:7
+msgid ""
+"Defaults to True. Indicates that ``CREATE TYPE`` should be emitted, after "
+"optionally checking for the presence of the type, when the parent table is "
+"being created; and additionally that ``DROP TYPE`` is called when the table "
+"is dropped.    When ``False``, no check will be performed and no ``CREATE "
+"TYPE`` or ``DROP TYPE`` is emitted, unless :meth:`~.postgresql.ENUM.create` "
+"or :meth:`~.postgresql.ENUM.drop` are called directly. Setting to ``False`` "
+"is helpful when invoking a creation scheme to a SQL file without access to "
+"the actual database - the :meth:`~.postgresql.ENUM.create` and "
+":meth:`~.postgresql.ENUM.drop` methods can be used to emit SQL to a target "
+"bind.  .. versionadded:: 0.7.4"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncEnum:7
+msgid ""
+"Defaults to True. Indicates that ``CREATE TYPE`` should be emitted, after "
+"optionally checking for the presence of the type, when the parent table is "
+"being created; and additionally that ``DROP TYPE`` is called when the table "
+"is dropped.    When ``False``, no check will be performed and no ``CREATE "
+"TYPE`` or ``DROP TYPE`` is emitted, unless :meth:`~.postgresql.ENUM.create` "
+"or :meth:`~.postgresql.ENUM.drop` are called directly. Setting to ``False`` "
+"is helpful when invoking a creation scheme to a SQL file without access to "
+"the actual database - the :meth:`~.postgresql.ENUM.create` and "
+":meth:`~.postgresql.ENUM.drop` methods can be used to emit SQL to a target "
+"bind."
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgCompiler:1
 msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGCompiler`"
 msgstr ""
@@ -29,11 +83,6 @@ msgstr ""
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgCompiler:1
 msgid "Construct a new :class:`.SQLCompiler` object."
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgCompiler:0
-msgid "Parameters"
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
@@ -65,63 +114,25 @@ msgid "additional keyword arguments to be consumed by the superclass."
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgCursor:1
+msgid "Bases: :class:`gino.dialects.base.Cursor`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
+#: gino.dialects.asyncpg.AsyncpgDBAPI:1
+msgid "Bases: :class:`gino.dialects.base.BaseDBAPI`"
+msgstr ""
+
+#: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgDialect:1
-msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGDialect`"
+msgid ""
+"Bases: :class:`sqlalchemy.dialects.postgresql.base.PGDialect`, "
+":class:`gino.dialects.base.AsyncDialectMixin`"
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:1
-msgid "Given a DBAPI connection, return its isolation level."
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:3
-msgid ""
-"When working with a :class:`.Connection` object, the corresponding DBAPI "
-"connection may be procured using the :attr:`.Connection.connection` "
-"accessor."
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:7
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:3
-msgid ""
-"Note that this is a dialect-level method which is used as part of the "
-"implementation of the :class:`.Connection` and :class:`.Engine` isolation "
-"level facilities; these APIs should be preferred for most typical use cases."
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:15
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:11
-msgid ":meth:`.Connection.get_isolation_level` - view current level"
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:17
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:13
-msgid ":attr:`.Connection.default_isolation_level` - view default level"
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:19
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:15
-msgid ""
-":paramref:`.Connection.execution_options.isolation_level` - set per "
-":class:`.Connection` isolation level"
-msgstr ""
-
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:22
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:18
-msgid ""
-":paramref:`.create_engine.isolation_level` - set per :class:`.Engine` "
-"isolation level"
+msgid "Given an asyncpg connection, return its isolation level."
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
@@ -175,25 +186,36 @@ msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:1
-msgid "Given a DBAPI connection, set its isolation level."
+msgid "Given an asyncpg connection, set its isolation level."
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.AsyncpgExecutionContext:1
-msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGExecutionContext`"
+msgid ""
+"Bases: :class:`gino.dialects.base.ExecutionContextOverride`, "
+":class:`sqlalchemy.dialects.postgresql.base.PGExecutionContext`"
 msgstr ""
 
 #: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.Cursor:1 ../../../gino/dialects/asyncpg.pydocstring
-#: of gino.dialects.asyncpg.CursorFactory:1
-#: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.CursorIterator:1
+#: gino.dialects.asyncpg.AsyncpgIterator:1
+msgid "Bases: :class:`object`"
+msgstr ""
+
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.DBAPICursor:1
+msgid "Bases: :class:`gino.dialects.base.DBAPICursor`"
+msgstr ""
+
 #: ../../../gino/dialects/asyncpg.pydocstring of gino.dialects.asyncpg.Pool:1
+msgid "Bases: :class:`gino.dialects.base.Pool`"
+msgstr ""
+
 #: ../../../gino/dialects/asyncpg.pydocstring of
-#: gino.dialects.asyncpg.ResultProxy:1
+#: gino.dialects.asyncpg.PreparedStatement:1
+msgid "Bases: :class:`gino.dialects.base.PreparedStatement`"
+msgstr ""
+
 #: ../../../gino/dialects/asyncpg.pydocstring of
 #: gino.dialects.asyncpg.Transaction:1
-msgid "Bases: :class:`object`"
+msgid "Bases: :class:`gino.dialects.base.Transaction`"
 msgstr ""

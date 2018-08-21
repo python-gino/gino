@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
@@ -25,6 +25,570 @@ msgstr ""
 msgid "Submodules"
 msgstr ""
 
-#: ../../gino.ext.rst:13
+#: ../../gino.ext.rst:8
+msgid "gino.ext.aiohttp module"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of
+#: gino.ext.aiohttp.AiohttpModelMixin:1 ../../../gino/ext/quart.pydocstring of
+#: gino.ext.quart.QuartModelMixin:1 ../../../gino/ext/sanic.pydocstring of
+#: gino.ext.sanic.SanicModelMixin:1 ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.TornadoModelMixin:1
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.AiohttpStrategy:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.QuartStrategy:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.SanicStrategy:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.TornadoStrategy:1
+msgid "Bases: :class:`gino.strategies.GinoStrategy`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:1
+msgid "Bases: :class:`gino.api.Gino`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:1
+msgid "Support aiohttp.web server."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:3
+msgid "The common usage looks like this::"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:12
+msgid ""
+"By :meth:`init_app` GINO subscribes to a few signals on aiohttp, so that "
+"GINO could use database configuration in aiohttp ``config.gino`` to "
+"initialize the bound engine. The config includes:"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:16
+msgid "``driver`` - the database driver, default is ``asyncpg``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:17
+msgid "``host`` - database server host, default is ``localhost``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:18
+msgid "``port`` - database server port, default is ``5432``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:19
+msgid "``user`` - database server user, default is ``postgres``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:20
+msgid "``password`` - database server password, default is empty."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:21
+msgid "``database`` - database name, default is ``postgres``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:22
+msgid ""
+"``dsn`` - a SQLAlchemy database URL to create the engine, its existence will"
+" replace all previous connect arguments."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:24
+msgid "``pool_min_size`` - the initial number of connections of the db pool."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:25
+msgid "``pool_max_size`` - the maximum number of connections in the db pool."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:26
+msgid "``echo`` - enable SQLAlchemy echo mode."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:28
+msgid ""
+"If the ``db`` is set as an aiohttp middleware, then a lazy connection is "
+"available at ``request['connection']``. By default, a database connection is"
+" borrowed on the first query, shared in the same execution context, and "
+"returned to the pool on response. If you need to release the connection "
+"early in the middle to do some long-running tasks, you can simply do this::"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:0
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:0
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:0
+msgid "Parameters"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:37
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:7
+msgid ""
+"A :class:`~.engine.GinoEngine` instance to bind. Also accepts string or "
+":class:`~sqlalchemy.engine.url.URL`, which will be passed to "
+":func:`~gino.create_engine` when this :class:`Gino` instance is awaited. "
+"Default is ``None``."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:42
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:12
+msgid ""
+"A :class:`tuple` of base class and mixin classes to create the "
+":attr:`~.Gino.Model` class. Default is :class:`(CRUDModel, ) "
+"<gino.crud.CRUDModel>`."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:45
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:15
+msgid ""
+"Boolean value to control the installation of the ``gino`` extension on "
+":class:`~sqlalchemy.sql.expression.Executable` for implicit execution. "
+"Default is to install (``True``)."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:49
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:19
+msgid ""
+"Boolean value to control the installation of the ``gino`` extension on "
+":class:`~sqlalchemy.schema.SchemaItem` for implicit execution. Default is to"
+" install (``True``)."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:53
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:23
+msgid ""
+"Boolean value to control the installation of the two ``gino`` extensions. "
+"``False`` for no extension at all, while it depends on the two individual "
+"switches when this is set to ``True`` (default)."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino:57
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:27
+msgid "Other arguments accepted by :class:`~sqlalchemy.schema.MetaData`."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino.set_bind:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino.set_bind:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino.set_bind:1
+msgid "Bind self to the given :class:`~.engine.GinoEngine` and return it."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino.set_bind:3
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino.set_bind:3
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:3
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino.set_bind:3
+msgid ""
+"If the given ``bind`` is a string or :class:`~sqlalchemy.engine.url.URL`, "
+"all arguments will be sent to :func:`~gino.create_engine` to create a new "
+"engine, and return it."
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino.set_bind:0
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino.set_bind:0
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:0
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino.set_bind:0
+msgid "Returns"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.Gino.set_bind:7
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino.set_bind:7
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino.set_bind:7
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino.set_bind:7
+msgid ":class:`~.engine.GinoEngine`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.GinoConnection:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.GinoConnection:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoConnection:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.GinoConnection:1
+msgid "Bases: :class:`gino.engine.GinoConnection`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.GinoEngine:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.GinoEngine:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoEngine:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.GinoEngine:1
+msgid "Bases: :class:`gino.engine.GinoEngine`"
+msgstr ""
+
+#: ../../../gino/ext/aiohttp.pydocstring of gino.ext.aiohttp.GinoExecutor:1
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.GinoExecutor:1
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.GinoExecutor:1
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.GinoExecutor:1
+msgid "Bases: :class:`gino.api.GinoExecutor`"
+msgstr ""
+
+#: ../../gino.ext.rst:16
+msgid "gino.ext.quart module"
+msgstr ""
+
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino:1
+msgid "Support Quart web server."
+msgstr ""
+
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino:3
+msgid ""
+"By :meth:`init_app` GINO registers a few hooks on Quart, so that GINO could "
+"use database configuration in Quart ``config`` to initialize the bound "
+"engine."
+msgstr ""
+
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino:7
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:7
+msgid ""
+"A lazy connection context is enabled by default for every request. You can "
+"change this default behavior by setting ``DB_USE_CONNECTION_FOR_REQUEST`` "
+"config value to ``False``. By default, a database connection is borrowed on "
+"the first query, shared in the same execution context, and returned to the "
+"pool on response. If you need to release the connection early in the middle "
+"to do some long-running tasks, you can simply do this::"
+msgstr ""
+
+#: ../../../gino/ext/quart.pydocstring of gino.ext.quart.Gino:16
+msgid ""
+"This doesn't apply to websocket, because websocket is usually a long "
+"connection, so it's not efficient to hold the connection."
+msgstr ""
+
+#: ../../gino.ext.rst:24
+msgid "gino.ext.sanic module"
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:1
+msgid "Support Sanic web server."
+msgstr ""
+
+#: ../../../gino/ext/sanic.pydocstring of gino.ext.sanic.Gino:3
+msgid ""
+"By :meth:`init_app` GINO registers a few hooks on Sanic, so that GINO could "
+"use database configuration in Sanic ``config`` to initialize the bound "
+"engine."
+msgstr ""
+
+#: ../../gino.ext.rst:32
+msgid "gino.ext.tornado module"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:1
+msgid ""
+"GINO provides a convenient plugin for integrating with Tornado_ webserver. "
+"It consists of two parts, each of them is optional."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:8
+msgid ""
+"Tornado doesn't wrap request handlers to asyncio tasks, hence task locals "
+"doesn't work in request handlers by default. To fix this, you may either "
+"redefine ``_execute()`` method on you handlers to wrap request processing "
+"into a task, or simply use "
+":py:class:`gino.ext.tornado.AsyncioRequestHandler` as a base class for all "
+"of your handlers."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:15
+msgid ""
+"See `integrate GINO with application and request handlers`_ for more "
+"details."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:20
+msgid "Provide tornado-specific methods on models"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:22
+msgid ""
+"GINO can provide a webframework-aware ``.get_or_404()`` method which work "
+"similar to ``.get()`` but raises an appropriate error whenever requested "
+"object not found. In case of tornado, an appropriate error is "
+"``tornado.web.HTTPError(404)``."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:27
+msgid ""
+"To have it working, simply use :py:class:`gino.ext.tornado.Gino` as your "
+"database metadata."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:32
+msgid "Integrate GINO with application and request handlers"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:34
+msgid ""
+"In addition to ``.get_or_404()``, GINO provides bases for application and "
+"request handler objects."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:37
+msgid ""
+"Inherit your application class from :py:class:`gino.ext.tornado.Application`"
+" to automate connection pool management and provide access to the database "
+"object to all of your request handlers via ``self.application.db``."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:41
+msgid ""
+"Inherit your request handlers from "
+":py:class:`gino.ext.tornado.AsyncioRequestHandler` to enable task locals "
+"support."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:45
+msgid ""
+"Inherit your request handlers from "
+":py:class:`gino.ext.tornado.GinoRequestHandler` to enable active connection "
+"management. Note that :py:class:`gino.ext.tornado.GinoRequestHandler` "
+"requires your application to have a ``db`` property with ``acquire`` "
+"coroutine so its best to use it with "
+":py:class:`gino.ext.tornado.Application`."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:54
+msgid "Settings defined by this extension"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:56
+msgid ""
+"GINO would define some options for database configuration. Use them with the"
+" standard ``tornado.options`` module:"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:59
+msgid "``'db_driver'`` -- if not set, ``asyncpg``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:60
+msgid "``'db_host'`` -- if not set, ``localhost``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:61
+msgid "``'db_port'`` -- if not set, ``5432``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:62
+msgid "``'db_user'`` -- if not set, ``postgres``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:63
+msgid "``'db_password'`` -- if not set, empty string;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:64
+msgid "``'db_database'`` -- if not set, ``postgres``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:65
+msgid ""
+"``'db_echo'`` -- whether to enable SQLAlchemy echo mode, defaults to False."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:66
+msgid ""
+"``dsn`` -- a SQLAlchemy database URL to create the engine, its existence "
+"will replace all previous connect arguments."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:68
+msgid ""
+"``'db_pool_min_size'`` -- number of connection the pool will be initialized "
+"with. Default is ``5``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:70
+msgid ""
+"``'db_pool_max_size'`` -- max number of connections in the pool. Default is "
+"``10``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:72
+msgid ""
+"``'db_pool_max_inactive_conn_lifetime'`` -- number of seconds after which "
+"inactive connections in the pool will be closed.  Pass ``0`` to disable this"
+" mechanism. Default is ``300``;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:75
+msgid ""
+"``'db_pool_max_queries '`` -- number of queries after a connection is closed"
+" and replaced with a new connection. Default is ``50000``."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:80
+msgid "An example application"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:82
+msgid ""
+"A helloworld application that uses tornado and GINO may look like this:"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado:150
+msgid "API reference"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Application:1
+msgid "Bases: :class:`tornado.web.Application`"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Application:1
+msgid ""
+"Base application that provides access to the database object and defines a "
+"convenient method for initializing all the database-related stuff."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Application.db:1
+msgid ""
+"The database object associated with this application. Use "
+":py:meth:`~.late_init()` to init this or set it manually."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:1
+msgid "Initialize this application with a database object."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:3
+msgid ""
+"This method does a few things to setup application for working with the "
+"database:"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:6
+msgid "it enables task local storage;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:7
+msgid "creates a connection pool and binds it to the passed database object;"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:8
+msgid "populates :py:attr:`~.db`."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:10
+msgid ""
+"the :py:class:`gino.ext.tornado.Gino()` class instance that will be used in "
+"this application."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:12
+msgid ""
+"io loop that will be used to run heep server, either tornado's or asyncio's."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.late_init:14
+msgid ""
+"a tornado's ``OptionParser()`` instance or any dictionary-like object with "
+"the database settings. Default is to use ``tornado.options.options`` global."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.use_connection_for_request:1
+msgid ""
+"If ``True``, enables ``GinoRequestHandler`` to create lazy connections."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.Application.use_connection_for_request:3
+msgid ""
+"See :py:attr:`~.GinoRequestHandler.use_connection_for_request` for more "
+"info."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.AsyncioRequestHandler:1
+msgid "Bases: :class:`tornado.web.RequestHandler`"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.AsyncioRequestHandler:1
+msgid ""
+"This class enables support for task locals by wrapping the ``_execute()`` "
+"method into ``asyncio.Task`` instances."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:1
+msgid "Base class for GINO database."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of gino.ext.tornado.Gino:3
+msgid ""
+"Using this class as a metadata for your database adds an additional "
+"``get_or_404()`` method to all of your table classes."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler:1
+msgid "Bases: :class:`gino.ext.tornado.AsyncioRequestHandler`"
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler:1
+msgid "Base class for all request handlers that use GINO."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler:3
+msgid ""
+"In addition to features provided by :py:class:`~.AsyncioRequestHandler`, "
+"this class manages lazy connections for each request."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.db:1
+msgid "Access to the database object."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.db:3
+msgid "This property is equal to :py:attr:`Application.db` by default."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.db_connection:1
+msgid ""
+"The actual connection associated with this request or ``None`` if "
+"``use_connection_for_request`` is ``False``."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.release_connection:1
+msgid "Return the connection associated with this request back to the pool."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.use_connection_for_request:1
+msgid "If ``True``, a lazy connection is created for each request."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.use_connection_for_request:3
+msgid ""
+"That is, whenever the first query occurs, a new connection is borrowed from "
+"the application's db object. All succeeding queries made within this request"
+" will reuse that connection. The connection will be returned to the pool "
+"once the request is finished or the :py:meth:`~.release_connection()` method"
+" is called explicitly."
+msgstr ""
+
+#: ../../../gino/ext/tornado.pydocstring of
+#: gino.ext.tornado.GinoRequestHandler.use_connection_for_request:9
+msgid ""
+"This property is equal to :py:attr:`Application.use_connection_for_request` "
+"by default."
+msgstr ""
+
+#: ../../gino.ext.rst:41
 msgid "Module contents"
 msgstr ""

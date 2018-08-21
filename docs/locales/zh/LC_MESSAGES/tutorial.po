@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.7.0\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-26 11:23+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: fantix <fantix.king@gmail.com>, 2018\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
@@ -77,63 +77,72 @@ msgstr ""
 "GINO 有一个可选依赖 "
 "aiocontextvars_，用来在协程中共享数据库连接，避免手动地把连接传来传去。除非您确实需要一个纯手动的环境，否则我们强烈建议大多数项目安装此依赖。"
 
-#: ../../tutorial.rst:41
+#: ../../tutorial.rst:39
+msgid ""
+"aiocontextvars_ will be replaced by `contextvars "
+"<https://github.com/MagicStack/contextvars>`__ once it `supports asyncio "
+"<https://github.com/MagicStack/contextvars/issues/2>`_. And neither will be "
+"needed in Python 3.7 which is delivered with a builtin `contextvars "
+"<https://docs.python.org/3.7/library/contextvars.html>`__ module."
+msgstr ""
+
+#: ../../tutorial.rst:49
 msgid "Stable release"
 msgstr "稳定版"
 
-#: ../../tutorial.rst:43
+#: ../../tutorial.rst:51
 msgid "To install GINO, run this command in your terminal:"
 msgstr "请在终端中执行以下命令以安装 GINO："
 
-#: ../../tutorial.rst:49
+#: ../../tutorial.rst:57
 msgid ""
 "This is the preferred method to install GINO, as it will always install the "
 "most recent stable release."
 msgstr "以上就是安装 GINO 的推荐方式，因为这种方式始终会去安装最新的稳定版。"
 
-#: ../../tutorial.rst:52
+#: ../../tutorial.rst:60
 msgid ""
 "If you don't have `pip`_ installed, this `Python installation guide`_ can "
 "guide you through the process."
 msgstr "如果您还没有安装过 `pip`_，您可以参阅 `Python installation guide`_。"
 
-#: ../../tutorial.rst:60
+#: ../../tutorial.rst:68
 msgid "From sources"
 msgstr "从源码安装"
 
-#: ../../tutorial.rst:62
+#: ../../tutorial.rst:70
 msgid "The sources for GINO can be downloaded from the `Github repo`_."
 msgstr "GINO 的源码可以从 `Github repo`_ 下载。"
 
-#: ../../tutorial.rst:64
+#: ../../tutorial.rst:72
 msgid "You can either clone the public repository:"
 msgstr "您可以 git clone："
 
-#: ../../tutorial.rst:70
+#: ../../tutorial.rst:78
 msgid "Or download the `tarball`_:"
 msgstr "或者下载 `tarball`_："
 
-#: ../../tutorial.rst:76
+#: ../../tutorial.rst:84
 msgid "Once you have a copy of the source, you can install it with:"
 msgstr "拿到源码后，您可以这样安装："
 
-#: ../../tutorial.rst:88
+#: ../../tutorial.rst:96
 msgid "Declare Models"
 msgstr "声明模型"
 
-#: ../../tutorial.rst:90
+#: ../../tutorial.rst:98
 msgid ""
 "First of all, we'll need a :class:`~gino.api.Gino` object, usually under the"
 " name of ``db`` as a global variable::"
 msgstr "开始之前，我们需要先创建一个 :class:`~gino.api.Gino` 的全局实例，通常叫做 ``db``： ::"
 
-#: ../../tutorial.rst:97
+#: ../../tutorial.rst:105
 msgid ""
 "``db`` acts like a reference to the database, most database interactions "
 "will go through it."
 msgstr "``db`` 可以被当做是数据库的一个代表，后续大部分的数据库交互都将通过它来完成。"
 
-#: ../../tutorial.rst:100
+#: ../../tutorial.rst:108
 msgid ""
 "\"Model\" is a basic concept in GINO, it is a Python class inherited from "
 ":attr:`db.Model <gino.api.Gino.Model>`. Each "
@@ -147,7 +156,7 @@ msgstr ""
 "的子类代表了数据库中的一张表，而这些类的对象则代表了对应表中的一行数据。如果您曾经使用过其它 ORM "
 "产品，对这种映射关系应该不感到陌生。现在我们尝试定义一个 model： ::"
 
-#: ../../tutorial.rst:112
+#: ../../tutorial.rst:120
 msgid ""
 "By declaring this ``User`` class, we are actually defining a database table "
 "named ``users``, with two columns ``id`` and ``nickname``. Note that the "
@@ -157,18 +166,11 @@ msgid ""
 "for the table, where its first parameter indicates the column type in "
 "database, while the rest is for other column attributes or constraints. You "
 "can find a mapping of database types to ``db`` types `here "
-"<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_ in the "
+"<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`__ in the "
 "SQLAlchemy documentation."
 msgstr ""
-"通过定义这个 ``User`` 类，我们实际上定义了一个名为 ``users`` 的数据库表，这个表有两个字段，分别为 ``id`` 和 "
-"``nickname``。请注意，:attr:`~gino.declarative.Model.__tablename__` "
-"是一个必须存在的固定属性。GINO 建议，model 名称使用名词的单数形式，表名使用复数形式。每个 :class:`db.Column "
-"<sqlalchemy.schema.Column>` 属性定义了表中的一列，:class:`db.Column "
-"<sqlalchemy.schema.Column>` "
-"的第一个参数表示该列的类型，其余参数则为该列的其他属性或约束。关于数据库类型的映射关系，您可以参考 `SQLAlchemy 的文档 "
-"<http://docs.sqlalchemy.org/en/latest/core/type_basics.html>`_。"
 
-#: ../../tutorial.rst:125
+#: ../../tutorial.rst:133
 msgid ""
 "SQLAlchemy_ is a powerful ORM library for non-asynchronous programming in "
 "Python, on top of which GINO is built. SQLAlchemy supports many popular "
@@ -181,25 +183,23 @@ msgstr ""
 "方言实现，SQLAlchemy 支持包括 PostgreSQL 和 MySQL 在内的许多流行的 RDBMS，以至于有时相同的 Python "
 "代码可以不经修改地运行在不同的数据库上。GINO 自然也承袭了这一特性，但目前暂仅支持 PostgreSQL（通过 asyncpg_）。"
 
-#: ../../tutorial.rst:135
+#: ../../tutorial.rst:143
 msgid ""
 "If you need constraints or indexes covering multiple columns these are also "
 "defined using properties in model classes. The property names must be "
 "unique, but are otherwise not used. Example::"
 msgstr "如果需要定义涵盖多个列的数据库约束或索引，您仍然可以通过 model 类属性的方式来定义，属性名称虽未被用到，但不能重复。例如： ::"
 
-#: ../../tutorial.rst:150
+#: ../../tutorial.rst:158
 msgid ""
 "It is also possible to define model constraints and indexes outside the "
 "model class if that is preferred. For more details on constraints and "
 "indexes, see `here "
-"<http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_ in the "
+"<http://docs.sqlalchemy.org/en/latest/core/constraints.html>`__ in the "
 "SQLAlchemy documentation."
 msgstr ""
-"如果愿意，您也可以在 model 类之外定义数据库约束和索引，更多细节请参考  `SQLAlchemy 文档 "
-"<http://docs.sqlalchemy.org/en/latest/core/constraints.html>`_。"
 
-#: ../../tutorial.rst:155
+#: ../../tutorial.rst:163
 msgid ""
 "Due to implementation limitations it is currently not allowed to specify "
 "explicit constraints and indexes as direct attributes in classes that are "
@@ -213,11 +213,11 @@ msgstr ""
 " 也是一样的。GINO 提供了 :func:`~gino.declarative.declared_attr` 来实现比如 mixin "
 "类这样的功能，更多信息请参阅其 API 文档。"
 
-#: ../../tutorial.rst:165
+#: ../../tutorial.rst:173
 msgid "Get Connected"
 msgstr "建立连接"
 
-#: ../../tutorial.rst:167
+#: ../../tutorial.rst:175
 msgid ""
 "The declaration only defined the mapping, it does not create the actual "
 "table in the database. To do that, we need to get connected first. Let's "
@@ -226,24 +226,22 @@ msgstr ""
 "前面的声明只是定义了映射关系，并非实际在数据库中创建了这些表结构。为了使用 GINO 来创建表，我们需要先与数据库建立连接。这里我们先为本指南创建一个 "
 "PostgreSQL 的数据库实例："
 
-#: ../../tutorial.rst:175
+#: ../../tutorial.rst:183
 msgid "Then we tell our ``db`` object to connect to this database::"
 msgstr "然后，告诉我们的 ``db`` 对象去连接这个数据库： ::"
 
-#: ../../tutorial.rst:184
+#: ../../tutorial.rst:192
 msgid ""
 "If this runs successfully, then you are connected to the newly created "
-"database. Here ``asyncpg`` indicates the database dialect and driver to use,"
-" ``localhost`` is where the server is, and ``gino`` is the name of the "
-"database. Check `here "
-"<https://docs.sqlalchemy.org/en/latest/core/engines.html>`_ for more "
+"database. Here ``postgresql`` indicates the database dialect to use (the "
+"default driver is ``asyncpg``, you can explicitly specify that with "
+"``postgresql+asyncpg://``, or simply ``asyncpg://``), ``localhost`` is where"
+" the server is, and ``gino`` is the name of the database. Check `here "
+"<https://docs.sqlalchemy.org/en/latest/core/engines.html>`__ for more "
 "information about how to compose this database URL."
 msgstr ""
-"如果执行成功了，就代表您已连接到新创建的数据库实例了。这里的 ``asyncpg`` 告诉 GINO 应该使用哪个 SQL "
-"方言和数据库连接驱动，``localhost`` 则是数据库所在主机地址，``gino`` 就是数据库的名称。请阅读 `这篇文档 "
-"<https://docs.sqlalchemy.org/en/latest/core/engines.html>`_ 来了解如何写这种数据库 URL。"
 
-#: ../../tutorial.rst:192
+#: ../../tutorial.rst:202
 msgid ""
 "Under the hood :meth:`~gino.api.Gino.set_bind` calls "
 ":func:`~gino.create_engine` and bind the engine to this ``db`` object. GINO "
@@ -255,13 +253,13 @@ msgstr ""
 "engine，并将其绑定到 ``db`` 对象上。GINO engine 与 SQLAlchemy engine 类似，但 GINO engine "
 "是异步的，而后者是阻塞式的。关于如何使用 engine，请参考 GINO 的 API 文档。"
 
-#: ../../tutorial.rst:198
+#: ../../tutorial.rst:208
 msgid ""
 "Now that we are connected, let's create the table in database (in the same "
 "``main()`` method)::"
 msgstr "建立连接之后，我们就可以用 GINO 在数据库中创建我们的表了（在同一个 ``main()`` 函数里）： ::"
 
-#: ../../tutorial.rst:205
+#: ../../tutorial.rst:215
 msgid ""
 "It is :meth:`db.gino.create_all <gino.schema.GinoSchemaVisitor.create_all>`,"
 " not :meth:`db.create_all <sqlalchemy.schema.MetaData.create_all>`, because "
@@ -277,7 +275,7 @@ msgstr ""
 "<sqlalchemy.schema.MetaData.create_all>` 是 SQLAlchemy 的阻塞式方法，无法适用于绑定的 GINO "
 "engine。"
 
-#: ../../tutorial.rst:212
+#: ../../tutorial.rst:222
 msgid ""
 "In practice :meth:`~gino.schema.GinoSchemaVisitor.create_all` is usually not"
 " an ideal solution. To manage database schema, tool like Alembic_ is "
@@ -286,37 +284,37 @@ msgstr ""
 "实际应用中，:meth:`~gino.schema.GinoSchemaVisitor.create_all` "
 "通常不是最理想的解决方案，我们推荐使用诸如 Alembic_ 这样的工具来管理数据库表结构。"
 
-#: ../../tutorial.rst:216
+#: ../../tutorial.rst:226
 msgid ""
 "If you want to explicitly disconnect from the database, you can do this::"
 msgstr "如果您想显式地断开与数据库的连接，您可以这么做： ::"
 
-#: ../../tutorial.rst:220
+#: ../../tutorial.rst:230
 msgid ""
 "Let's review the code we have so far together in one piece before moving "
 "on::"
 msgstr "继续之前，让我们重新看一下前面所有的代码： ::"
 
-#: ../../tutorial.rst:250
+#: ../../tutorial.rst:260
 msgid "CRUD Operations"
 msgstr "增删改查"
 
-#: ../../tutorial.rst:252
+#: ../../tutorial.rst:262
 msgid ""
 "In order to operate on the database, one of GINO's core features is to "
 "Create, Retrieve, Update or Delete model objects, also known as the CRUD "
 "operations."
 msgstr "为了操作数据库中的数据，GINO 提供了基本的基于对象的增删改查功能。"
 
-#: ../../tutorial.rst:257
+#: ../../tutorial.rst:267
 msgid "Create"
 msgstr "增"
 
-#: ../../tutorial.rst:259
+#: ../../tutorial.rst:269
 msgid "Let's start by creating a ``User``::"
 msgstr "让我们从创建一个 ``User`` 对象开始： ::"
 
-#: ../../tutorial.rst:265
+#: ../../tutorial.rst:275
 msgid ""
 "As mentioned previously, ``user`` object represents the newly created row in"
 " the database. You can get the value of each columns by the declared column "
@@ -324,17 +322,17 @@ msgid ""
 msgstr ""
 "正如之前所说，``user`` 对象代表了数据库中新插入的这一行数据。您可以通过 ``user`` 对象上的之前定义的列属性来访问每一列的值： ::"
 
-#: ../../tutorial.rst:272
+#: ../../tutorial.rst:282
 msgid ""
 "It is also possible to create a model instance in-memory first, modify it, "
 "then finally create it in the database::"
 msgstr "另外，您也可以先在内存中创建一个 ``user`` 对象，然后再将其插入到数据库中： ::"
 
-#: ../../tutorial.rst:280
+#: ../../tutorial.rst:290
 msgid "Retrieve"
 msgstr "查"
 
-#: ../../tutorial.rst:282
+#: ../../tutorial.rst:292
 msgid ""
 "To retrieve a model object from database by primary key, you can use the "
 "class method :meth:`~gino.crud.CRUDModel.get` on the model class. Now let's "
@@ -343,7 +341,7 @@ msgstr ""
 "想要通过主键来获取一个 model 对象，您可以使用 model 的类方法 "
 ":meth:`~gino.crud.CRUDModel.get`。比如，重新获取刚才插入的同一行数据： ::"
 
-#: ../../tutorial.rst:290
+#: ../../tutorial.rst:300
 msgid ""
 "Normal SQL queries are done through a class property "
 ":attr:`~gino.crud.CRUDModel.query`. For example, let's retrieve all ``User``"
@@ -352,7 +350,7 @@ msgstr ""
 "常规的 SQL 查询则是通过类属性 :attr:`~gino.crud.CRUDModel.query` 来完成。比如，获取数据库中所有的 "
 "``User`` 对象的列表： ::"
 
-#: ../../tutorial.rst:298
+#: ../../tutorial.rst:308
 msgid ""
 "Alternatively, you can use the ``gino`` extension on "
 ":attr:`~gino.crud.CRUDModel.query`. This has exactly the same effect as "
@@ -361,7 +359,7 @@ msgstr ""
 "或者，您也可以使用 :attr:`~gino.crud.CRUDModel.query` 的 ``gino`` "
 "扩展。比如，下面的代码可以实现一样的效果： ::"
 
-#: ../../tutorial.rst:307
+#: ../../tutorial.rst:317
 msgid ""
 "``User.query`` is actually a SQLAlchemy query, with its own non-asynchronous"
 " execution methods. GINO added this ``gino`` extension on all executable "
@@ -373,22 +371,20 @@ msgstr ""
 "向所有 SQLAlchemy 的“Executable”对象注入了一个 ``gino`` 扩展，以便在不影响 SQLAlchemy 原有 API "
 "的基础上，让直接异步地执行这些查询对象更容易，而不用每次都通过 engine 或 ``db`` 对象来执行。"
 
-#: ../../tutorial.rst:313
+#: ../../tutorial.rst:323
 msgid ""
 "Now let's add some filters. For example, find all users with ID lower than "
 "10::"
 msgstr "现在让我们尝试增加一些过滤器。比如，查找出所有 ID 小于 10 的用户： ::"
 
-#: ../../tutorial.rst:319
+#: ../../tutorial.rst:329
 msgid ""
 "Read more `here "
-"<https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`_ about "
+"<https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`__ about "
 "writing queries, because the query object is exactly from SQLAlchemy core."
 msgstr ""
-"GINO 的查询语句对象都是纯粹的 SQLAlchemy core 查询，因此要了解如何编写查询语句，请参考 `SQLAlchemy 的文档 "
-"<https://docs.sqlalchemy.org/en/latest/core/expression_api.html>`_。"
 
-#: ../../tutorial.rst:324
+#: ../../tutorial.rst:334
 msgid ""
 "Once you get a model object, it is purely in memory and fully detached from "
 "the database. That means, if the row is externally updated, the object "
@@ -398,7 +394,7 @@ msgstr ""
 "当您拿到一个 model "
 "对象时，这个对象就已经彻底与数据库分离了，完全成为内存中的一个普通对象。这就意味着，即使数据库中对应的行发生了变化，对象的值仍然不会受到丝毫影响。类似地，如果您修改了该对象的值，数据库也不会受到任何影响。"
 
-#: ../../tutorial.rst:329
+#: ../../tutorial.rst:339
 msgid ""
 "Also, GINO keeps no track of model objects, therefore getting the same row "
 "twice returns two different object with identical values. Modifying one does"
@@ -406,7 +402,7 @@ msgid ""
 msgstr ""
 "并且，GINO 也不会追踪 model 对象，因此重复查询同一行数据将会得到两个独立的、拥有相同值的对象，修改其中一个的值不会幽灵般地影响到另一个的值。"
 
-#: ../../tutorial.rst:333
+#: ../../tutorial.rst:343
 msgid ""
 "Different than traditional ORMs, the GINO model objects are more like "
 "objective SQL results, rather than stateful ORM objects. In order to adapt "
@@ -416,18 +412,18 @@ msgstr ""
 "不同于传统 ORM 的 model 对象通常是有状态的，GINO 的 model 对象则更像是用对象封装的 SQL 查询结果，这是 GINO "
 "为了适应异步编程而特意设计的简易性，也是“GINO 不是 ORM”名字的来源。"
 
-#: ../../tutorial.rst:338
+#: ../../tutorial.rst:348
 msgid ""
 "Sometimes we want to get only one object, for example getting the user by "
 "name when logging in. There's a shortcut for this scenario::"
 msgstr "有时我们仅需要获取一个对象，比如验证登录时，使用用户名来查找一个用户。这时，可以使用这种便捷的写法： ::"
 
-#: ../../tutorial.rst:345
+#: ../../tutorial.rst:355
 msgid ""
 "If there is no user named \"fantix\" in database, ``user`` will be ``None``."
 msgstr "如果数据库中没有叫“fantix”的用户，则 ``user`` 会被置为 ``None``。"
 
-#: ../../tutorial.rst:347
+#: ../../tutorial.rst:357
 msgid ""
 "And sometimes we may want to get a single value from database, getting the "
 "name of user with ID 1 for example. Then we can use the "
@@ -436,21 +432,21 @@ msgstr ""
 "又有时，我们会需要获取一个单独的值，比如 ID 为 1 的用户的名字。此时可以使用 model 的类方法 "
 ":meth:`~gino.crud.CRUDModel.select`： ::"
 
-#: ../../tutorial.rst:356
+#: ../../tutorial.rst:366
 msgid "Or get the count of all users::"
 msgstr "又比如，查询用户数量： ::"
 
-#: ../../tutorial.rst:365
+#: ../../tutorial.rst:375
 msgid "Update"
 msgstr "改"
 
-#: ../../tutorial.rst:367
+#: ../../tutorial.rst:377
 msgid ""
 "Then let's try to make some modifications. In this example we'll mixin some "
 "retrieve operations we just tried. ::"
 msgstr "接下来，让我们尝试对数据做一些修改，下面的例子会穿插一些前面用过的查询操作。 ::"
 
-#: ../../tutorial.rst:390
+#: ../../tutorial.rst:400
 msgid ""
 "So :meth:`~gino.crud.CRUDModel.update` is the first GINO method we met so "
 "far on model instance level. It accepts multiple keyword arguments, whose "
@@ -462,7 +458,7 @@ msgstr ""
 "方法，它接受多个自定义命名参数，参数名对应着 model 的字段名，而参数值则为期望修改成的新的值。连着写的 "
 ":meth:`~gino.crud.UpdateRequest.apply` 则会将这一修改同步到数据库中。"
 
-#: ../../tutorial.rst:397
+#: ../../tutorial.rst:407
 msgid ""
 "GINO explicitly split the in-memory update and SQL update into two methods: "
 ":meth:`~gino.crud.CRUDModel.update` and "
@@ -480,7 +476,7 @@ msgstr ""
 ":class:`~gino.crud.UpdateRequest` 对象的 :meth:`~gino.crud.UpdateRequest.apply`"
 " 方法则会将这些记录下的改动通过 SQL 更新到数据库中。"
 
-#: ../../tutorial.rst:408
+#: ../../tutorial.rst:418
 msgid ""
 ":class:`~gino.crud.UpdateRequest` object has another method named "
 ":meth:`~gino.crud.UpdateRequest.update` which works the same as the one on "
@@ -500,7 +496,7 @@ msgstr ""
 ":meth:`~gino.crud.UpdateRequest.apply` 结尾，或者仅仅是通过 "
 ":class:`~gino.crud.UpdateRequest` 对象来完成内存对象的多次改动。"
 
-#: ../../tutorial.rst:418
+#: ../../tutorial.rst:428
 msgid ""
 ":meth:`~gino.crud.CRUDModel.update` on model object affects only the row "
 "represented by the object. If you want to do update with wider condition, "
@@ -511,7 +507,7 @@ msgstr ""
 "方法只能操作该对象对应的数据库中的一行数据，而如果您想要批量更新多行数据的话，您可以使用 model 类上的 "
 ":meth:`~gino.crud.CRUDModel.update` 类方法。用法略有不同： ::"
 
-#: ../../tutorial.rst:432
+#: ../../tutorial.rst:442
 msgid ""
 "There is no :class:`~gino.crud.UpdateRequest` here, everything is again "
 "SQLAlchemy clause, its `documentation "
@@ -522,15 +518,15 @@ msgstr ""
 "用法，更多细节可以参考 `SQLAlchemy 的文档 "
 "<https://docs.sqlalchemy.org/en/latest/core/dml.html>`_。"
 
-#: ../../tutorial.rst:439
+#: ../../tutorial.rst:449
 msgid "Delete"
 msgstr "删"
 
-#: ../../tutorial.rst:441
+#: ../../tutorial.rst:451
 msgid "At last. Deleting is similar to updating, but way simpler. ::"
 msgstr "最后，删除一行数据与更新一行数据有些类似，但要简单很多： ::"
 
-#: ../../tutorial.rst:452
+#: ../../tutorial.rst:462
 msgid ""
 "Remember the model object is in memory? In the last :func:`print` statement,"
 " even though the row is already deleted in database, the object ``user`` "
@@ -539,13 +535,13 @@ msgstr ""
 "还记得内存对象的事情吗？在最后一行的 :func:`print` 中，尽管数据库中已经没有这一行数据了，但是 ``user`` "
 "对象依然在内存中，它的值也都没有变化，所以这里仍然可以用 ``user.id``。"
 
-#: ../../tutorial.rst:456
+#: ../../tutorial.rst:466
 msgid ""
 "Or mass deletion (never forget the where clause, unless you want to truncate"
 " the whole table!!)::"
 msgstr "或者批量删除（千万不要忘记写 ``where``！是不是整个表都不想要了？）： ::"
 
-#: ../../tutorial.rst:464
+#: ../../tutorial.rst:474
 msgid ""
 "With basic :doc:`crud`, you can already make some amazing stuff with GINO. "
 "This tutorial ends here, please find out more in detail from the rest of "

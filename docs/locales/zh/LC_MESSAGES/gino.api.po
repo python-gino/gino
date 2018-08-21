@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
@@ -120,8 +120,8 @@ msgstr ""
 msgid ""
 "A :class:`~.engine.GinoEngine` instance to bind. Also accepts string or "
 ":class:`~sqlalchemy.engine.url.URL`, which will be passed to "
-":meth:`~gino.strategies.create_engine` when this :class:`Gino` instance is "
-"awaited. Default is ``None``."
+":func:`~gino.create_engine` when this :class:`Gino` instance is awaited. "
+"Default is ``None``."
 msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.Gino:75
@@ -233,7 +233,7 @@ msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.Gino.query_executor:1
 msgid ""
-"The overridable ``gino`` extension class on  "
+"The overridable ``gino`` extension class on "
 ":class:`~sqlalchemy.sql.expression.Executable`."
 msgstr ""
 
@@ -241,13 +241,8 @@ msgstr ""
 msgid ""
 "This class will be set as the getter method of the property ``gino`` on "
 ":class:`~sqlalchemy.sql.expression.Executable` and its subclasses, if "
-"``ext`` and ``query_ext`` arguments are both ``True``. Default is  "
+"``ext`` and ``query_ext`` arguments are both ``True``. Default is "
 ":class:`GinoExecutor`."
-msgstr ""
-
-#: ../../../gino/api.pydocstring of gino.api.Gino.release:1
-msgid ""
-"A delegate of :meth:`GinoEngine.release() <.engine.GinoEngine.release>`."
 msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.Gino.scalar:1
@@ -261,11 +256,11 @@ msgstr ""
 #: ../../../gino/api.pydocstring of gino.api.Gino.set_bind:3
 msgid ""
 "If the given ``bind`` is a string or :class:`~sqlalchemy.engine.url.URL`, "
-"all arguments will be sent to :meth:`~gino.strategies.create_engine` to "
-"create a new engine, and return it."
+"all arguments will be sent to :func:`~gino.create_engine` to create a new "
+"engine, and return it."
 msgstr ""
 
-#: ../../../gino/api.pydocstring of gino.api.Gino.set_bind:8
+#: ../../../gino/api.pydocstring of gino.api.Gino.set_bind:7
 msgid ":class:`~.engine.GinoEngine`"
 msgstr ""
 
@@ -286,10 +281,9 @@ msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.Gino.with_bind:3
 msgid ""
-"This method accepts the same arguments of "
-":meth:`~gino.strategies.create_engine`. This allows inline creating an "
-"engine and binding self on enter, and unbinding self and closing the engine "
-"on exit::"
+"This method accepts the same arguments of :func:`~gino.create_engine`. This "
+"allows inline creating an engine and binding self on enter, and unbinding "
+"self and closing the engine on exit::"
 msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.Gino.with_bind:11
@@ -362,16 +356,25 @@ msgid ""
 " bound, while metadata is found in this query."
 msgstr ""
 
-#: ../../../gino/api.pydocstring of gino.api.GinoExecutor.model:1
-msgid "Shortcut to set execution option ``model`` in a chaining call."
+#: ../../../gino/api.pydocstring of gino.api.GinoExecutor.load:1
+msgid "Shortcut to set execution option ``loader`` in a chaining call."
 msgstr ""
 
+#: ../../../gino/api.pydocstring of gino.api.GinoExecutor.load:3
+msgid "For example to load ``Book`` instances with their authors::"
+msgstr ""
+
+#: ../../../gino/api.pydocstring of gino.api.GinoExecutor.load:8
 #: ../../../gino/api.pydocstring of gino.api.GinoExecutor.model:3
 #: ../../../gino/api.pydocstring of gino.api.GinoExecutor.return_model:3
 #: ../../../gino/api.pydocstring of gino.api.GinoExecutor.timeout:3
 msgid ""
 "Read :meth:`~gino.engine.GinoConnection.execution_options` for more "
 "information."
+msgstr ""
+
+#: ../../../gino/api.pydocstring of gino.api.GinoExecutor.model:1
+msgid "Shortcut to set execution option ``model`` in a chaining call."
 msgstr ""
 
 #: ../../../gino/api.pydocstring of gino.api.GinoExecutor.query:1

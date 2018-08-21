@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: GINO 0.5.8\n"
+"Project-Id-Version: GINO 0.7.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-07 23:28+0800\n"
+"POT-Creation-Date: 2018-08-21 12:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
 "MIME-Version: 1.0\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Language: zh\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../../sanic.rst:3
+#: ../../sanic.rst:3 ../../sanic.rst:69
 msgid "Sanic Support"
 msgstr ""
 
@@ -25,69 +25,149 @@ msgstr ""
 msgid "**THIS IS A WIP**"
 msgstr ""
 
-#: ../../sanic.rst:7
-msgid "Check examples directory for general usage."
-msgstr ""
-
-#: ../../sanic.rst:11
+#: ../../sanic.rst:9
 msgid "Work with Sanic"
 msgstr ""
 
-#: ../../sanic.rst:13
+#: ../../sanic.rst:11
 msgid ""
 "Using the Sanic extension, the request handler acquires a lazy connection on"
 " each request, and return the connection when the response finishes by "
 "default."
 msgstr ""
 
-#: ../../sanic.rst:16
+#: ../../sanic.rst:14
 msgid ""
 "The lazy connection is actually established if necessary, i.e. just before "
 "first access to db."
 msgstr ""
 
-#: ../../sanic.rst:18
+#: ../../sanic.rst:16
 msgid ""
 "This behavior is controlled by app.config.DB_USE_CONNECTION_FOR_REQUEST, "
 "which is True by default."
 msgstr ""
 
-#: ../../sanic.rst:20
+#: ../../sanic.rst:18
 msgid "Supported configurations:"
 msgstr ""
 
-#: ../../sanic.rst:22
+#: ../../sanic.rst:20
 msgid "DB_HOST"
 msgstr ""
 
-#: ../../sanic.rst:23
+#: ../../sanic.rst:21
 msgid "DB_PORT"
 msgstr ""
 
-#: ../../sanic.rst:24
+#: ../../sanic.rst:22
 msgid "DB_USER"
 msgstr ""
 
-#: ../../sanic.rst:25
+#: ../../sanic.rst:23
 msgid "DB_PASSWORD"
 msgstr ""
 
-#: ../../sanic.rst:26
+#: ../../sanic.rst:24
 msgid "DB_DATABASE"
 msgstr ""
 
-#: ../../sanic.rst:27
+#: ../../sanic.rst:25
+msgid "DB_ECHO"
+msgstr ""
+
+#: ../../sanic.rst:26
 msgid "DB_POOL_MIN_SIZE"
 msgstr ""
 
-#: ../../sanic.rst:28
+#: ../../sanic.rst:27
 msgid "DB_POOL_MAX_SIZE"
 msgstr ""
 
-#: ../../sanic.rst:29
+#: ../../sanic.rst:28
 msgid "DB_USE_CONNECTION_FOR_REQUEST"
 msgstr ""
 
-#: ../../sanic.rst:31
+#: ../../sanic.rst:30
 msgid "An example server:"
+msgstr ""
+
+#: ../../sanic.rst:71
+msgid ""
+"To integrate with Sanic, a few configurations needs to be set in "
+"``app.config`` (with default value though):"
+msgstr ""
+
+#: ../../sanic.rst:74
+msgid "DB_HOST: if not set, ``localhost``"
+msgstr ""
+
+#: ../../sanic.rst:75
+msgid "DB_PORT: if not set, ``5432``"
+msgstr ""
+
+#: ../../sanic.rst:76
+msgid "DB_USER: if not set, ``postgres``"
+msgstr ""
+
+#: ../../sanic.rst:77
+msgid "DB_PASSWORD: if not set, empty string"
+msgstr ""
+
+#: ../../sanic.rst:78
+msgid "DB_DATABASE: if not set, ``postgres``"
+msgstr ""
+
+#: ../../sanic.rst:79
+msgid "DB_ECHO: if not set, ``False``"
+msgstr ""
+
+#: ../../sanic.rst:80
+msgid "DB_POOL_MIN_SIZE: if not set, 5"
+msgstr ""
+
+#: ../../sanic.rst:81
+msgid "DB_POOL_MAX_SIZE: if not set, 10"
+msgstr ""
+
+#: ../../sanic.rst:83
+msgid "An example:"
+msgstr ""
+
+#: ../../sanic.rst:98
+msgid ""
+"After ``db.init_app``, a connection pool with configured settings shall be "
+"created and bound to ``db`` when Sanic server is started, and closed on "
+"stop. Furthermore, a lazy connection context is created on each request, and"
+" released on response. That is to say, within Sanic request handlers, you "
+"can directly access db by e.g. ``User.get(1)``, everything else is settled: "
+"database pool is created on server start, connection is lazily borrowed from"
+" pool on the first database access and shared within the rest of the same "
+"request handler, and automatically returned to the pool on response."
+msgstr ""
+
+#: ../../sanic.rst:107
+msgid ""
+"Please be noted that, in the async world, ``await`` may block unpredictably "
+"for a long time. When this world is crossing RDBMS pools and transactions, "
+"it is a very dangerous bite for performance, even causing disasters "
+"sometimes. Therefore we recommend, during the time enjoying fast "
+"development, do pay special attention to the scope of transactions and "
+"borrowed connections, make sure that transactions are closed as soon as "
+"possible, and connections are not taken for unnecessarily long time. As for "
+"the Sanic support, if you want to release the concrete connection in the "
+"request context before response is reached, just do it like this:"
+msgstr ""
+
+#: ../../sanic.rst:122
+msgid ""
+"Or if you prefer not to use the contextual lazy connection in certain "
+"handlers, prefer explicitly manage the connection lifetime, you can always "
+"borrow a new connection by setting ``reuse=False``:"
+msgstr ""
+
+#: ../../sanic.rst:132
+msgid ""
+"Or if you prefer not to use the builtin request-scoped lazy connection at "
+"all, you can simply turn it off:"
 msgstr ""
