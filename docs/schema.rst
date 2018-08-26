@@ -197,6 +197,19 @@ more declarative. Instead of ``users.c.name``, you can now access the column by
 available at ``User.__table__`` and ``Address.__table__``. You can use anything
 that works in GINO core here.
 
+.. note::
+
+    Column names can be different as a class property and database column.
+    For example, name can be declared as
+    ``nickname = db.Column('name', db.Unicode(), default='noname')``. In this
+    example, ``User.nickname`` is used to access the column, while in database,
+    the column name is ``name``.
+
+    What's worth mentioning is where raw SQL statements are used, or
+    ``TableClause`` is involved, like ``User.insert()``, the original name is
+    required to be used, because in this case, GINO has no knowledge about the
+    mappings.
+
 .. tip::
 
     ``db.Model`` is a dynamically created parent class for your models. It is
