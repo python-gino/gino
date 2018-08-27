@@ -15,7 +15,7 @@ if sys.version_info >= (3, 7):
     from contextvars import ContextVar
 else:
     # noinspection PyPackageRequirements
-    from aiocontextvars import ContextVar
+    from aiocontextvars import ContextVar  # pragma: no cover
 
 
 class _BaseDBAPIConnection:

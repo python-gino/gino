@@ -1,5 +1,6 @@
 import pytest
 import gino
+from gino.declarative import InvertDict
 from asyncpg.exceptions import (
     UniqueViolationError, ForeignKeyViolationError, CheckViolationError)
 
@@ -54,7 +55,7 @@ async def test_table_args():
 
 
 async def test_inline_constraints_and_indexes(bind, engine):
-    u = await User.create(name='test')
+    u = await User.create(nickname='test')
     us1 = await UserSetting.create(user_id=u.id, setting='skin', value='blue')
 
     # PrimaryKeyConstraint
@@ -222,3 +223,23 @@ async def test_abstract_model_error():
 
     with pytest.raises(TypeError, match='AbstractModel is abstract'):
         await AbstractModel.get(1)
+
+
+async def test_invert_dict():
+    with pytest.raises(gino.GinoException,
+                       match=r'Column name c1 already maps to \w+'):
+        InvertDict({'col1': 'c1', 'col2': 'c1'})
+
+    with pytest.raises(gino.GinoException,
+                       match=r'Column name c1 already maps to \w+'):
+        d = InvertDict()
+        d['col1'] = 'c1'
+        d['col2'] = 'c1'
+
+    d = InvertDict()
+    d['col1'] = 'c1'
+    # it works for same key/value pair
+    d['col1'] = 'c1'
+    d['col2'] = 'c2'
+    assert d.invert_get('c1') == 'col1'
+    assert d.invert_get('c2') == 'col2'

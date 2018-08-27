@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 def names(sa_engine):
     rv = {'11', '22', '33'}
     sa_engine.execute(User.__table__.insert(),
-                      [dict(nickname=name) for name in rv])
+                      [dict(name=name) for name in rv])
     yield rv
     sa_engine.execute('DELETE FROM gino_users')
 

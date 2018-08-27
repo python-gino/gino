@@ -75,7 +75,11 @@ class ModelLoader(Loader):
         if none_as_none and all((v is None) for v in values.values()):
             return None
         rv = self.model()
-        rv.__values__.update(values)
+        for c in self.columns:
+            if c in row:
+                # noinspection PyProtectedMember
+                instance_key = self.model._column_name_map.invert_get(c.name)
+                rv.__values__[instance_key] = row[c]
         return rv
 
     def do_load(self, row, context):

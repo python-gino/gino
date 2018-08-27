@@ -3,23 +3,48 @@ import collections
 import sqlalchemy as sa
 from sqlalchemy.exc import InvalidRequestError
 
+from .exceptions import GinoException
+
 
 class ColumnAttribute:
-    def __init__(self, column):
-        self.name = column.name
+    def __init__(self, prop_name, column):
+        self.prop_name = prop_name
         self.column = column
 
     def __get__(self, instance, owner):
         if instance is None:
             return self.column
         else:
-            return instance.__values__.get(self.name)
+            return instance.__values__.get(self.prop_name)
 
     def __set__(self, instance, value):
-        instance.__values__[self.name] = value
+        instance.__values__[self.prop_name] = value
 
     def __delete__(self, instance):
         raise AttributeError('Cannot delete value.')
+
+
+class InvertDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._inverted_dict = dict()
+        for k, v in self.items():
+            if v in self._inverted_dict:
+                raise GinoException(
+                    'Column name {} already maps to {}'.format(
+                        v, self._inverted_dict[v]))
+            self._inverted_dict[v] = k
+
+    def __setitem__(self, key, value):
+        if value in self._inverted_dict and self._inverted_dict[value] != key:
+            raise GinoException(
+                'Column name {} already maps to {}'.format(
+                    value, self._inverted_dict[value]))
+        super().__setitem__(key, value)
+        self._inverted_dict[value] = key
+
+    def invert_get(self, key, default=None):
+        return self._inverted_dict.get(key, default)
 
 
 class ModelType(type):
@@ -119,6 +144,7 @@ class Model:
         columns = []
         inspected_args = []
         updates = {}
+        column_name_map = InvertDict()
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in getattr(each_cls, '__namespace__',
                                 each_cls.__dict__).items():
@@ -126,11 +152,14 @@ class Model:
                     v = updates[k] = v(sub_cls)
                 if isinstance(v, sa.Column):
                     v = v.copy()
-                    v.name = k
+                    if not v.name:
+                        v.name = k
+                    column_name_map[k] = v.name
                     columns.append(v)
-                    updates[k] = sub_cls.__attr_factory__(v)
+                    updates[k] = sub_cls.__attr_factory__(k, v)
                 elif isinstance(v, (sa.Index, sa.Constraint)):
                     inspected_args.append(v)
+        sub_cls._column_name_map = column_name_map
 
         # handle __table_args__
         table_args = updates.get('__table_args__',
@@ -173,4 +202,5 @@ def inspect_model_type(target):
     return sa.inspection.inspect(target.__table__)
 
 
-__all__ = ['ColumnAttribute', 'Model', 'declarative_base', 'declared_attr']
+__all__ = ['ColumnAttribute', 'Model', 'declarative_base', 'declared_attr',
+           'InvertDict']

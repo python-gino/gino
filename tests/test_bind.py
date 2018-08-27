@@ -40,7 +40,7 @@ async def test_unbind(asyncpg_pool):
 
 async def test_db_api(bind, random_name):
     assert await db.scalar(
-        User.insert().values(nickname=random_name).returning(
+        User.insert().values(name=random_name).returning(
             User.nickname)) == random_name
     assert (await db.first(User.query.where(
         User.nickname == random_name))).nickname == random_name

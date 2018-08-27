@@ -22,7 +22,7 @@ async def _test_client(config):
         __tablename__ = 'gino_users'
 
         id = db.Column(db.BigInteger(), primary_key=True)
-        nickname = db.Column(db.Unicode(), default='noname')
+        nickname = db.Column('name', db.Unicode(), default='noname')
 
     routes = web.RouteTableDef()
 
@@ -107,8 +107,7 @@ async def _test(test_client):
         response = await test_client.get('/users/1?method=' + method)
         assert response.status == 404
 
-    response = await test_client.post('/users',
-                                      data=dict(name='fantix'))
+    response = await test_client.post('/users', data=dict(name='fantix'))
     assert response.status == 200
     assert await response.json() == dict(id=1, nickname='fantix')
 
