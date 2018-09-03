@@ -163,8 +163,11 @@ class TupleLoader(Loader):
         self.loaders = tuple(self.get(value) for value in values)
 
     def do_load(self, row, context):
-        return tuple(loader.do_load(row, context)[0]
-                     for loader in self.loaders), True
+        loaders_result = [loader.do_load(row, context) for loader
+                          in self.loaders]
+        distinct = all(distinct for loader, distinct in loaders_result
+                       if loader is not None)
+        return tuple([loader for loader, _ in loaders_result]), distinct
 
 
 class CallableLoader(Loader):
