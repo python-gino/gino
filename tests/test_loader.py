@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 from async_generator import yield_, async_generator
 
+from gino.loader import AliasLoader
 from .models import db, User, Team, Company
 
 pytestmark = pytest.mark.asyncio
@@ -142,6 +143,15 @@ async def test_adjacency_list(user):
         assert isinstance(u.team.parent, Team)
         assert u.team.parent.id == user.team.parent.id
         assert u.team.parent.name == user.team.parent.name
+
+
+async def test_alias_loader_columns(user):
+    user_alias = User.alias()
+    base_query = user_alias.outerjoin(Team).select()
+
+    query = base_query.execution_options(loader=AliasLoader(user_alias, 'id'))
+    u = await query.gino.first()
+    assert u.id is not None
 
 
 async def test_adjacency_list_query_builder(user):
