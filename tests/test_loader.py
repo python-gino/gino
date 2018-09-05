@@ -204,6 +204,27 @@ async def test_loader_with_aggregation(user):
             assert user_count is None
 
 
+async def test_adjanency_list_on_nested_load(user):
+    subquery = db.select(User).alias()
+    base_query = subquery.outerjoin(Team).select()
+
+    query = base_query.execution_options(loader=(User.load('id')))
+    u = await query.gino.first()
+    # Because here arrives team_id, not user_id, and replaces it
+    assert u.id is None
+
+    from gino.loader import SubqueryLoader
+    query = base_query.execution_options(loader=SubqueryLoader(User, subquery, team=Team))
+    u = await query.gino.first()
+    assert u.id == user.id
+    assert u.realname == user.realname
+    assert u.nickname == user.nickname
+
+    assert isinstance(u.team, Team)
+    assert u.team.id == user.team.id
+    assert u.team.name == user.team.name
+
+
 async def test_adjacency_list_query_builder(user):
     group = Team.alias()
     u = await User.load(team=Team.load(parent=group.on(
