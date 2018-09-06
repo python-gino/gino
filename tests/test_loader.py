@@ -43,10 +43,17 @@ async def test_scalar(user):
 
 
 async def test_model_load(user):
-    u = await User.query.gino.load(User.load('nickname')).first()
+    u = await User.query.gino.load(User.load('nickname', User.team_id)).first()
     assert isinstance(u, User)
     assert u.id is None
     assert u.nickname == user.nickname
+    assert u.team_id == user.team.id
+
+    with pytest.raises(TypeError):
+        await User.query.gino.load(User.load(123)).first()
+
+    with pytest.raises(AttributeError):
+        await User.query.gino.load(User.load(Team.id)).first()
 
 
 async def test_216_model_load_passive_partial(user):

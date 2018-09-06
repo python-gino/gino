@@ -56,7 +56,7 @@ class ModelLoader(Loader):
         self.model = model
         self._distinct = None
         if column_names:
-            self.columns = [getattr(model, name) for name in column_names]
+            self.columns = self._column_loader(model, column_names)
         else:
             self.columns = model
         self.extras = dict((key, self.get(value))
@@ -123,10 +123,27 @@ class ModelLoader(Loader):
 
     def load(self, *column_names, **extras):
         if column_names:
-            self.columns = [getattr(self.model, name) for name in column_names]
+            self.columns = self._column_loader(self.model, column_names)
+
         self.extras.update((key, self.get(value))
                            for key, value in extras.items())
         return self
+
+    @classmethod
+    def _column_loader(cls, model, column_names):
+        def column_formatter(column_name):
+            if isinstance(column_name, str):
+                return getattr(model, column_name)
+            elif isinstance(column_name, Column):
+                if column_name not in model:
+                    raise AttributeError('Column {} does not belong '
+                                         'to this model'.format(column_name))
+                return column_name
+            else:
+                raise TypeError('Unknown column name {} type {}'.
+                                format(column_name, type(column_name)))
+
+        return [column_formatter(column_name) for column_name in column_names]
 
     def on(self, on_clause):
         self.on_clause = on_clause
