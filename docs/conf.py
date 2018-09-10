@@ -180,7 +180,7 @@ def run_apidoc(_):
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     mod = os.path.join(cur_dir, '..', 'gino')
     # https://github.com/sphinx-doc/sphinx/issues/4615
-    main(None, ['-e', '-o', cur_dir, mod, '--force'])
+    main(['-e', '-o', cur_dir, mod, '--force'])
     os.remove(os.path.join(cur_dir, 'modules.rst'))
 
 
