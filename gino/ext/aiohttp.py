@@ -1,11 +1,6 @@
 # noinspection PyPackageRequirements
 from aiohttp.web import HTTPNotFound, middleware
 from sqlalchemy.engine.url import URL
-try:
-    # noinspection PyPackageRequirements
-    from aiocontextvars import enable_inherit, disable_inherit
-except ImportError:
-    enable_inherit = disable_inherit = lambda loop: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
@@ -114,15 +109,9 @@ class Gino(_Gino):
     def init_app(self, app):
         app['db'] = self
 
-        inherit_enabled = [False]
-
         config = app['config'].get('gino', {})
 
         async def before_server_start(app_):
-            if config.setdefault('enable_inherit', True):
-                enable_inherit(app_.loop)
-                inherit_enabled[0] = True
-
             if config.get('dsn'):
                 dsn = config['dsn']
             else:
@@ -145,9 +134,6 @@ class Gino(_Gino):
 
         async def after_server_stop(app_):
             await self.pop_bind().close()
-            if inherit_enabled[0]:
-                disable_inherit(app_.loop)
-                inherit_enabled[0] = False
 
         app.on_startup.append(before_server_start)
         app.on_cleanup.append(after_server_stop)
