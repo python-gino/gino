@@ -270,14 +270,9 @@ class GinoConnection:
 
         """
         if permanent and self._stack is not None:
-            for i in range(len(self._stack)):
-                if self._stack[-1].gino_conn is self:
-                    dbapi_conn = self._stack.pop()
-                    self._stack.rotate(-i)
-                    await dbapi_conn.release(True)
-                    break
-                else:
-                    self._stack.rotate()
+            dbapi_conn = self._stack.remove(lambda x: x.gino_conn is self)
+            if dbapi_conn:
+                await dbapi_conn.release(True)
             else:
                 raise ValueError('This connection is already released.')
         else:
@@ -493,6 +488,39 @@ class GinoConnection:
             clause, (_bypass_no_param,), {}).prepare(clause)
 
 
+class _ContextualStack:
+    __slots__ = ('_ctx', '_stack')
+
+    def __init__(self, ctx):
+        self._ctx = ctx
+        self._stack = ctx.get()
+        if self._stack is None:
+            self._stack = collections.deque()
+            ctx.set(self._stack)
+
+    def __bool__(self):
+        return bool(self._stack)
+
+    @property
+    def top(self):
+        return self._stack[-1]
+
+    def push(self, value):
+        self._stack.append(value)
+
+    def remove(self, checker):
+        for i in range(len(self._stack)):
+            if checker(self._stack[-1]):
+                rv = self._stack.pop()
+                if self._stack:
+                    self._stack.rotate(-i)
+                else:
+                    self._ctx.set(None)
+                return rv
+            else:
+                self._stack.rotate(1)
+
+
 class GinoEngine:
     """
     Connects a :class:`~.dialects.base.Pool` and
@@ -522,7 +550,7 @@ class GinoEngine:
         self._dialect = dialect
         self._pool = pool
         self._loop = loop
-        self._ctx = ContextVar('gino')
+        self._ctx = ContextVar('gino', default=None)
 
     @property
     def dialect(self):
@@ -608,14 +636,10 @@ class GinoEngine:
             self._acquire, timeout, reuse, lazy, reusable))
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
-        try:
-            stack = self._ctx.get()
-        except LookupError:
-            stack = collections.deque()
-            self._ctx.set(stack)
+        stack = _ContextualStack(self._ctx)
         if reuse and stack:
             dbapi_conn = _ReusingDBAPIConnection(self._dialect.cursor_cls,
-                                                 stack[-1])
+                                                 stack.top)
             reusable = False
         else:
             dbapi_conn = _DBAPIConnection(self._dialect.cursor_cls, self._pool)
@@ -626,7 +650,7 @@ class GinoEngine:
         if not lazy:
             await dbapi_conn.acquire(timeout=timeout)
         if reusable:
-            stack.append(dbapi_conn)
+            stack.push(dbapi_conn)
         return rv
 
     @property
@@ -638,10 +662,9 @@ class GinoEngine:
         :return: :class:`.GinoConnection`
 
         """
-        try:
-            return self._ctx.get()[-1].gino_conn
-        except (LookupError, IndexError):
-            pass
+        stack = self._ctx.get()
+        if stack:
+            return stack[-1].gino_conn
 
     async def close(self):
         """

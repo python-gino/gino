@@ -231,7 +231,7 @@ async def test_lazy(mocker):
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
         assert len(engine._ctx.get()) == 1
-    assert len(engine._ctx.get()) == 0
+    assert engine._ctx.get() is None
     assert qsize(engine) == init_size
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
@@ -239,7 +239,7 @@ async def test_lazy(mocker):
         assert await engine.scalar('select 1')
         assert qsize(engine) == init_size - 1
         assert len(engine._ctx.get()) == 1
-    assert len(engine._ctx.get()) == 0
+    assert engine._ctx.get() is None
     assert qsize(engine) == init_size
 
     loop = asyncio.get_event_loop()
@@ -367,3 +367,28 @@ async def test_ssl():
 
     e = await gino.create_engine(PG_URL, ssl=ctx)
     await e.close()
+
+
+async def test_issue_313(bind):
+    assert bind._ctx.get() is None
+
+    async with db.acquire():
+        pass
+
+    assert bind._ctx.get() is None
+
+    async def task():
+        async with db.acquire(reuse=True):
+            await db.scalar('SELECT now()')
+
+    await asyncio.gather(*[task() for _ in range(5)])
+
+    assert bind._ctx.get() is None
+
+    async def task():
+        async with db.transaction():
+            await db.scalar('SELECT now()')
+
+    await asyncio.gather(*[task() for _ in range(5)])
+
+    assert bind._ctx.get() is None
