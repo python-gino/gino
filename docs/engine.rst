@@ -273,22 +273,12 @@ new head of the stack.
 
 .. tip::
 
-    By context, we are actually referring to the context concept in either
-    `aiocontextvars <https://github.com/fantix/aiocontextvars>`_ the optional
-    dependency or `contextvars
-    <https://docs.python.org/3.7/library/contextvars.html>`_ the new module in
-    upcoming Python 3.7. Simply speaking, you may treat a function call chain
-    including awaited :class:`~asyncio.Task` created in the chain as in the
-    same context, something like a thread local in asyncio.
-
-.. note::
-
-    And that is to say, `aiocontextvars
-    <https://github.com/fantix/aiocontextvars>`_ is a required dependency for
-    ``reuse`` to work correctly in Python 3.6 - actually ``reuse`` is the
-    reason for introducing context in the first place. Without context, the
-    stack is always empty for any :meth:`~gino.engine.GinoEngine.acquire` thus
-    no one could reuse any raw connection at all.
+    By context, we are actually referring to the context concept in
+    `contextvars <https://docs.python.org/3.7/library/contextvars.html>`_ the
+    new module in Python 3.7, and its partial backport `aiocontextvars
+    <https://github.com/fantix/aiocontextvars>`_. Simply speaking, you may
+    treat a series of function calls in a chain as in the same context, even if
+    there is an ``await``. It's something like a thread local in asyncio.
 
 :class:`~gino.engine.GinoConnection` (2) may be created through
 ``acquire(reuse=True)`` too - because the stack is empty before (2), there is
@@ -519,11 +509,3 @@ at the creation of :class:`~gino.api.Gino` instance. Therefore, any
 :class:`~sqlalchemy.sql.expression.Executable` object has the ``gino``
 property for implicit execution. Similarly, the execution methods calls the
 corresponding ones on the ``bind`` of the ``db`` instance.
-
-.. warning::
-
-    The assumption for code above to run as expected is having
-    `aiocontextvars <https://github.com/fantix/aiocontextvars>`_ installed on
-    Python 3.6, or directly using Python 3.7. Or else, nested implicit
-    executions will always run in a different new connection. This may be not
-    so important here, but it is crucial for transactions.

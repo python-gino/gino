@@ -27,24 +27,6 @@ code run faster, if not slower. Please read :doc:`why` for more information.
 Installation
 ------------
 
-.. note::
-
-    GINO optionally depends on aiocontextvars_ for sharing connection between
-    method calls or chained coroutines without passing the connection object
-    over and over again. It is highly recommended for most projects, unless you
-    truly need a bare environment and handle connections manually.
-
-.. important::
-
-    aiocontextvars_ will be replaced by `contextvars
-    <https://github.com/MagicStack/contextvars>`__ once it `supports asyncio
-    <https://github.com/MagicStack/contextvars/issues/2>`_. And neither will be
-    needed in Python 3.7 which is delivered with a builtin `contextvars
-    <https://docs.python.org/3.7/library/contextvars.html>`__ module.
-
-.. _aiocontextvars: https://github.com/fantix/aiocontextvars
-
-
 Stable release
 ^^^^^^^^^^^^^^
 
@@ -52,7 +34,7 @@ To install GINO, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install gino aiocontextvars
+    $ pip install gino
 
 This is the preferred method to install GINO, as it will always install the
 most recent stable release.

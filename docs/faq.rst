@@ -41,22 +41,19 @@ available on :func:`~gino.create_engine` or :meth:`db.set_bind()
     engine = await gino.create_engine(..., ssl=True)
 
 
-Transaction cannot rollback changes?
-------------------------------------
+What is aiocontextvars and what does it do?
+-------------------------------------------
 
-As for now, make sure `aiocontextvars
-<https://github.com/fantix/aiocontextvars>`_ is installed in order to use
-contextual transactions like this::
+It is a partial backport of the new built-in module `contextvars
+<https://docs.python.org/3.7/library/contextvars.html>`_ introduced in Python
+3.7. In Python 3.5 and 3.6, ``aiocontextvars`` patches ``loop.create_task()` to
+copy context from caller as a workaround to simulate the same behavior. This is
+also under discussion in upstream backport project, please read more here:
+https://github.com/MagicStack/contextvars/issues/2
 
-    async with db.transaction():
-        await MyModel.create(name='xxx')
+If you are using Python 3.7, then ``aiocontextvars`` does nothing at all.
 
-Or else if you'd prefer not to install an additional dependency, you'll have to
-modify the code to explicitly use the correct connection::
+.. note::
 
-    async with db.transaction() as tx:
-        await MyModel.create(name='xxx', bind=tx.connection)
-
-.. tip::
-
-    Since GINO 0.7.4, ``aiocontextvars`` became a required dependency.
+    This answer is for GINO 0.8 and later, please check earlier versions of
+    this documentation if you are using GINO 0.7.

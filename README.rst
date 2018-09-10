@@ -57,10 +57,7 @@ Installation
 
 .. code-block:: console
 
-    pip install gino aiocontextvars
-
-(aiocontextvars_ is an optional dependency recommended for most users. It will
-be replaced_ by contextvars_, and it is not needed in upcoming `Python 3.7`_)
+    pip install gino
 
 
 Showcase
@@ -248,7 +245,6 @@ hiring_!
 .. _`hire us`: https://decentfox.com/
 .. _`Become a patron`: https://www.patreon.com/fantixking
 .. _hiring: https://www.zhipin.com/gongsi/c6e283cf57f2d9361nF92NS7GA~~.html
-.. _aiocontextvars: https://github.com/fantix/aiocontextvars
 .. _contextvars: https://github.com/MagicStack/contextvars
 .. _replaced: https://github.com/MagicStack/contextvars/issues/2
 .. _`Python 3.7`: https://docs.python.org/3.7/library/contextvars.html
