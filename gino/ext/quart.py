@@ -5,11 +5,6 @@ from quart import Quart, request
 # noinspection PyPackageRequirements
 from quart.exceptions import NotFound
 from sqlalchemy.engine.url import URL
-try:
-    # noinspection PyPackageRequirements
-    from aiocontextvars import enable_inherit, disable_inherit
-except ImportError:
-    enable_inherit = disable_inherit = lambda loop: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
@@ -108,9 +103,6 @@ class Gino(_Gino):
 
         @app.before_first_request
         async def before_first_request():
-            if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
-                enable_inherit(asyncio.get_event_loop())
-
             dsn = app.config.get('DB_DSN')
             if not dsn:
                 dsn = URL(

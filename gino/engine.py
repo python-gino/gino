@@ -4,18 +4,11 @@ import functools
 import sys
 import time
 
+from aiocontextvars import ContextVar
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
 
 from .transaction import GinoTransaction
-
-
-if sys.version_info >= (3, 7):
-    # noinspection PyPackageRequirements,PyUnresolvedReferences
-    from contextvars import ContextVar
-else:
-    # noinspection PyPackageRequirements
-    from aiocontextvars import ContextVar  # pragma: no cover
 
 
 class _BaseDBAPIConnection:

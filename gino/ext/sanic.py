@@ -1,11 +1,6 @@
 # noinspection PyPackageRequirements
 from sanic.exceptions import NotFound
 from sqlalchemy.engine.url import URL
-try:
-    # noinspection PyPackageRequirements
-    from aiocontextvars import enable_inherit, disable_inherit
-except ImportError:
-    enable_inherit = disable_inherit = lambda loop: None
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
@@ -86,8 +81,6 @@ class Gino(_Gino):
             self.init_app(app)
 
     def init_app(self, app):
-        inherit_enabled = [False]
-
         if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
             @app.middleware('request')
             async def on_request(request):
@@ -101,10 +94,6 @@ class Gino(_Gino):
 
         @app.listener('before_server_start')
         async def before_server_start(_, loop):
-            if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
-                enable_inherit(loop)
-                inherit_enabled[0] = True
-
             if app.config.get('DB_DSN'):
                 dsn = app.config.DB_DSN
             else:
@@ -128,9 +117,6 @@ class Gino(_Gino):
         @app.listener('after_server_stop')
         async def after_server_stop(_, loop):
             await self.pop_bind().close()
-            if inherit_enabled[0]:
-                disable_inherit(loop)
-                inherit_enabled[0] = False
 
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
