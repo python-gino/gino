@@ -234,8 +234,8 @@ class Alias:
 
     def __getattr__(self, item):
         rv = getattr(self.alias.columns, item,
-                     getattr(self.model, item,
-                             getattr(self.alias, item, DEFAULT)))
+                     getattr(self.alias, item,
+                             getattr(self.model, item, DEFAULT)))
         if rv is DEFAULT:
             raise AttributeError
         return rv
