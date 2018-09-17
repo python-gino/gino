@@ -1,4 +1,3 @@
-import asyncio
 import collections
 import functools
 import sys
@@ -9,6 +8,7 @@ from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
 
 from .transaction import GinoTransaction
+from .loops import get_loop
 
 
 class _BaseDBAPIConnection:
@@ -52,7 +52,7 @@ class _DBAPIConnection(_BaseDBAPIConnection):
         super().__init__(cursor_cls)
         self._pool = pool
         self._conn = None
-        self._lock = asyncio.Lock()
+        self._lock = get_loop().Lock()
 
     @property
     def raw_connection(self):
@@ -64,7 +64,7 @@ class _DBAPIConnection(_BaseDBAPIConnection):
                 await self._lock.acquire()
             else:
                 before = time.monotonic()
-                await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
+                await get_loop().wait_for_with_timeout(self._lock.acquire, timeout)
                 after = time.monotonic()
                 timeout -= after - before
             if self._conn is None:
