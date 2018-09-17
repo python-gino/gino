@@ -189,12 +189,20 @@ class _ResultProxy:
 
         param_groups = []
         for params in context.parameters:
-            replace_params = []
-            for val in params:
-                if asyncio.iscoroutine(val):
-                    val = await val
-                replace_params.append(val)
-            param_groups.append(replace_params)
+            if isinstance(params, dict):
+                replace_params = {}
+                for name, val in params.items():
+                    if asyncio.iscoroutine(val):
+                        val = await val
+                    replace_params[name] = val
+                param_groups.append(replace_params)
+            else:
+                replace_params = []
+                for val in params:
+                    if asyncio.iscoroutine(val):
+                        val = await val
+                    replace_params.append(val)
+                param_groups.append(replace_params)
 
         cursor = context.cursor
         if context.executemany:

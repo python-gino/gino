@@ -46,10 +46,12 @@ setup(
     [sqlalchemy.dialects]
     postgresql.asyncpg = gino.dialects.asyncpg:AsyncpgDialect
     asyncpg = gino.dialects.asyncpg:AsyncpgDialect
+    postgresql.riopg = gino.dialects.riopg:RiopgDialect
+    riopg = gino.dialects.riopg:RiopgDialect
     """,
     license="BSD license",
     zip_safe=False,
-    keywords='orm asyncio sqlalchemy asyncpg python3 sanic aiohttp tornado',
+    keywords='orm asyncio sqlalchemy asyncpg python3 sanic aiohttp tornado trio',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

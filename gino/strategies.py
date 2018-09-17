@@ -1,4 +1,5 @@
 import asyncio
+from sniffio import current_async_library
 
 from sqlalchemy.engine import url
 from sqlalchemy import util
@@ -17,7 +18,10 @@ class GinoStrategy(EngineStrategy):
         if loop is None:
             loop = asyncio.get_event_loop()
         if u.drivername in {'postgresql', 'postgres'}:
-            u.drivername = 'postgresql+asyncpg'
+            if current_async_library() == 'trio':
+                u.drivername = 'postgresql+riopg'
+            else:
+                u.drivername = 'postgresql+asyncpg'
 
         dialect_cls = u.get_dialect()
 
