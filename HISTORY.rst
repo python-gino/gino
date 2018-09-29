@@ -7,6 +7,18 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.6 (2018-08-26)
+^^^^^^^^^^^^^^^^^^
+
+* Updated library support (Contributed by Tony Wang in #275 #309)
+* Added ``none_as_none()`` (#281 #282)
+* Added ``ARRAY`` alias in asyncpg dialect module (Contributed by Mykyta Holubakha in #289)
+* Added ``Model.lookup()`` to prevent updating whole table without primary key (#287 #288)
+* Added ``DB_ECHO`` in extension options (Contributed by Mykyta Holubakha in #298)
+* Fixed broken JSON/JSONB result processor since 0.5.8 (Contributed by Tony Wang in #291 #305)
+* Removed bad rollback after a failing commit (Contributed by Tony Wang in #302 #304)
+* Fixed to raise ``UninitializedError`` if bind is ``None`` (Contributed by Tony Wang in #307 #310)
+
 0.7.5 (2018-07-26)
 ^^^^^^^^^^^^^^^^^^
 

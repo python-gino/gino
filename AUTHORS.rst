@@ -23,6 +23,7 @@ Contributors
 * Nicolas Crocfer <ncrocfer@gmail.com>
 * Denys Badzo <badzyo360@gmail.com>
 * Pavol Vargovcik <pavol.vargovcik@gmail.com>
+* Mykyta Holubakha <hilobakho@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
