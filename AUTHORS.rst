@@ -28,6 +28,7 @@ Contributors
 * Denys Badzo <badzyo360@gmail.com>
 * Pavol Vargovcik <pavol.vargovcik@gmail.com>
 * Mykyta Holubakha <hilobakho@gmail.com>
+* Jekel <jekel@psyspace.ru>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,

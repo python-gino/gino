@@ -2,6 +2,61 @@
 History
 =======
 
+GINO 0.8
+--------
+
+This is also version 1.0 release candidate.
+
+Migrating to GINO 0.8
+^^^^^^^^^^^^^^^^^^^^^
+
+1. contextvars
+""""""""""""""
+
+We introduced aiocontextvars_ 0.2.0 which is revamped to be compatible with
+PEP-567 without manual interference by a few simple implicit patches. To
+upgrade to GINO 0.8, please remove the ``enable_inherit()`` or
+``disable_inherit()`` calls, because they are the default behavior now thus
+no longer exist. However, you'll need to confirm that the event loop in use is
+always created **after** importing ``gino`` or ``aiocontextvars``, or the patch
+won't work correctly.
+
+There is nothing to worry about in Python 3.7.
+
+2. none_as_none
+"""""""""""""""
+
+When GINO tries to load a row with all ``NULL`` values into an instance, it
+will now by default return ``None`` instead of an instance with all ``None``
+attributes. To recover the default behavior of 0.7, please specify
+``none_as_none(False)`` in affected model loader.
+
+This is especially applicable to relationship sub-loaders - if the sub-loader
+found it all ``NULL``, no instance will be set to parent instance. For
+example::
+
+    child = await Child.load(parent=Parent).query.gino.first()
+
+If ``child.parent_id`` is ``NULL`` in database, then the ``child`` instance
+won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
+``child.parent == None`` in this case, consider setting default value
+``parent = None`` in child model.)
+
+Please note, it is deprecated to disable ``none_as_none``, and disabling will
+be removed in GINO 1.0.
+
+0.8.0 (2018-00-00)
+^^^^^^^^^^^^^^^^^^
+
+* Welcome Tony Wang to the maintenance team (#335)
+* Allowed custom column names (#261 #297)
+* Allowed column instance in ``model.load()`` (Contributed by Jekel in #323)
+* [Breaking] Upgraded to aiocontextvars 0.2.0 (#333)
+* Fixed bug that the same empty stack is shared between sub-tasks (#313 #334)
+* [Breaking] Made ``none_as_none()`` the default behavior (#351)
+* Bug fixes and docs update
+
+
 GINO 0.7
 --------
 

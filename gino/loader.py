@@ -76,15 +76,11 @@ class ModelLoader(Loader):
         self.extras = dict((key, self.get(value))
                            for key, value in extras.items())
         self.on_clause = None
-        self._none_as_none = None
+        self._none_as_none = True
 
     def _do_load(self, row, *, none_as_none=None):
         if none_as_none is None:
             none_as_none = self._none_as_none
-        if none_as_none is None:
-            warnings.warn(
-                'The none_as_none feature will be enabled by default in 0.8',
-                DeprecationWarning)
         values = dict((c.name, row[c]) for c in self.columns if c in row)
         if none_as_none and all((v is None) for v in values.values()):
             return None
@@ -154,7 +150,7 @@ class ModelLoader(Loader):
     def none_as_none(self, enabled=True):
         if not enabled:
             warnings.warn(
-                'The none_as_none feature will be always enabled in 0.9',
+                'The none_as_none feature will be always enabled in 1.0',
                 PendingDeprecationWarning)
         self._none_as_none = enabled
         return self
