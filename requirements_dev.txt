@@ -26,4 +26,4 @@ pytest-cov==2.6.0
 Sphinx==1.8.1
 Pygments==2.2.0
 sphinxcontrib-asyncio==0.2.0
-sphinx-rtd-theme==0.4.1
+sphinx-rtd-theme==0.4.2
