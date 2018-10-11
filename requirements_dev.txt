@@ -1,4 +1,4 @@
-pip==18.0
+pip==18.1
 -e .
 
 bumpversion==0.5.3
