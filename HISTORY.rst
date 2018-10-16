@@ -45,7 +45,7 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
-0.8.0 (2018-00-00)
+0.8.0 (2018-10-16)
 ^^^^^^^^^^^^^^^^^^
 
 * Welcome Tony Wang to the maintenance team (#335)
