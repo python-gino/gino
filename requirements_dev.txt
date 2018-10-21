@@ -2,7 +2,7 @@ pip==18.1
 -e .
 
 bumpversion==0.5.3
-wheel==0.32.1
+wheel==0.32.2
 cryptography==2.3.1
 psycopg2-binary==2.7.5
 sanic==0.8.3
