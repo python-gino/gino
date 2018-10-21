@@ -16,6 +16,8 @@ from gino.ext.quart import Gino
 
 from .models import DB_ARGS, PG_URL
 
+pytestmark = pytest.mark.asyncio
+
 
 # noinspection PyShadowingNames
 async def _app(config):
@@ -120,12 +122,10 @@ async def _test_index_returns_200(app):
     assert await response.get_data(raw=False) == 'Hello, world!'
 
 
-@pytest.mark.asyncio
 async def test_index_returns_200(app):
     await _test_index_returns_200(app)
 
 
-@pytest.mark.asyncio
 async def test_index_returns_200_dsn(app_dsn):
     await _test_index_returns_200(app_dsn)
 
@@ -148,12 +148,10 @@ async def _test(app):
         assert await response.get_json() == dict(id=1, nickname='fantix')
 
 
-@pytest.mark.asyncio
 async def test(app):
     await _test(app)
 
 
-@pytest.mark.asyncio
 async def test_dsn(app_dsn):
     await _test(app_dsn)
 
@@ -181,11 +179,9 @@ async def _test_websocket(app):
             assert response == dict(id=1, nickname='fantix')
 
 
-@pytest.mark.asyncio
 async def test_ws(app):
     await _test_websocket(app)
 
 
-@pytest.mark.asyncio
 async def test_ws_dsn(app_dsn):
     await _test_websocket(app_dsn)

@@ -23,6 +23,10 @@ db = Gino()
 
 @pytest.fixture
 def random_name(length=8) -> str:
+    return _random_name(length)
+
+
+def _random_name(length=8):
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
 
@@ -34,7 +38,7 @@ class User(db.Model):
     __tablename__ = 'gino_users'
 
     id = db.Column(db.BigInteger(), primary_key=True)
-    nickname = db.Column('name', db.Unicode(), default='noname')
+    nickname = db.Column('name', db.Unicode(), default=_random_name)
     profile = db.Column('props', JSONB(), nullable=False, server_default='{}')
     type = db.Column(
         db.Enum(UserType),
@@ -78,7 +82,7 @@ class Team(db.Model):
     __tablename__ = 'gino_teams'
 
     id = db.Column(db.BigInteger(), primary_key=True)
-    name = db.Column(db.Unicode(), default=random_name)
+    name = db.Column(db.Unicode(), default=_random_name)
     parent_id = db.Column(db.ForeignKey('gino_teams.id'))
     company_id = db.Column(db.ForeignKey('gino_companies.id'))
 
@@ -99,7 +103,7 @@ class Company(db.Model):
     __tablename__ = 'gino_companies'
 
     id = db.Column(db.BigInteger(), primary_key=True)
-    name = db.Column(db.Unicode(), default=random_name)
+    name = db.Column(db.Unicode(), default=_random_name)
     logo = db.Column(db.LargeBinary())
 
     def __init__(self, **kw):
