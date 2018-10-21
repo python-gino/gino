@@ -1,10 +1,12 @@
 import random
 from datetime import datetime
 
-import pytest
 from async_generator import yield_, async_generator
+import pytest
+from sqlalchemy import select
+from sqlalchemy.sql.functions import count
 
-from gino.loader import AliasLoader
+from gino.loader import AliasLoader, ColumnLoader
 from .models import db, User, Team, Company
 
 pytestmark = pytest.mark.asyncio
@@ -12,11 +14,11 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
 @async_generator
-async def user(bind, random_name):
+async def user(bind):
     c = await Company.create()
     t1 = await Team.create(company_id=c.id)
     t2 = await Team.create(company_id=c.id, parent_id=t1.id)
-    u = await User.create(nickname=random_name, team_id=t2.id)
+    u = await User.create(team_id=t2.id)
     u.team = t2
     t2.parent = t1
     t2.company = c
@@ -159,6 +161,46 @@ async def test_alias_loader_columns(user):
     query = base_query.execution_options(loader=AliasLoader(user_alias, 'id'))
     u = await query.gino.first()
     assert u.id is not None
+
+
+async def test_multiple_models_in_one_query(bind):
+    for _ in range(3):
+        await User.create()
+
+    ua1 = User.alias()
+    ua2 = User.alias()
+    join_query = select([ua1, ua2]).where(ua1.id < ua2.id)
+    result = await join_query.gino.load((ua1.load('id'), ua2.load('id'))).all()
+    assert len(result) == 3
+    for u1, u2 in result:
+        assert u1.id is not None
+        assert u2.id is not None
+        assert u1.id < u2.id
+
+
+async def test_loader_with_aggregation(user):
+    user_count = select(
+        [User.team_id, count().label('count')]
+    ).group_by(
+        User.team_id
+    ).alias()
+    query = Team.outerjoin(user_count).select()
+    result = await query.gino.load(
+        (Team.id, Team.name, user_count.columns.team_id, ColumnLoader('count'))
+    ).all()
+    assert len(result) == 2
+    # team 1 doesn't have users, team 2 has 1 user
+    # third and forth columns are None for team 1
+    for team_id, team_name, user_team_id, user_count in result:
+        if team_id == user.team_id:
+            assert team_name == user.team.name
+            assert user_team_id == user.team_id
+            assert user_count == 1
+        else:
+            assert team_id is not None
+            assert team_name is not None
+            assert user_team_id is None
+            assert user_count is None
 
 
 async def test_adjacency_list_query_builder(user):

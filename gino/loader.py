@@ -2,6 +2,7 @@ import warnings
 
 from sqlalchemy import select
 from sqlalchemy.schema import Column
+from sqlalchemy.sql.elements import Label
 
 from .declarative import Model
 
@@ -19,6 +20,8 @@ class Loader:
             rv = AliasLoader(value)
         elif isinstance(value, Column):
             rv = ColumnLoader(value)
+        elif isinstance(value, Label):
+            rv = ColumnLoader(value.name)
         elif isinstance(value, tuple):
             rv = TupleLoader(value)
         elif callable(value):
