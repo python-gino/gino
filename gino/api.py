@@ -248,10 +248,10 @@ class Gino(sa.MetaData):
             metadata.bind = 'postgresql://...'
 
         While in GINO this only sets a string to :attr:`~.Gino.bind`, because
-        creating an engine requires ``await``, which is excatly what
+        creating an engine requires ``await``, which is exactly what
         :meth:`~.Gino.set_bind` does.
 
-    At last, :class:`Gino` delegated all query APIs on the bound
+    At last, :class:`Gino` delegates all query APIs on the bound
     :class:`~.engine.GinoEngine`.
 
     """
