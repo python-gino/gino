@@ -179,14 +179,15 @@ async def test_multiple_models_in_one_query(bind):
 
 
 async def test_loader_with_aggregation(user):
+    count_col = count().label('count')
     user_count = select(
-        [User.team_id, count().label('count')]
+        [User.team_id, count_col]
     ).group_by(
         User.team_id
     ).alias()
     query = Team.outerjoin(user_count).select()
     result = await query.gino.load(
-        (Team.id, Team.name, user_count.columns.team_id, ColumnLoader('count'))
+        (Team.id, Team.name, user_count.columns.team_id, count_col)
     ).all()
     assert len(result) == 2
     # team 1 doesn't have users, team 2 has 1 user
