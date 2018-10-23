@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.sql.functions import count
 
-from gino.loader import AliasLoader, ColumnLoader
+from gino.loader import AliasLoader
 from .models import db, User, Team, Company
 
 pytestmark = pytest.mark.asyncio
