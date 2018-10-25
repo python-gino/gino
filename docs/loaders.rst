@@ -1,13 +1,15 @@
-=============
-Relationships
-=============
+========================
+Loaders and Relationship
+========================
 
-As for now (April 2018) GINO has no full support for relationships. For one
-thing, we are still trying to find a decent way implementing relationships, for
-another, we insist explicit code style in asynchronous programming and that
-conflicts with some usual ORM relationship patterns. Still, GINO doesn't stop
-you from using relationships in the database through foreign keys or whatever
-magic, and gradually provides more features to support doing so.
+Loaders are used to load database row results into objects.
+
+GINO doesn't support automated relationship. We insist explicit code style in
+asynchronous programming and that conflicts with some usual ORM relationship
+patterns. Instead, GINO provides a rich loader system to assist you with manual
+relationships through foreign keys or whatever magic. That means, you are
+responsible for writing the queries, and GINO could assemble objects for you
+from the database result with loaders you defined.
 
 
 Model Loader
@@ -67,12 +69,6 @@ should be processed and returned. Other than :class:`~gino.loader.ModelLoader`,
 there're also other loaders that could turn the database rows into different
 results like based on your definition. GINO provides the Loader Expression
 feature for you to easily assemble complex loaders.
-
-
-.. tip::
-
-    This is less relevant to relationships, please skip to the next section if
-    it's not helpful for you.
 
 Here is an example using all loaders at once::
 
@@ -389,3 +385,78 @@ Similarly, you can build many-to-many relationships in the same way::
 
 Likewise, there is for now no way to modify the relationships automatically,
 you'll have to manually create, delete or modify ``ParentXChild`` instances.
+
+
+Advanced Usage of Loaders
+-------------------------
+
+You could use combined loaders flexibly in complex queries - loading
+relationships is just one special use case. For `example
+<https://github.com/fantix/gino/issues/308>`_, you could load the count of
+visits at the same time of loading each user, by using a tuple loader with two
+items - model loader for the user, and column loader for the count::
+
+    import asyncio
+    import random
+    import string
+
+    import gino
+    from gino.loader import ColumnLoader
+
+    db = gino.Gino()
+
+
+    class User(db.Model):
+        __tablename__ = 'users'
+
+        id = db.Column(db.Integer(), primary_key=True)
+        name = db.Column(db.Unicode())
+
+
+    class Visit(db.Model):
+        __tablename__ = 'visits'
+
+        id = db.Column(db.Integer(), primary_key=True)
+        time = db.Column(db.DateTime(), server_default='now()')
+        user_id = db.Column(db.ForeignKey('users.id'))
+
+
+    async def main():
+        async with db.with_bind('postgresql://localhost/gino'):
+            await db.gino.create_all()
+
+            for i in range(random.randint(5, 10)):
+                u = await User.create(
+                    name=''.join(random.choices(string.ascii_letters, k=10)))
+                for v in range(random.randint(10, 20)):
+                    await Visit.create(user_id=u.id)
+
+            visits = db.func.count(Visit.id)
+            q = db.select([
+                User,
+                visits,
+            ]).select_from(
+                User.outerjoin(Visit)
+            ).group_by(
+                *User,
+            ).gino.load((User, ColumnLoader(visits)))
+            async with db.transaction():
+                async for user, visits in q.iterate():
+                    print(user.name, visits)
+
+            await db.gino.drop_all()
+
+
+    asyncio.run(main())
+
+Using alias to get ID-ascending pairs from the same table::
+
+        ua1 = User.alias()
+        ua2 = User.alias()
+        join_query = select([ua1, ua2]).where(ua1.id < ua2.id)
+        loader = ua1.load('id'), ua2.load('id')
+        result = await join_query.gino.load(loader).all()
+        print(result)  # e.g. [(1, 2), (1, 3), (2, 3)]
+
+Potentially there could be a lot of different use cases of loaders. We'll add
+more inspiration here in the future.
