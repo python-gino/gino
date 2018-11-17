@@ -85,6 +85,18 @@ async def test_client_dsn():
     await _test_client(dict(dsn=PG_URL))
 
 
+@pytest.fixture
+@async_generator
+async def test_client_ssl():
+    import ssl
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    await _test_client(dict(dsn=PG_URL, ssl=ctx))
+
+
 async def _test_index_returns_200(test_client):
     response = await test_client.get('/')
     assert response.status == 200
@@ -122,3 +134,7 @@ async def test(test_client):
 
 async def test_dsn(test_client_dsn):
     await _test(test_client_dsn)
+
+
+async def test_ssl(test_client_ssl):
+    await _test(test_client_ssl)

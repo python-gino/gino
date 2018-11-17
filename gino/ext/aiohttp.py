@@ -82,6 +82,7 @@ class Gino(_Gino):
     * ``pool_min_size`` - the initial number of connections of the db pool.
     * ``pool_max_size`` - the maximum number of connections in the db pool.
     * ``echo`` - enable SQLAlchemy echo mode.
+    * ``ssl`` - SSL context passed to ``asyncpg.connect``, default is ``None``.
 
     If the ``db`` is set as an aiohttp middleware, then a lazy connection is
     available at ``request['connection']``. By default, a database connection
@@ -129,6 +130,7 @@ class Gino(_Gino):
                 echo=config.setdefault('echo', False),
                 min_size=config.setdefault('pool_min_size', 5),
                 max_size=config.setdefault('pool_max_size', 10),
+                ssl=config.setdefault("ssl"),
                 loop=app_.loop,
             )
 
