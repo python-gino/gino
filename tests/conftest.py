@@ -1,3 +1,5 @@
+import ssl
+
 import asyncpg
 import pytest
 import sqlalchemy
@@ -46,3 +48,11 @@ async def asyncpg_pool(sa_engine):
         await yield_(rv)
         await rv.execute('DELETE FROM gino_user_settings')
         await rv.execute('DELETE FROM gino_users')
+
+
+@pytest.fixture
+def ssl_ctx():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
