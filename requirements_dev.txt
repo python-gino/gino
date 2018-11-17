@@ -4,12 +4,12 @@ pip==18.1  # pyup: update minor
 bumpversion==0.5.3  # pyup: update minor
 wheel==0.32.2  # pyup: update minor
 cryptography==2.4.1  # pyup: update minor
-psycopg2-binary==2.7.6.1
-sanic==0.8.3
-aiohttp==3.4.4
-tornado==4.5.3
-async_generator==1.10
-quart==0.6.10;python_version>="3.6"
+psycopg2-binary==2.7.6.1  # pyup: update minor
+sanic==0.8.3  # pyup: update minor
+aiohttp==3.4.4  # pyup: update minor
+tornado==4.5.3  # pyup: update minor
+async_generator==1.10  # pyup: update minor
+quart==0.6.10;python_version>="3.6"  # pyup: update minor
 
 # tests
 coverage==4.5.1  # pyup: update minor
