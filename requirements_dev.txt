@@ -9,7 +9,7 @@ sanic==0.8.3
 aiohttp==3.4.4
 tornado==4.5.3
 async_generator==1.10
-quart==0.6.9;python_version>="3.6"
+quart==0.6.10;python_version>="3.6"
 
 # tests
 coverage==4.5.1  # pyup: update minor
