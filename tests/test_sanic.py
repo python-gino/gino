@@ -78,6 +78,19 @@ async def app():
 
 @pytest.fixture
 @async_generator
+async def app_ssl(ssl_ctx):
+    await _app({
+        'DB_HOST': DB_ARGS['host'],
+        'DB_PORT': DB_ARGS['port'],
+        'DB_USER': DB_ARGS['user'],
+        'DB_PASSWORD': DB_ARGS['password'],
+        'DB_DATABASE': DB_ARGS['database'],
+        'DB_SSL': ssl_ctx,
+    })
+
+
+@pytest.fixture
+@async_generator
 async def app_dsn():
     await _app({'DB_DSN': PG_URL})
 
@@ -114,6 +127,10 @@ def _test(app):
 
 def test(app):
     _test(app)
+
+
+def test_ssl(app_ssl):
+    _test(app_ssl)
 
 
 def test_dsn(app_dsn):

@@ -1,8 +1,6 @@
 import asyncio
 
-# noinspection PyPackageRequirements
 from quart import Quart, request
-# noinspection PyPackageRequirements
 from quart.exceptions import NotFound
 from sqlalchemy.engine.url import URL
 
@@ -21,7 +19,6 @@ class QuartModelMixin:
         return rv
 
 
-# noinspection PyClassHasNoInit
 class GinoExecutor(_Executor):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
@@ -30,7 +27,6 @@ class GinoExecutor(_Executor):
         return rv
 
 
-# noinspection PyClassHasNoInit
 class GinoConnection(_Connection):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
@@ -39,7 +35,6 @@ class GinoConnection(_Connection):
         return rv
 
 
-# noinspection PyClassHasNoInit
 class GinoEngine(_Engine):
     connection_cls = GinoConnection
 
@@ -119,6 +114,7 @@ class Gino(_Gino):
                 echo=app.config.setdefault('DB_ECHO', False),
                 min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
+                ssl=app.config.setdefault('DB_SSL'),
                 loop=asyncio.get_event_loop(),
             )
 

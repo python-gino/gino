@@ -130,7 +130,7 @@ class Gino(_Gino):
                 echo=config.setdefault('echo', False),
                 min_size=config.setdefault('pool_min_size', 5),
                 max_size=config.setdefault('pool_max_size', 10),
-                ssl=config.setdefault("ssl"),
+                ssl=config.setdefault('ssl'),
                 loop=app_.loop,
             )
 

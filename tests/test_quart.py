@@ -1,4 +1,5 @@
 import sys
+
 import pytest
 
 # Quart only supports Python 3.6 or later
@@ -112,6 +113,19 @@ async def app():
 
 @pytest.fixture
 @async_generator
+async def app_ssl(ssl_ctx):
+    await _app({
+        'DB_HOST': DB_ARGS['host'],
+        'DB_PORT': DB_ARGS['port'],
+        'DB_USER': DB_ARGS['user'],
+        'DB_PASSWORD': DB_ARGS['password'],
+        'DB_DATABASE': DB_ARGS['database'],
+        'DB_SSL': ssl_ctx,
+    })
+
+
+@pytest.fixture
+@async_generator
 async def app_dsn():
     await _app({'DB_DSN': PG_URL})
 
@@ -150,6 +164,10 @@ async def _test(app):
 
 async def test(app):
     await _test(app)
+
+
+async def test_ssl(app_ssl):
+    await _test(app_ssl)
 
 
 async def test_dsn(app_dsn):

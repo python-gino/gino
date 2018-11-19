@@ -111,6 +111,7 @@ class Gino(_Gino):
                 echo=app.config.setdefault('DB_ECHO', False),
                 min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
+                ssl=app.config.setdefault('DB_SSL'),
                 loop=loop,
             )
 

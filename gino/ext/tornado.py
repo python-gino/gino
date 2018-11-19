@@ -73,7 +73,7 @@ the standard ``tornado.options`` module:
 - ``'db_pool_max_inactive_conn_lifetime'`` -- number of seconds after which
   inactive connections in the pool will be closed.  Pass ``0`` to disable this
   mechanism. Default is ``300``;
-- ``'db_pool_max_queries '`` -- number of queries after a connection is closed
+- ``'db_pool_max_queries'`` -- number of queries after a connection is closed
   and replaced with a new connection. Default is ``50000``.
 
 
@@ -343,7 +343,7 @@ class Application(tornado.web.Application):
                 options['db_pool_max_inactive_conn_lifetime']
             ),
             max_queries=options['db_pool_max_queries'],
-            loop=asyncio_loop
+            loop=asyncio_loop,
         )
 
 
