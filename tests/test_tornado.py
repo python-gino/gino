@@ -1,10 +1,10 @@
 import pytest
 import tornado.web
 import tornado.httpclient
-import tornado.ioloop
+from tornado.ioloop import IOLoop
 import tornado.options
 import tornado.escape
-from gino.ext.tornado import Gino
+from gino.ext.tornado import Gino, DBMixin, RequestHandlerMixin
 
 from .models import DB_ARGS
 
@@ -38,24 +38,31 @@ def app(ssl_ctx):
                     url=self.application.reverse_url('user', user.id),
                     nickname=tornado.escape.xhtml_escape(user.nickname)))
 
-    class GetUser(tornado.web.RequestHandler):
+    class GetUser(tornado.web.RequestHandler, RequestHandlerMixin):
         async def get(self, uid):
-            user = await User.get_or_404(int(uid))
-            self.write('Hi, {}!'.format(user.nickname))
+            async with self.db.acquire() as conn:
+                user = await User.get_or_404(int(uid), bind=conn)
+                self.write('Hi, {}!'.format(user.nickname))
 
     class AddUser(tornado.web.RequestHandler):
         async def post(self):
             user = await User.create(nickname=self.get_argument('name'))
             self.write('Hi, {}!'.format(user.nickname))
 
-    app = tornado.web.Application([
+    class Application(tornado.web.Application, DBMixin):
+        pass
+
+    app = Application([
         tornado.web.URLSpec(r'/', AllUsers, name='index'),
         tornado.web.URLSpec(r'/user/(?P<uid>[0-9]+)', GetUser, name='user'),
         tornado.web.URLSpec(r'/user', AddUser, name='user_add'),
     ], debug=True)
-    db.init_app(app, host=DB_ARGS['host'], port=DB_ARGS['port'],
-                user=DB_ARGS['user'], password=DB_ARGS['password'],
-                database=DB_ARGS['database'], ssl=ssl_ctx)
+    IOLoop.current().run_sync(
+        lambda: app.init_db(db, host=DB_ARGS['host'], port=DB_ARGS['port'],
+                            user=DB_ARGS['user'],
+                            password=DB_ARGS['password'],
+                            database=DB_ARGS['database'],
+                            ssl=ssl_ctx))
     loop = tornado.ioloop.IOLoop.current().asyncio_loop
     loop.run_until_complete(db.gino.create_all())
     try:

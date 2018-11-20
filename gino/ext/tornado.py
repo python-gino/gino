@@ -1,6 +1,5 @@
 """
 GINO provides a convenient plugin for integrating with Tornado_ webserver.
-It consists of two parts, each of them is optional.
 
 .. _Tornado: http://www.tornadoweb.org
 
@@ -20,8 +19,20 @@ database metadata.
 Integrate GINO with application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Initialize by ``db.init_app(app)``, and get the ``Gino`` instance in the
-``RequestHandler`` by ``self.application.db``.
+GINO provides two ways to initialize the db instances for tornado:
+
+1) Initialize by ``db.init_app(app)``, and get the ``Gino`` instance in the
+``RequestHandler`` subclasses by ``self.application.db``.
+
+2) For subclassed tornado Application, use :py:class:`gino.ext.tornado.DBMixin`
+and run :py:meth:`init_db`.
+
+
+Request Handler Mixin
+^^^^^^^^^^^^^^^^^^^^^
+
+A mixin to provide a convenience property access to db using ``self.db``
+instead of ``self.application.db``.
 
 
 An example application
@@ -31,13 +42,14 @@ A hello world application that uses tornado and GINO may look like this:
 
 .. code-block:: python
 
+    import ssl
+
     import tornado.web
     import tornado.ioloop
     import tornado.options
     import tornado.escape
 
-    from gino.ext.tornado import Gino, Application, GinoRequestHandler
-
+    from gino.ext.tornado import Gino, RequestHandlerMixin
 
     # Define your database metadata
     # -----------------------------
@@ -58,7 +70,7 @@ A hello world application that uses tornado and GINO may look like this:
     # Now just use your tables
     # ------------------------
 
-    class AllUsers(GinoRequestHandler):
+    class AllUsers(tornado.web.RequestHandler, RequestHandlerMixin):
         async def get(self):
             users = await User.query.gino.all()
 
@@ -68,7 +80,7 @@ A hello world application that uses tornado and GINO may look like this:
                 self.write(f'<a href="{url}">{nickname}</a><br/>')
 
 
-    class GetUser(GinoRequestHandler):
+    class GetUser(tornado.web.RequestHandler, RequestHandlerMixin):
         async def get(self, uid):
             async with self.application.db.acquire() as conn:
                 async with conn.transaction():
@@ -85,8 +97,8 @@ A hello world application that uses tornado and GINO may look like this:
         ssl_ctx = ssl.SSLContext()
         ssl_ctx.verify_mode = ssl.CERT_NONE
         ssl_ctx.check_hostname = False
-        db.init_app(app, ssl=ssl_ctx)
-
+        tornado.ioloop.IOLoop.current().run_sync(
+            lambda: db.init_app(app, ssl=ssl_ctx))
         app.listen(8888)
         tornado.ioloop.IOLoop.current().start()
 
@@ -190,13 +202,15 @@ class Gino(_Gino):
         kwargs.setdefault('strategy', 'tornado')
         return await super().set_bind(bind, loop=loop, **kwargs)
 
-    def init_app(self, app, *, loop=None, dsn='', driver='asyncpg',
-                 host='localhost', port=5432,
-                 user='postgres', password='', database='postgres',
-                 echo=False, pool_min_size=5, pool_max_size=10, ssl=None):
+    async def init_app(self, app, *, loop=None, dsn='', driver='asyncpg',
+                       host='localhost', port=5432,
+                       user='postgres', password='', database='postgres',
+                       echo=False, pool_min_size=5, pool_max_size=10,
+                       ssl=None):
         """
         Initialize database
 
+        :param app: tornado.web.Application
         :param loop: User-defined event loop. If not defined, tornado default
         loop will be used.
         :param driver: the database driver, default is ``asyncpg``.
@@ -230,11 +244,32 @@ class Gino(_Gino):
                 password=password, database=database,
             )
 
-        async def set_bind():
-            await self.set_bind(
-                dsn, echo=echo, min_size=pool_min_size, max_size=pool_max_size,
-                ssl=ssl, loop=asyncio_loop,
-            )
+        await self.set_bind(
+            dsn, echo=echo, min_size=pool_min_size, max_size=pool_max_size,
+            ssl=ssl, loop=asyncio_loop,
+        )
 
-        asyncio_loop.run_until_complete(set_bind())
         app.db = self
+
+
+class DBMixin:
+    """
+    A mixin for tornado.web.Application to initialize and have convenience
+    methods for database accesses.
+    """
+
+    db = None
+
+    async def init_db(self: [tornado.web.Application, 'DBMixin'],
+                      db: Gino, **kwargs):
+        await db.init_app(self, **kwargs)
+
+
+class RequestHandlerMixin:
+    """
+    A mixin to provide convenience methods to access GINO object
+    """
+
+    @property
+    def db(self: tornado.web.RequestHandler) -> Gino:
+        return self.application.db
