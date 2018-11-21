@@ -82,7 +82,7 @@ A hello world application that uses tornado and GINO may look like this:
 
     class GetUser(tornado.web.RequestHandler, RequestHandlerMixin):
         async def get(self, uid):
-            async with self.application.db.acquire() as conn:
+            async with self.db.acquire() as conn:
                 async with conn.transaction():
                     user: User = await User.get_or_404(int(uid))
                     self.write(f'Hi, {user.nickname}!')
@@ -94,11 +94,8 @@ A hello world application that uses tornado and GINO may look like this:
             tornado.web.URLSpec(r'/users/(?P<uid>[0-9]+)', GetUser,
                                 name='user')
         ], debug=True)
-        ssl_ctx = ssl.SSLContext()
-        ssl_ctx.verify_mode = ssl.CERT_NONE
-        ssl_ctx.check_hostname = False
         tornado.ioloop.IOLoop.current().run_sync(
-            lambda: db.init_app(app, ssl=ssl_ctx))
+            lambda: db.init_app(app, ssl=True))
         app.listen(8888)
         tornado.ioloop.IOLoop.current().start()
 
