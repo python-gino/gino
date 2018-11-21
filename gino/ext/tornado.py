@@ -255,7 +255,7 @@ class DBMixin:
     methods for database accesses.
     """
 
-    db = None
+    db = None  # type: Gino
 
     async def init_db(self: [tornado.web.Application, 'DBMixin'],
                       db: Gino, **kwargs):
