@@ -131,35 +131,6 @@ ORM at all, you can use GINO without ORM:
 
 .. code-block:: python
 
-    import sqlalchemy as sa
-
-    metadata = sa.MetaData()
-
-    user = sa.Table(
-        'users', metadata,
-        sa.Column('id', sa.BigInteger(), primary_key=True),
-        sa.Column('nickname', sa.Unicode()),
-    )
-
-
-    import gino
-
-    async def main():
-        e = await gino.create_engine('postgresql://localhost/gino')
-        users = await e.all(sa.select([user]))
-        print(users)
-        # prints something like this:
-        # [(1, 'fantix'), (2, 'fantix'), (3, 'fantix'), (5, 'fantix')]
-
-
-    import asyncio
-
-    asyncio.get_event_loop().run_until_complete(main())
-
-or a bit more GINO-ish:
-
-.. code-block:: python
-
     from gino import Gino
 
     db = Gino()
