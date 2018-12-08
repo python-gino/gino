@@ -29,6 +29,8 @@ Contributors
 * Pavol Vargovcik <pavol.vargovcik@gmail.com>
 * Mykyta Holubakha <hilobakho@gmail.com>
 * Jekel <jekel@psyspace.ru>
+* Martin Zaťko <martin.zatko@kiwi.com>
+* Pascal van Kooten <kootenpv@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,

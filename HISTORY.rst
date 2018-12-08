@@ -45,6 +45,19 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.1 (2018-12-08)
+^^^^^^^^^^^^^^^^^^
+
+* Alias supported ``Label`` (#365)
+* Docs update (#308, 4c59ad, #401 by Pascal van Kooten)
+* Version requirement for SQLAlchemy is updated to ``>=1.2`` (#378 #382)
+* Added option for SSL in aiohttp extension (Contributed by Martin Zaťko in #387 #393)
+  * And all other extensions (#395)
+* Supported Tornado 5 (#396, also thanks to Vladimir Goncharov)
+* Fixed custom JSON/JSONB type support (#402 #403)
+
+(Most fixes done by Tony Wang)
+
 0.8.0 (2018-10-16)
 ^^^^^^^^^^^^^^^^^^
 
@@ -93,7 +106,7 @@ This is also version 1.0 beta 3.
 * Added aiocontextvars as required dependency required for Python 3.5 and 3.6 (#228)
 * Added Quart support (#213)
 * Fixed Tornado options parsing (#231)
-* Improve coding style and test coverage
+* Improved coding style and test coverage
 
 0.7.3 (2018-05-19)
 ^^^^^^^^^^^^^^^^^^
