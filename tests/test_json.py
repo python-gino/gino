@@ -175,13 +175,21 @@ async def test_no_profile():
             age = db.IntegerProperty(default=18)
 
 
-async def test_t291(bind):
+async def test_t291_t402(bind):
     from gino.dialects.asyncpg import JSON, JSONB
+
+    class CustomJSONB(db.TypeDecorator):
+        impl = JSONB
+
+        def process_result_value(self, *_):
+            return 123
 
     class PropsTest(db.Model):
         __tablename__ = 'props_test_291'
         profile = db.Column(JSONB(), nullable=False, server_default='{}')
         profile1 = db.Column(JSON(), nullable=False, server_default='{}')
+        profile2 = db.Column(CustomJSONB(),
+                             nullable=False, server_default='{}')
 
         bool = db.BooleanProperty()
         bool1 = db.BooleanProperty(column_name='profile1')
@@ -196,5 +204,10 @@ async def test_t291(bind):
         assert isinstance(profile, dict)
         profile1 = await bind.scalar('SELECT profile1 FROM props_test_291')
         assert isinstance(profile1, dict)
+        profile2 = await bind.scalar('SELECT profile2 FROM props_test_291')
+        assert isinstance(profile2, dict)
+        custom_profile2 = await bind.scalar(PropsTest.select('profile2'))
+        assert isinstance(custom_profile2, int)
+        assert custom_profile2 == 123
     finally:
         await PropsTest.gino.drop()
