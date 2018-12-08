@@ -21,6 +21,9 @@ from sqlalchemy.sql import sqltypes
 
 from . import base
 
+JSON_COLTYPE = 114
+JSONB_COLTYPE = 3802
+
 
 class AsyncpgDBAPI(base.BaseDBAPI):
     Error = asyncpg.PostgresError, asyncpg.InterfaceError
@@ -283,6 +286,15 @@ class AsyncEnum(ENUM):
             await self.drop_async(bind=bind, checkfirst=checkfirst)
 
 
+class GinoNullType(sqltypes.NullType):
+    def result_processor(self, dialect, coltype):
+        if coltype == JSON_COLTYPE:
+            return JSON().result_processor(dialect, coltype)
+        if coltype == JSONB_COLTYPE:
+            return JSONB().result_processor(dialect, coltype)
+        return super().result_processor(dialect, coltype)
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     driver = 'asyncpg'
@@ -299,6 +311,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         {
             ENUM: AsyncEnum,
             sqltypes.Enum: AsyncEnum,
+            sqltypes.NullType: GinoNullType,
         }
     )
 
