@@ -62,6 +62,11 @@ GINO 0.7
 
 This is also version 1.0 beta 3.
 
+0.7.7 (2018-12-08)
+^^^^^^^^^^^^^^^^^^
+
+* Backported fix for custom JSON/JSONB type support (#402 #403)
+
 0.7.6 (2018-08-26)
 ^^^^^^^^^^^^^^^^^^
 
