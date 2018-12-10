@@ -4,15 +4,15 @@ import functools
 import sys
 import time
 
-if sys.version_info < (3, 7):
-    from aiocontextvars import ContextVar
-else:
-    from contextvars import ContextVar
-
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
 
 from .transaction import GinoTransaction
+
+if sys.version_info < (3, 7):
+    from aiocontextvars import ContextVar
+else:
+    from contextvars import ContextVar
 
 
 class _BaseDBAPIConnection:
