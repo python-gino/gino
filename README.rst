@@ -48,7 +48,7 @@ Features
 * Asynchronous-friendly CRUD objective models
 * Well-considered contextual connection and transaction management
 * Reusing native SQLAlchemy core to build queries with grammar sugars
-* Support Sanic_, Tornado_ and aiohttp_
+* Support Sanic_, Tornado_, aiohttp_ and Quart_
 * Rich PostgreSQL JSONB support
 
 
@@ -206,6 +206,7 @@ hiring_!
 .. _peewee-async: https://github.com/05bit/peewee-async
 .. _asyncorm: https://github.com/monobot/asyncorm
 .. _Tornado: http://www.tornadoweb.org/
+.. _Quart: https://gitlab.com/pgjones/quart/
 .. _English: https://python-gino.readthedocs.io/
 .. _Chinese: https://python-gino.readthedocs.io/zh/latest/
 .. _DecentFoX Studio: https://decentfox.com/
