@@ -2,6 +2,8 @@ from datetime import datetime
 
 import sqlalchemy as sa
 
+from .exceptions import UnknownJSONPropertyError
+
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'
 NONE = object()
 
@@ -54,8 +56,15 @@ class JSONProperty:
         if instance.__profile__ is None:
             props = type(instance).__dict__
             instance.__profile__ = {}
-            for key, value in (getattr(instance, self.prop_name, None)
-                               or {}).items():
+            for key, value in (
+                getattr(instance, self.prop_name, None) or {}
+            ).items():
+                if key not in props:
+                    raise UnknownJSONPropertyError(
+                        '`{}` is found in `{}` of instance {}, '
+                        'but it is not defined'.format(
+                            key, self.prop_name, instance
+                        ))
                 instance.__profile__[key] = props[key].decode(value)
         return instance.__profile__
 
