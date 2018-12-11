@@ -8,3 +8,7 @@ class NoSuchRowError(GinoException):
 
 class UninitializedError(GinoException):
     pass
+
+
+class UnknownJSONPropertyError(GinoException):
+    pass

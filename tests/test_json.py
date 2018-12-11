@@ -1,6 +1,8 @@
 import pytest
 from datetime import datetime, timedelta
 
+from gino.exceptions import UnknownJSONPropertyError
+
 from .models import db, User, UserType
 
 pytestmark = pytest.mark.asyncio
@@ -165,6 +167,25 @@ async def test_properties(bind):
         assert t.arr[-1] == 7
     finally:
         await PropsTest.gino.drop()
+
+
+# noinspection PyUnusedLocal
+async def test_unknown_properties(bind):
+    from gino.dialects.asyncpg import JSONB
+
+    class PropsTest1(db.Model):
+        __tablename__ = 'props_test1'
+        profile = db.Column(JSONB(), nullable=False, server_default='{}')
+        bool = db.BooleanProperty()
+
+    await PropsTest1.gino.create()
+    try:
+        # bool1 is not defined in the model
+        t = await PropsTest1.create(profile=dict(bool1=True))
+        with pytest.raises(UnknownJSONPropertyError, match=r'bool1.*profile'):
+            t.to_dict()
+    finally:
+        await PropsTest1.gino.drop()
 
 
 async def test_no_profile():
