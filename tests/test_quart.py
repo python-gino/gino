@@ -2,8 +2,8 @@ import sys
 
 import pytest
 
-# Quart only supports Python 3.6 or later
-if sys.version_info < (3, 6):
+# Quart only supports Python 3.7 or later
+if sys.version_info < (3, 7):
     raise pytest.skip(allow_module_level=True)
 
 import json
@@ -181,7 +181,7 @@ async def _websocket_request(ws, req: dict) -> dict:
 
 async def _test_websocket(app):
     test_client = app.test_client()
-    with test_client.websocket('/ws') as ws:
+    async with test_client.websocket('/ws') as ws:
         for method in '01234':
             response = await _websocket_request(
                 ws, {'action': 'get', 'id': 1, 'method': method})
