@@ -106,8 +106,35 @@ class _bypass_no_param:
 _bypass_no_param = _bypass_no_param()
 
 
+class _InterceptedListener:
+    __slots__ = '_orig', '_args'
+
+    def __init__(self, orig):
+        self._orig = orig
+        self._args = None
+
+    def __getattr__(self, item):
+        return getattr(self._orig, item)
+
+    def __call__(self, *args, **kwargs):
+        self._args = args, kwargs
+
+    def call(self):
+        if self._args:
+            return self._orig(*self._args[0], **self._args[1])
+
+
 # noinspection PyAbstractClass
 class _SAConnection(Connection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dispatch.after_execute = _InterceptedListener(
+            self.dispatch.after_execute)
+
+    def after_execute(self):
+        if self._has_events or self.engine._has_events:
+            self.dispatch.after_execute.call()
+
     def _execute_context(self, dialect, constructor,
                          statement, parameters,
                          *args):
