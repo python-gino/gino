@@ -15,12 +15,12 @@ quart==0.7.0;python_version>="3.7"  # pyup: update minor
 coverage==4.5.1  # pyup: update minor
 flake8==3.5.0  # pyup: update minor
 tox==3.6.0  # pyup: update minor
-pytest==4.0.0  # pyup: update minor
+pytest==4.1.0  # pyup: update minor
 pytest-runner==4.2  # pyup: update minor
 pytest-asyncio==0.10.0  # pyup: update minor
 pytest-tornado5==2.0.0  # pyup: update minor
 pytest-mock==1.10.0  # pyup: update minor
-pytest-cov==2.6.0  # pyup: update minor
+pytest-cov==2.6.1  # pyup: update minor
 
 # docs
 Sphinx==1.8.1  # pyup: update minor
