@@ -1,4 +1,4 @@
-pip==18.1  # pyup: update minor
+pip==19.0.1  # pyup: update minor
 -e .
 
 bumpversion==0.5.3  # pyup: update minor
