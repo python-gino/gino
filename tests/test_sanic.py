@@ -8,11 +8,18 @@ from gino.ext.sanic import Gino
 
 from .models import DB_ARGS, PG_URL
 
+_MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
+
 
 # noinspection PyShadowingNames
 async def _app(config):
     app = sanic.Sanic()
     app.config.update(config)
+    app.config.update({
+        'DB_KWARGS': dict(
+            max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
+        ),
+    })
 
     db = Gino(app)
 
@@ -24,6 +31,10 @@ async def _app(config):
 
     @app.route('/')
     async def root(request):
+        conn = await request['connection'].get_raw_connection()
+        # noinspection PyProtectedMember
+        assert conn._holder._max_inactive_time == \
+            _MAX_INACTIVE_CONNECTION_LIFETIME
         return text('Hello, world!')
 
     @app.route('/users/<uid:int>')

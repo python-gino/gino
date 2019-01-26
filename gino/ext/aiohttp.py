@@ -132,6 +132,7 @@ class Gino(_Gino):
                 max_size=config.setdefault('pool_max_size', 10),
                 ssl=config.setdefault('ssl'),
                 loop=app_.loop,
+                **config.setdefault('kwargs', dict()),
             )
 
         async def after_server_stop(app_):

@@ -7,6 +7,7 @@ from gino.ext.aiohttp import Gino
 from .models import DB_ARGS, PG_URL
 
 pytestmark = pytest.mark.asyncio
+_MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
 
 
 # noinspection PyShadowingNames
@@ -15,6 +16,11 @@ async def _test_client(config):
 
     db = Gino()
     app = web.Application(middlewares=[db])
+    config.update({
+        'kwargs': dict(
+            max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
+        ),
+    })
     app['config'] = dict(gino=config)
     db.init_app(app)
 
@@ -28,6 +34,10 @@ async def _test_client(config):
 
     @routes.get('/')
     async def root(request):
+        conn = await request['connection'].get_raw_connection()
+        # noinspection PyProtectedMember
+        assert conn._holder._max_inactive_time == \
+            _MAX_INACTIVE_CONNECTION_LIFETIME
         return web.Response(text='Hello, world!')
 
     @routes.get('/users/{uid}')

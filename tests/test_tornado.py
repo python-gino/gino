@@ -62,10 +62,13 @@ def app(ssl_ctx):
                             user=DB_ARGS['user'],
                             password=DB_ARGS['password'],
                             database=DB_ARGS['database'],
+                            max_inactive_connection_lifetime=59.0,
                             ssl=ssl_ctx))
     loop = tornado.ioloop.IOLoop.current().asyncio_loop
     loop.run_until_complete(db.gino.create_all())
     try:
+        # noinspection PyProtectedMember
+        assert app.db.bind._pool._pool._holders[0]._max_inactive_time == 59.0
         yield app
     finally:
         loop.run_until_complete(db.gino.drop_all())

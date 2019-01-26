@@ -203,7 +203,7 @@ class Gino(_Gino):
                        host='localhost', port=5432,
                        user='postgres', password='', database='postgres',
                        echo=False, pool_min_size=5, pool_max_size=10,
-                       ssl=None):
+                       ssl=None, **kwargs):
         """
         Initialize database
 
@@ -225,6 +225,8 @@ class Gino(_Gino):
         pool, default is ``10``.
         :param ssl: SSL context passed to ``asyncpg.connect``, default is
         ``None``. This can be ``True`` or an instance of ``ssl.SSLContext``.
+        :param kwargs: other parameters passed to the specified dialects,
+        like ``asyncpg``. Unrecognized parameters will cause exceptions.
         """
         if loop is None:
             loop = tornado.ioloop.IOLoop.current()
@@ -243,7 +245,7 @@ class Gino(_Gino):
 
         await self.set_bind(
             dsn, echo=echo, min_size=pool_min_size, max_size=pool_max_size,
-            ssl=ssl, loop=asyncio_loop,
+            ssl=ssl, loop=asyncio_loop, **kwargs,
         )
 
         app.db = self

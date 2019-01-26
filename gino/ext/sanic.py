@@ -113,6 +113,7 @@ class Gino(_Gino):
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
                 ssl=app.config.setdefault('DB_SSL'),
                 loop=loop,
+                **app.config.setdefault('DB_KWARGS', dict()),
             )
 
         @app.listener('after_server_stop')
