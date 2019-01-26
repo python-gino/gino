@@ -83,6 +83,8 @@ class Gino(_Gino):
     * ``pool_max_size`` - the maximum number of connections in the db pool.
     * ``echo`` - enable SQLAlchemy echo mode.
     * ``ssl`` - SSL context passed to ``asyncpg.connect``, default is ``None``.
+    * ``kwargs`` - other parameters passed to the specified dialects,
+      like ``asyncpg``. Unrecognized parameters will cause exceptions.
 
     If the ``db`` is set as an aiohttp middleware, then a lazy connection is
     available at ``request['connection']``. By default, a database connection
