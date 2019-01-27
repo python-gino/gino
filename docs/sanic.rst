@@ -26,6 +26,7 @@ Supported configurations:
 - DB_POOL_MIN_SIZE
 - DB_POOL_MAX_SIZE
 - DB_USE_CONNECTION_FOR_REQUEST
+- DB_KWARGS
 
 An example server:
 
@@ -79,6 +80,7 @@ To integrate with Sanic, a few configurations needs to be set in
 - DB_ECHO: if not set, ``False``
 - DB_POOL_MIN_SIZE: if not set, 5
 - DB_POOL_MAX_SIZE: if not set, 10
+- DB_KWARGS; if not set, empty dictionary
 
 An example:
 

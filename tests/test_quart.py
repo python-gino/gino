@@ -18,12 +18,18 @@ from gino.ext.quart import Gino
 from .models import DB_ARGS, PG_URL
 
 pytestmark = pytest.mark.asyncio
+_MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
 
 
 # noinspection PyShadowingNames
 async def _app(config):
     app = Quart(__name__)
     app.config.update(config)
+    app.config.update({
+        'DB_KWARGS': dict(
+            max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
+        ),
+    })
 
     db = Gino(app)
 
@@ -35,6 +41,10 @@ async def _app(config):
 
     @app.route('/')
     async def root():
+        conn = await request.connection.get_raw_connection()
+        # noinspection PyProtectedMember
+        assert conn._holder._max_inactive_time == \
+            _MAX_INACTIVE_CONNECTION_LIFETIME
         return 'Hello, world!'
 
     async def _get_user(ctx, uid: int, method: str) -> dict:

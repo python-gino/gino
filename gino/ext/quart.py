@@ -116,6 +116,7 @@ class Gino(_Gino):
                 max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
                 ssl=app.config.setdefault('DB_SSL'),
                 loop=asyncio.get_event_loop(),
+                **app.config.setdefault('DB_KWARGS', dict()),
             )
 
     async def first_or_404(self, *args, **kwargs):
