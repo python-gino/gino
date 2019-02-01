@@ -194,6 +194,8 @@ for offering me the opportunity to build this project. We are open for global
 software project outsourcing on Python, iOS and Android development. And we are
 hiring_!
 
+GINO is developed proudly with |PyCharm|.
+
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 .. _SQLAlchemy: https://www.sqlalchemy.org/
@@ -222,3 +224,6 @@ hiring_!
 .. _`Python 3.7`: https://docs.python.org/3.7/library/contextvars.html
 .. _AintQ: https://github.com/fantix/aintq
 .. _ExchangeratesAPI: https://github.com/madisvain/exchangeratesapi
+.. |PyCharm| image:: ./docs/pycharm.svg
+        :height: 20px
+        :target: https://www.jetbrains.com/?from=GINO
