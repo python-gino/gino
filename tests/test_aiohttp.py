@@ -11,7 +11,7 @@ _MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
 
 
 # noinspection PyShadowingNames
-async def _test_client(config):
+async def _test_client(config, in_app_config=True):
     from aiohttp.test_utils import TestServer, TestClient
 
     db = Gino()
@@ -21,8 +21,11 @@ async def _test_client(config):
             max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
         ),
     })
-    app['config'] = dict(gino=config)
-    db.init_app(app)
+    if in_app_config:
+        app['config'] = dict(gino=config)
+        db.init_app(app)
+    else:
+        db.init_app(app, config)
 
     class User(db.Model):
         __tablename__ = 'gino_users'
@@ -83,22 +86,22 @@ async def _test_client(config):
         await e.close()
 
 
-@pytest.fixture
+@pytest.fixture(params=[True, False])
 @async_generator
-async def test_client():
-    await _test_client(DB_ARGS.copy())
+async def test_client(request):
+    await _test_client(DB_ARGS.copy(), request.param)
 
 
-@pytest.fixture
+@pytest.fixture(params=[True, False])
 @async_generator
-async def test_client_dsn():
-    await _test_client(dict(dsn=PG_URL))
+async def test_client_dsn(request):
+    await _test_client(dict(dsn=PG_URL), request.param)
 
 
-@pytest.fixture
+@pytest.fixture(params=[True, False])
 @async_generator
-async def test_client_ssl(ssl_ctx):
-    await _test_client(dict(dsn=PG_URL, ssl=ssl_ctx))
+async def test_client_ssl(ssl_ctx, request):
+    await _test_client(dict(dsn=PG_URL, ssl=ssl_ctx), request.param)
 
 
 async def _test_index_returns_200(test_client):
