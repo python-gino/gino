@@ -87,8 +87,8 @@ class Gino(_Gino):
       like ``asyncpg``. Unrecognized parameters will cause exceptions.
 
     If you would like to use a custom configuration dictionary, you can do that
-    by passing it as ``config=`` argument in ``app_init`` call. Remember to use the keys
-    described above.
+    by passing it as ``config=`` argument in ``app_init`` call. Remember to use
+    the keys described above.
 
     If the ``db`` is set as an aiohttp middleware, then a lazy connection is
     available at ``request['connection']``. By default, a database connection
