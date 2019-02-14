@@ -68,7 +68,7 @@ class Gino(_Gino):
         db.init_app(app)
 
     By :meth:`init_app` GINO subscribes to a few signals on aiohttp, so that
-    GINO could use database configuration in aiohttp ``config.gino`` to
+    GINO could use database configuration in aiohttp ``app['config'].gino`` to
     initialize the bound engine. The config includes:
 
     * ``driver`` - the database driver, default is ``asyncpg``.
@@ -85,6 +85,10 @@ class Gino(_Gino):
     * ``ssl`` - SSL context passed to ``asyncpg.connect``, default is ``None``.
     * ``kwargs`` - other parameters passed to the specified dialects,
       like ``asyncpg``. Unrecognized parameters will cause exceptions.
+
+    If you would like to use a custom configuration dictionary, you can do that
+    by passing it as ``config=`` argument in ``app_init`` call. Remember to use the keys
+    described above.
 
     If the ``db`` is set as an aiohttp middleware, then a lazy connection is
     available at ``request['connection']``. By default, a database connection
