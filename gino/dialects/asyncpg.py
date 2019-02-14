@@ -137,6 +137,7 @@ class DBAPICursor(base.DBAPICursor):
         self._conn = dbapi_conn
         self._attributes = None
         self._status = None
+        self._rowcount = 0
 
     async def prepare(self, context, clause=None):
         timeout = context.timeout
@@ -183,11 +184,30 @@ class DBAPICursor(base.DBAPICursor):
                 self._attributes = []
             if not many:
                 result, self._status = result[:2]
+                try:
+                    # Refs https://git.io/fphKg
+                    parts = self._status.split()
+                    if parts[0] in (b'INSERT', b'SELECT', b'UPDATE', b'DELETE',
+                                    b'MOVE', b'FETCH', b'COPY'):
+                        self._rowcount += int(parts[-1])
+                except (AttributeError, IndexError, ValueError):
+                    pass
             return result
 
     @property
     def description(self):
         return [((a[0], a[1][0]) + (None,) * 5) for a in self._attributes]
+
+    @property
+    def rowcount(self):
+        """Simulate DB-API rowcount.
+
+        This has several known issues:
+        * Execute with limit (e.g. first() or scalar()) may not trigger a
+          CommandComplete, thus rowcount is always 0
+        * It's always 0 for executemany(), iterate() and prepare()
+        """
+        return self._rowcount
 
     def get_statusmsg(self):
         return self._status.decode()

@@ -31,6 +31,10 @@ class DBAPICursor:
     def description(self):
         raise NotImplementedError
 
+    @property
+    def rowcount(self):
+        raise NotImplementedError
+
     async def prepare(self, context, clause=None):
         raise NotImplementedError
 
@@ -198,7 +202,7 @@ class _ResultProxy:
 
         cursor = context.cursor
         if context.executemany:
-            return await cursor.async_execute(
+            rv = await cursor.async_execute(
                 context.statement, context.timeout, param_groups,
                 many=True)
         else:
@@ -213,18 +217,28 @@ class _ResultProxy:
                     item = None
             if status:
                 item = cursor.get_statusmsg(), item
-            return item
+            rv = item
+        context.root_connection.after_execute()
+        return rv
 
     def iterate(self):
         if self._context.executemany:
             raise ValueError('too many multiparams')
-        return _IterableCursor(self._context)
+        rv = _IterableCursor(self._context)
+        self._context.root_connection.after_execute()
+        return rv
 
     async def prepare(self, clause):
-        return await self._context.cursor.prepare(self._context, clause)
+        rv = await self._context.cursor.prepare(self._context, clause)
+        self._context.root_connection.after_execute()
+        return rv
 
     def _soft_close(self):
         pass
+
+    @property
+    def rowcount(self):
+        return self.context.rowcount
 
 
 class Cursor:

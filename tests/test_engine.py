@@ -392,3 +392,38 @@ async def test_issue_313(bind):
     await asyncio.gather(*[task() for _ in range(5)])
 
     assert bind._ctx.get() is None
+
+
+async def test_issue_412(bind):
+    sql = 'SELECT now()'
+
+    @sa.event.listens_for(bind._sa_engine, 'after_execute')
+    def after_exec(conn, clauseelement, multiparams, params, result):
+        nonlocal rowcount
+        rowcount = result.rowcount
+
+    for i in range(4):
+        rowcount = None
+        await bind.all(sql)
+        assert rowcount == 1
+
+    rowcount = None
+    await bind.first(sql)
+    assert rowcount == 0
+
+    rowcount = None
+    await bind.all(sql, [(), ()])
+    assert rowcount == 0
+
+    async with bind.transaction() as tx:
+        rowcount = None
+        async for _ in bind.iterate(sql):
+            assert rowcount == 0
+
+        rowcount = None
+        stmt = await tx.connection.prepare(sql)
+        assert rowcount == 0
+
+        rowcount = None
+        await stmt.all()
+        assert rowcount is None
