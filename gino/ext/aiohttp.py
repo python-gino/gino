@@ -118,6 +118,8 @@ class Gino(_Gino):
 
         if not isinstance(config, dict):
             config = app['config'].get('gino', {})
+        else:
+            config = config.copy()
 
         async def before_server_start(app_):
             if config.get('dsn'):
