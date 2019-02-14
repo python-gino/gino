@@ -109,10 +109,11 @@ class Gino(_Gino):
             finally:
                 request.pop('connection', None)
 
-    def init_app(self, app):
+    def init_app(self, app, config = None):
         app['db'] = self
 
-        config = app['config'].get('gino', {})
+        if not isinstance(config, dict):
+            config = app['config'].get('gino', {})
 
         async def before_server_start(app_):
             if config.get('dsn'):
