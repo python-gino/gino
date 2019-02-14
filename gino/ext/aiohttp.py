@@ -113,7 +113,7 @@ class Gino(_Gino):
             finally:
                 request.pop('connection', None)
 
-    def init_app(self, app, config = None):
+    def init_app(self, app, config=None):
         app['db'] = self
 
         if not isinstance(config, dict):
