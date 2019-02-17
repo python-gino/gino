@@ -39,7 +39,8 @@ class GinoStrategy(EngineStrategy):
         dialect_args['dbapi'] = dbapi
 
         dialect = dialect_cls(**dialect_args)
-        pool = await dialect.init_pool(u, loop)
+        pool_class = kwargs.pop('pool_class', None)
+        pool = await dialect.init_pool(u, loop, pool_class=pool_class)
 
         engine_args = dict(loop=loop)
         for k in util.get_cls_kwargs(engine_cls):
