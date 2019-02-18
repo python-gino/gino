@@ -4,7 +4,7 @@ from datetime import datetime
 
 import asyncpg
 from asyncpg.exceptions import InvalidCatalogNameError
-from gino import UninitializedError
+from gino import create_engine, UninitializedError
 import pytest
 from sqlalchemy.exc import ObjectNotExecutableError
 import sqlalchemy as sa
@@ -31,8 +31,7 @@ async def test_basic(engine):
 
 
 async def test_issue_79():
-    import gino
-    e = await gino.create_engine(PG_URL + '_non_exist', min_size=0)
+    e = await create_engine(PG_URL + '_non_exist', min_size=0)
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
@@ -99,17 +98,16 @@ async def test_compile(engine):
 
 
 async def test_logging(mocker):
-    import gino
     mocker.patch('logging.Logger._log')
     sql = 'SELECT NOW() AS test_logging'
 
-    e = await gino.create_engine(PG_URL, echo=False)
+    e = await create_engine(PG_URL, echo=False)
     await e.scalar(sql)
     await e.close()
     # noinspection PyProtectedMember,PyUnresolvedReferences
     logging.Logger._log.assert_not_called()
 
-    e = await gino.create_engine(PG_URL, echo=True)
+    e = await create_engine(PG_URL, echo=True)
     await e.scalar(sql)
     await e.close()
     # noinspection PyProtectedMember,PyUnresolvedReferences
@@ -117,11 +115,9 @@ async def test_logging(mocker):
 
 
 async def test_set_isolation_level():
-    import gino
     with pytest.raises(sa.exc.ArgumentError):
-        await gino.create_engine(PG_URL, isolation_level='non')
-    e = await gino.create_engine(PG_URL,
-                                 isolation_level='READ_UNCOMMITTED')
+        await create_engine(PG_URL, isolation_level='non')
+    e = await create_engine(PG_URL, isolation_level='READ_UNCOMMITTED')
     async with e.acquire() as conn:
         assert await e.dialect.get_isolation_level(
             conn.raw_connection) == 'READ UNCOMMITTED'
@@ -131,9 +127,8 @@ async def test_set_isolation_level():
 
 
 async def test_too_many_engine_args():
-    import gino
     with pytest.raises(TypeError):
-        await gino.create_engine(PG_URL, non_exist=None)
+        await create_engine(PG_URL, non_exist=None)
 
 
 # noinspection PyUnusedLocal
@@ -188,8 +183,7 @@ async def test_async_metadata():
 
 # noinspection PyUnreachableCode
 async def test_acquire_timeout():
-    import gino
-    e = await gino.create_engine(PG_URL, min_size=1, max_size=1)
+    e = await create_engine(PG_URL, min_size=1, max_size=1)
     async with e.acquire():
         with pytest.raises(asyncio.TimeoutError):
             async with e.acquire(timeout=0.1):
@@ -225,8 +219,7 @@ async def test_acquire_timeout():
 
 # noinspection PyProtectedMember
 async def test_lazy(mocker):
-    import gino
-    engine = await gino.create_engine(PG_URL, min_size=1, max_size=1)
+    engine = await create_engine(PG_URL, min_size=1, max_size=1)
     init_size = qsize(engine)
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
@@ -359,13 +352,12 @@ async def test_release(engine):
 
 async def test_ssl():
     import ssl
-    import gino
 
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
-    e = await gino.create_engine(PG_URL, ssl=ctx)
+    e = await create_engine(PG_URL, ssl=ctx)
     await e.close()
 
 
@@ -392,3 +384,17 @@ async def test_issue_313(bind):
     await asyncio.gather(*[task() for _ in range(5)])
 
     assert bind._ctx.get() is None
+
+
+async def test_null_pool():
+    from gino.dialects.asyncpg import NullPool
+    e = await create_engine(PG_URL, pool_class=NullPool)
+    async with e.acquire() as conn:
+        raw_conn = conn.raw_connection
+    assert raw_conn.is_closed()
+
+    e = await create_engine(PG_URL)
+    async with e.acquire() as conn:
+        # noinspection PyProtectedMember
+        raw_conn = conn.raw_connection._con
+    assert not raw_conn.is_closed()

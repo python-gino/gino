@@ -230,6 +230,44 @@ class Pool(base.Pool):
         await self._pool.close()
 
 
+class NullPool(base.Pool):
+    # TODO: generic NullPool, abstracting connection part
+    def __init__(self, url, loop, **kwargs):
+        self._loop = loop
+        self._kwargs = dict()
+        for k in inspect.getfullargspec(asyncpg.connect).kwonlyargs:
+            if k in kwargs:
+                self._kwargs[k] = kwargs[k]
+        self._kwargs.update(dict(
+            host=url.host,
+            port=url.port,
+            user=url.username,
+            database=url.database,
+            password=url.password,
+        ))
+
+    def __await__(self):
+        async def return_self():
+            return self
+        return return_self().__await__()
+
+    @property
+    def raw_pool(self):
+        return self
+
+    async def acquire(self, *, timeout=None):
+        args = self._kwargs.copy()
+        if timeout is not None:
+            args.update(timeout=timeout)
+        return await asyncpg.connect(loop=self._loop, **args)
+
+    async def release(self, conn):
+        await conn.close()
+
+    async def close(self):
+        pass
+
+
 class Transaction(base.Transaction):
     def __init__(self, tx):
         self._tx = tx
@@ -323,9 +361,11 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         super().__init__(*args, **kwargs)
         self._init_mixin()
 
-    async def init_pool(self, url, loop):
-        return await Pool(url, loop, init=self.on_connect(),
-                          **self._pool_kwargs)
+    async def init_pool(self, url, loop, pool_class=None):
+        if pool_class is None:
+            pool_class = Pool
+        return await pool_class(url, loop, init=self.on_connect(),
+                                **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
