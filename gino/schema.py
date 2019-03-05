@@ -21,8 +21,9 @@ from sqlalchemy.types import SchemaType
 
 class AsyncVisitor:
     async def traverse_single(self, obj, **kw):
-        # noinspection PyUnresolvedReferences
-        for v in self._visitor_iterator:
+        # Support both SQLAlchemy 1.2 and 1.3
+        for v in getattr(self, 'visitor_iterator',
+                         getattr(self, '_visitor_iterator', None)):
             meth = getattr(v, "visit_%s" % obj.__visit_name__, None)
             if meth:
                 return await meth(obj, **kw)
