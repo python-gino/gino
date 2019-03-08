@@ -45,6 +45,17 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.2 (2019-03-07)
+^^^^^^^^^^^^^^^^^^
+
+* Added exception for unknown JSON properties (#406 #408)
+* Supported Quart 0.7 (#411)
+* Accepted kwargs for db init in extensions (#407 #427)
+* Added custom config parameter to aiohttp middleware (Contributed by Michał Dziewulski in #440)
+* Added NullPool (#437 #441)
+* Unpinned dependency versions (#447)
+* Added support for SQLAlchemy 1.3 (#433 #451)
+
 0.8.1 (2018-12-08)
 ^^^^^^^^^^^^^^^^^^
 

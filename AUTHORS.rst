@@ -31,6 +31,7 @@ Contributors
 * Jekel <jekel@psyspace.ru>
 * Martin Zaťko <martin.zatko@kiwi.com>
 * Pascal van Kooten <kootenpv@gmail.com>
+* Michał Dziewulski <michal@dziewulski.pl>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,

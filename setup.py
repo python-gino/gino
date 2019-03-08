@@ -31,7 +31,7 @@ test_requirements = [
 
 setup(
     name='gino',
-    version='0.8.1',
+    version='0.8.2',
     description="GINO Is Not ORM - "
                 "a Python asyncio ORM on SQLAlchemy core.",
     long_description=readme + '\n\n' + history,
