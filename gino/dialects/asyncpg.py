@@ -309,7 +309,7 @@ class AsyncEnum(ENUM):
 
     async def _on_table_drop_async(self, target, bind, checkfirst=False, **kw):
         if not self.metadata and \
-            not kw.get('_is_metadata_operation', False) and \
+                not kw.get('_is_metadata_operation', False) and \
                 not self._check_for_name_in_memos(checkfirst, kw):
             await self.drop_async(bind=bind, checkfirst=checkfirst)
 
@@ -405,15 +405,16 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         return val.upper()
 
     async def has_schema(self, connection, schema):
-        query = ("select nspname from pg_namespace "
-                 "where lower(nspname)=:schema")
         row = await connection.first(
             sql.text(
-                query,
-                bindparams=[
-                    sql.bindparam(
-                        'schema', util.text_type(schema.lower()),
-                        type_=sqltypes.Unicode)]
+                "select nspname from pg_namespace "
+                "where lower(nspname)=:schema"
+            ).bindparams(
+                sql.bindparam(
+                    'schema',
+                    util.text_type(schema.lower()),
+                    type_=sqltypes.Unicode,
+                )
             )
         )
 
@@ -427,10 +428,13 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "select relname from pg_class c join pg_namespace n on "
                     "n.oid=c.relnamespace where "
                     "pg_catalog.pg_table_is_visible(c.oid) "
-                    "and relname=:name",
-                    bindparams=[
-                        sql.bindparam('name', util.text_type(table_name),
-                                      type_=sqltypes.Unicode)]
+                    "and relname=:name"
+                ).bindparams(
+                    sql.bindparam(
+                        'name',
+                        util.text_type(table_name),
+                        type_=sqltypes.Unicode
+                    ),
                 )
             )
         else:
@@ -438,14 +442,18 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 sql.text(
                     "select relname from pg_class c join pg_namespace n on "
                     "n.oid=c.relnamespace where n.nspname=:schema and "
-                    "relname=:name",
-                    bindparams=[
-                        sql.bindparam('name',
-                                      util.text_type(table_name),
-                                      type_=sqltypes.Unicode),
-                        sql.bindparam('schema',
-                                      util.text_type(schema),
-                                      type_=sqltypes.Unicode)]
+                    "relname=:name"
+                ).bindparams(
+                    sql.bindparam(
+                        'name',
+                        util.text_type(table_name),
+                        type_=sqltypes.Unicode,
+                    ),
+                    sql.bindparam(
+                        'schema',
+                        util.text_type(schema),
+                        type_=sqltypes.Unicode,
+                    )
                 )
             )
         return bool(row)
@@ -457,11 +465,13 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "SELECT relname FROM pg_class c join pg_namespace n on "
                     "n.oid=c.relnamespace where relkind='S' and "
                     "n.nspname=current_schema() "
-                    "and relname=:name",
-                    bindparams=[
-                        sql.bindparam('name', util.text_type(sequence_name),
-                                      type_=sqltypes.Unicode)
-                    ]
+                    "and relname=:name"
+                ).bindparams(
+                    sql.bindparam(
+                        'name',
+                        util.text_type(sequence_name),
+                        type_=sqltypes.Unicode,
+                    )
                 )
             )
         else:
@@ -469,14 +479,18 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 sql.text(
                     "SELECT relname FROM pg_class c join pg_namespace n on "
                     "n.oid=c.relnamespace where relkind='S' and "
-                    "n.nspname=:schema and relname=:name",
-                    bindparams=[
-                        sql.bindparam('name', util.text_type(sequence_name),
-                                      type_=sqltypes.Unicode),
-                        sql.bindparam('schema',
-                                      util.text_type(schema),
-                                      type_=sqltypes.Unicode)
-                    ]
+                    "n.nspname=:schema and relname=:name"
+                ).bindparams(
+                    sql.bindparam(
+                        'name',
+                        util.text_type(sequence_name),
+                        type_=sqltypes.Unicode,
+                    ),
+                    sql.bindparam(
+                        'schema',
+                        util.text_type(schema),
+                        type_=sqltypes.Unicode,
+                    )
                 )
             )
 
@@ -503,12 +517,18 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 """
             query = sql.text(query)
         query = query.bindparams(
-            sql.bindparam('typname',
-                          util.text_type(type_name), type_=sqltypes.Unicode),
+            sql.bindparam(
+                'typname',
+                util.text_type(type_name),
+                type_=sqltypes.Unicode,
+            ),
         )
         if schema is not None:
             query = query.bindparams(
-                sql.bindparam('nspname',
-                              util.text_type(schema), type_=sqltypes.Unicode),
+                sql.bindparam(
+                    'nspname',
+                    util.text_type(schema),
+                    type_=sqltypes.Unicode,
+                ),
             )
         return bool(await connection.scalar(query))
