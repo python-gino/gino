@@ -141,7 +141,6 @@ class Gino(_Gino):
                 min_size=config.setdefault('pool_min_size', 5),
                 max_size=config.setdefault('pool_max_size', 10),
                 ssl=config.setdefault('ssl'),
-                loop=app_.loop,
                 **config.setdefault('kwargs', dict()),
             )
 
@@ -157,6 +156,6 @@ class Gino(_Gino):
             raise HTTPNotFound(reason='No such data')
         return rv
 
-    async def set_bind(self, bind, loop=None, **kwargs):
+    async def set_bind(self, bind, **kwargs):
         kwargs.setdefault('strategy', 'aiohttp')
-        return await super().set_bind(bind, loop=loop, **kwargs)
+        return await super().set_bind(bind, **kwargs)
