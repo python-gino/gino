@@ -16,6 +16,7 @@ async def _test_client(config, in_app_config=True):
 
     db = Gino()
     app = web.Application(middlewares=[db])
+    db_attr_name = 'gino_db'
     config.update({
         'kwargs': dict(
             max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
@@ -23,9 +24,9 @@ async def _test_client(config, in_app_config=True):
     })
     if in_app_config:
         app['config'] = dict(gino=config)
-        db.init_app(app)
+        db.init_app(app, db_attr_name=db_attr_name)
     else:
-        db.init_app(app, config)
+        db.init_app(app, config, db_attr_name=db_attr_name)
 
     class User(db.Model):
         __tablename__ = 'gino_users'
@@ -58,7 +59,7 @@ async def _test_client(config, in_app_config=True):
                 (await db.bind.first_or_404(q)).to_dict())
         elif method == '4':
             return web.json_response(
-                (await request.app['db'].first_or_404(q)).to_dict())
+                (await request.app[db_attr_name].first_or_404(q)).to_dict())
         else:
             return web.json_response((await User.get_or_404(uid)).to_dict())
 

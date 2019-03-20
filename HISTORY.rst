@@ -45,6 +45,11 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.3 (UNRELEASED)
+^^^^^^^^^^^^^^^^^^
+
+* Customizable db attribute name in aiohttp app instance (#457)
+
 0.8.2 (2019-03-07)
 ^^^^^^^^^^^^^^^^^^
 
