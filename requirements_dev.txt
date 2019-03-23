@@ -5,7 +5,7 @@ bumpversion==0.5.3  # pyup: update minor
 wheel==0.33.0  # pyup: update minor
 cryptography==2.6.1  # pyup: update minor
 psycopg2-binary==2.7.6.1  # pyup: update minor
-sanic==18.12.0  # pyup: update minor
+sanic==19.3.1  # pyup: update minor
 aiohttp==3.5.0  # pyup: update minor
 tornado==6.0  # pyup: update minor
 async_generator==1.10  # pyup: update minor
