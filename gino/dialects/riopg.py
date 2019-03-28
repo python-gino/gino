@@ -156,7 +156,7 @@ class DBAPICursor(base.DBAPICursor):
             # https://github.com/psycopg/psycopg2/issues/491
             raise RuntimeError('Not yet supported.')
 
-        with trio.open_cancel_scope() as scope:
+        with trio.CancelScope() as scope:
             if timeout:
                 scope.deadline = trio.current_time() + timeout
 
@@ -211,7 +211,7 @@ class Pool(base.Pool):
         return self._pool
 
     async def acquire(self, *, timeout=None):
-        with trio.open_cancel_scope() as scope:
+        with trio.CancelScope() as scope:
             if timeout:
                 scope.deadline = trio.current_time() + timeout
             return await self._pool.acquire()
@@ -304,10 +304,12 @@ class RiopgDialect(PGDialect_psycopg2, base.AsyncDialectMixin):
         super().__init__(*args, **kwargs)
         self._init_mixin()
 
-    async def init_pool(self, url, loop):
+    async def init_pool(self, url, loop, pool_class=None):
         # XXX: riopg supports a connection_factory argument we might be able to use.
         #init = self.on_connect()
-        return await Pool(url, **self._pool_kwargs)
+        if pool_class is None:
+            pool_class = Pool
+        return await pool_class(url, **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
