@@ -16,7 +16,7 @@ coverage==4.5.1  # pyup: update minor
 flake8==3.7.1  # pyup: update minor
 tox==3.12.1  # pyup: update minor
 pytest==4.5.0  # pyup: update minor
-pytest-runner==4.4  # pyup: update minor
+pytest-runner==5.1  # pyup: update minor
 pytest-asyncio==0.10.0  # pyup: update minor
 pytest-tornado5==2.0.0  # pyup: update minor
 pytest-mock==1.10.0  # pyup: update minor
