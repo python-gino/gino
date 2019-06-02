@@ -23,7 +23,7 @@ pytest-mock==1.10.0  # pyup: update minor
 pytest-cov==2.7.1  # pyup: update minor
 
 # docs
-Sphinx==2.0.0  # pyup: update minor
+Sphinx==2.1.0  # pyup: update minor
 Pygments==2.4.0  # pyup: update minor
 sphinxcontrib-asyncio==0.2.0  # pyup: update minor
 sphinx-rtd-theme==0.4.2  # pyup: update minor
