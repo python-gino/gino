@@ -1,6 +1,8 @@
 import asyncio
 
+# noinspection PyPackageRequirements
 from quart import Quart, request
+# noinspection PyPackageRequirements
 from quart.exceptions import NotFound
 from sqlalchemy.engine.url import URL
 

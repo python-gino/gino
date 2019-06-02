@@ -122,8 +122,8 @@ class Gino(_Gino):
         else:
             config = config.copy()
 
-        async def before_server_start(app_):
-            if config.get('dsn'):
+        async def before_server_start(_):
+            if 'dsn' in config:
                 dsn = config['dsn']
             else:
                 dsn = URL(
@@ -144,7 +144,7 @@ class Gino(_Gino):
                 **config.setdefault('kwargs', dict()),
             )
 
-        async def after_server_stop(app_):
+        async def after_server_stop(_):
             await self.pop_bind().close()
 
         app.on_startup.append(before_server_start)
