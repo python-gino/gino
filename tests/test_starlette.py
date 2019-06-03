@@ -1,3 +1,11 @@
+import sys
+
+import pytest
+
+# Starlette only supports Python 3.6 or later
+if sys.version_info < (3, 6):
+    raise pytest.skip(allow_module_level=True)
+
 from async_generator import yield_, async_generator
 import pytest
 from starlette.applications import Starlette
