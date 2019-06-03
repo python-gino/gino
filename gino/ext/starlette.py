@@ -1,8 +1,7 @@
-import typing
-
 # noinspection PyPackageRequirements
 from starlette.applications import Starlette
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+# noinspection PyPackageRequirements
+from starlette.types import Message, Receive, Scope, Send
 # noinspection PyPackageRequirements
 from starlette.exceptions import HTTPException
 # noinspection PyPackageRequirements
