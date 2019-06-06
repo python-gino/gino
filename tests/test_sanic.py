@@ -1,3 +1,5 @@
+import asyncio
+
 from async_generator import yield_, async_generator
 import pytest
 import sanic
@@ -9,6 +11,11 @@ from gino.ext.sanic import Gino
 from .models import DB_ARGS, PG_URL
 
 _MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
+
+
+def teardown_module():
+    # sanic server will close the loop during shutdown
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
 
 # noinspection PyShadowingNames
