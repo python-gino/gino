@@ -102,7 +102,7 @@ Manual Control
 Other than using ``async with``, you can also manually control the
 transaction::
 
-    tx = await db.transaction()
+    tx = await connection.transaction()
     try:
         await db.status('INSERT INTO mytable VALUES(1, 2, 3)')
         await tx.commit()
