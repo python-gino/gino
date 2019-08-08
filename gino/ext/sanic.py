@@ -92,7 +92,7 @@ class Gino(_Gino):
                 if conn is not None:
                     await conn.release()
 
-        @app.listener('before_server_start')
+        @app.listener('after_server_start')
         async def before_server_start(_, loop):
             if app.config.get('DB_DSN'):
                 dsn = app.config.DB_DSN
@@ -116,7 +116,7 @@ class Gino(_Gino):
                 **app.config.setdefault('DB_KWARGS', dict()),
             )
 
-        @app.listener('after_server_stop')
+        @app.listener('before_server_stop')
         async def after_server_stop(_, loop):
             await self.pop_bind().close()
 
