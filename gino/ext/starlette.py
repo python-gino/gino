@@ -71,10 +71,12 @@ class _Middleware:
         if (scope['type'] == 'http' and
                 self.db.config['use_connection_for_request']):
             scope['connection'] = await self.db.acquire(lazy=True)
-            await self.app(scope, receive, send)
-            conn = scope.pop('connection', None)
-            if conn is not None:
-                await conn.release()
+            try:
+                await self.app(scope, receive, send)
+            finally:
+                conn = scope.pop('connection', None)
+                if conn is not None:
+                    await conn.release()
             return
 
         if scope['type'] == 'lifespan':
