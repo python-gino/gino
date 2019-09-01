@@ -45,6 +45,13 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.4 (TBD)
+^^^^^^^^^^^
+
+* Fixed Starlette connection release during exceptions issue (Contributed by qulaz in #533)
+* Fixed server event compatibility with Sanic 19.6.2 (Contributed by Julio Lacerda in #520)
+* Fixed Grammar (Contributed by Simeon J Morgan in #504)
+
 0.8.3 (2019-06-06)
 ^^^^^^^^^^^^^^^^^^
 

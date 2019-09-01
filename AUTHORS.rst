@@ -32,6 +32,9 @@ Contributors
 * Martin Zaťko <martin.zatko@kiwi.com>
 * Pascal van Kooten <kootenpv@gmail.com>
 * Michał Dziewulski <michal@dziewulski.pl>
+* Simeon J Morgan <smorgan@digitalfeed.net>
+* Julio Lacerda <julio.castro.lacerda@gmail.com>
+* qulaz <qulazwork@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
