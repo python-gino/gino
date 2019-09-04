@@ -147,7 +147,7 @@ class Gino(_Gino):
     model_base_classes = _Gino.model_base_classes + (StarletteModelMixin,)
     query_executor = GinoExecutor
 
-    def __init__(self, app: Starlette = None, *args, **kwargs):
+    def __init__(self, app=None, *args, **kwargs):
         self.config = dict()
         if 'dsn' in kwargs:
             self.config['dsn'] = kwargs.pop('dsn')
@@ -172,7 +172,7 @@ class Gino(_Gino):
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: Starlette):
+    def init_app(self, app):
         app.add_middleware(_Middleware, db=self)
 
     async def first_or_404(self, *args, **kwargs):
