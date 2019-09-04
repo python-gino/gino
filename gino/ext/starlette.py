@@ -2,7 +2,6 @@
 from sqlalchemy.engine.url import URL
 # noinspection PyPackageRequirements
 from starlette import status
-from starlette.applications import Starlette
 # noinspection PyPackageRequirements
 from starlette.exceptions import HTTPException
 # noinspection PyPackageRequirements
