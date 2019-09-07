@@ -11,6 +11,7 @@ import pytest
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, PlainTextResponse
 from starlette.testclient import TestClient
+
 import gino
 from gino.ext.starlette import Gino
 
@@ -31,6 +32,7 @@ async def _app(**kwargs):
 
     if factory:
         db = Gino(**kwargs)
+        db.init_app(app)
     else:
         db = Gino(app, **kwargs)
 
@@ -78,8 +80,6 @@ async def _app(**kwargs):
 
     e = await gino.create_engine(PG_URL)
     try:
-        if factory:
-            db.init_app(app)
         try:
             await db.gino.create_all(e)
             await yield_(app)
