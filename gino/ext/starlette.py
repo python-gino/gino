@@ -1,12 +1,11 @@
 # noinspection PyPackageRequirements
-from starlette.applications import Starlette
+from sqlalchemy.engine.url import URL
 # noinspection PyPackageRequirements
-from starlette.types import Message, Receive, Scope, Send
+from starlette import status
 # noinspection PyPackageRequirements
 from starlette.exceptions import HTTPException
 # noinspection PyPackageRequirements
-from starlette import status
-from sqlalchemy.engine.url import URL
+from starlette.types import Message, Receive, Scope, Send
 
 from ..api import Gino as _Gino, GinoExecutor as _Executor
 from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
@@ -94,6 +93,7 @@ class _Middleware:
                 elif message["type"] == "lifespan.shutdown":
                     await self.db.pop_bind().close()
                 return message
+
             await self.app(scope, receiver, send)
             return
 
@@ -146,7 +146,7 @@ class Gino(_Gino):
     model_base_classes = _Gino.model_base_classes + (StarletteModelMixin,)
     query_executor = GinoExecutor
 
-    def __init__(self, app: Starlette, *args, **kwargs):
+    def __init__(self, app=None, *args, **kwargs):
         self.config = dict()
         if 'dsn' in kwargs:
             self.config['dsn'] = kwargs.pop('dsn')
@@ -168,7 +168,10 @@ class Gino(_Gino):
         self.config['kwargs'] = kwargs.pop('kwargs', dict())
 
         super().__init__(*args, **kwargs)
+        if app is not None:
+            self.init_app(app)
 
+    def init_app(self, app):
         app.add_middleware(_Middleware, db=self)
 
     async def first_or_404(self, *args, **kwargs):

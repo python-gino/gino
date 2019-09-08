@@ -28,7 +28,13 @@ async def _app(**kwargs):
             max_inactive_connection_lifetime=_MAX_INACTIVE_CONNECTION_LIFETIME,
         ),
     })
-    db = Gino(app, **kwargs)
+    factory = kwargs.pop('factory', False)
+
+    if factory:
+        db = Gino(**kwargs)
+        db.init_app(app)
+    else:
+        db = Gino(app, **kwargs)
 
     class User(db.Model):
         __tablename__ = 'gino_users'
@@ -97,6 +103,18 @@ async def app():
 
 @pytest.fixture
 @async_generator
+async def app_factory():
+    await _app(
+        factory=True,
+        host=DB_ARGS['host'],
+        port=DB_ARGS['port'],
+        user=DB_ARGS['user'],
+        password=DB_ARGS['password'],
+        database=DB_ARGS['database'],
+    )
+
+@pytest.fixture
+@async_generator
 async def app_ssl(ssl_ctx):
     await _app(
         host=DB_ARGS['host'],
@@ -157,3 +175,6 @@ def test_ssl(app_ssl):
 
 def test_dsn(app_dsn):
     _test(app_dsn)
+
+def test_app_factory(app_factory):
+    _test(app_factory)
