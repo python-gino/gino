@@ -3,11 +3,14 @@ import sys
 
 from async_generator import yield_, async_generator
 import pytest
-import sanic
-from sanic.response import text, json
+try:
+    import sanic
+    from sanic.response import text, json
+    from gino.ext.sanic import Gino
+except ImportError:
+    pass
 
 import gino
-from gino.ext.sanic import Gino
 
 from .models import DB_ARGS, PG_URL
 
