@@ -327,6 +327,7 @@ class Gino(sa.MetaData):
             model_classes = self.model_base_classes
         self._model = declarative_base(self, model_classes)
         self.declared_attr = declared_attr
+        self.quoted_name = sa.sql.quoted_name
         for mod in json_support, sa:
             for key in mod.__all__:
                 if not hasattr(self, key) and key not in self.no_delegate:
