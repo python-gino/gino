@@ -35,6 +35,7 @@ Contributors
 * Simeon J Morgan <smorgan@digitalfeed.net>
 * Julio Lacerda <julio.castro.lacerda@gmail.com>
 * qulaz <qulazwork@gmail.com>
+* Jim O'Brien
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
