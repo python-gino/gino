@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from async_generator import yield_, async_generator
 import pytest
@@ -11,6 +12,8 @@ from gino.ext.sanic import Gino
 from .models import DB_ARGS, PG_URL
 
 _MAX_INACTIVE_CONNECTION_LIFETIME = 59.0
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 6),
+                                reason="Sanic 19.6 dropped Python 3.5 support")
 
 
 def teardown_module():
