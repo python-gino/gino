@@ -243,3 +243,13 @@ async def test_invert_dict():
     d['col2'] = 'c2'
     assert d.invert_get('c1') == 'col1'
     assert d.invert_get('c2') == 'col2'
+
+
+async def test_instant_column_name():
+    class Model(db.Model):
+        user = db.Column()
+        assert user.name == 'user'
+
+        select_col = db.Column(name=db.quoted_name('select', False))
+        assert select_col.name == 'select'
+        assert not select_col.name.quote

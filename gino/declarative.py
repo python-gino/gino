@@ -47,6 +47,13 @@ class InvertDict(dict):
         return self._inverted_dict.get(key, default)
 
 
+class Dict(collections.OrderedDict):
+    def __setitem__(self, key, value):
+        if isinstance(value, sa.Column) and not value.name:
+            value.name = key
+        return super().__setitem__(key, value)
+
+
 class ModelType(type):
     def _check_abstract(self):
         if self.__table__ is None:
@@ -71,7 +78,7 @@ class ModelType(type):
 
     @classmethod
     def __prepare__(mcs, name, bases, **kwargs):
-        return collections.OrderedDict()
+        return Dict()
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         rv = type.__new__(mcs, name, bases, namespace)
