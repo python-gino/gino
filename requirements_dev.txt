@@ -3,7 +3,7 @@ pip==19.2.2  # pyup: update minor
 
 bumpversion==0.5.3  # pyup: update minor
 wheel==0.33.0  # pyup: update minor
-cryptography==2.7  # pyup: update minor
+cryptography==2.8  # pyup: update minor
 psycopg2-binary==2.8.1  # pyup: update minor
 sanic==19.6.3;python_version>="3.6"  # pyup: update minor
 aiohttp==3.6.0;python_full_version>="3.5.3"  # pyup: update minor
