@@ -79,6 +79,10 @@ but return a bit differently. There are also other similar query APIs:
   :class:`~sqlalchemy.engine.RowProxy`
 * :meth:`~gino.engine.GinoConnection.first` returns one
   :class:`~sqlalchemy.engine.RowProxy`, or ``None``
+* :meth:`~gino.engine.GinoConnection.one` returns one
+  :class:`~sqlalchemy.engine.RowProxy`
+* :meth:`~gino.engine.GinoConnection.one_or_none` returns one
+  :class:`~sqlalchemy.engine.RowProxy`, or ``None``
 * :meth:`~gino.engine.GinoConnection.scalar` returns a single value, or
   ``None``
 * :meth:`~gino.engine.GinoConnection.iterate` returns an asynchronous iterator
