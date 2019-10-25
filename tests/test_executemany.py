@@ -1,5 +1,6 @@
 import pytest
 
+from gino import MultipleResultsFound, NoResultFound
 from .models import db, User
 
 pytestmark = pytest.mark.asyncio
@@ -49,6 +50,65 @@ async def test_first(bind):
     rows = await User.query.gino.all()
     assert len(rows) == 4
     assert set(u.nickname for u in rows) == {'1', '2', '3', '4'}
+
+
+# noinspection PyUnusedLocal
+async def test_one_or_none(bind):
+    row = await User.query.gino.one_or_none()
+    assert row is None
+
+    await User.create(nickname='0')
+    row = await User.query.gino.one_or_none()
+    assert row.nickname == '0'
+
+    result = await User.insert().returning(User.nickname).gino.one_or_none(
+        dict(name='1'), dict(name='2'))
+    assert result is None
+    rows = await User.query.gino.all()
+    assert len(await User.query.gino.all()) == 3
+    assert set(u.nickname for u in rows) == {'0', '1', '2'}
+
+    with pytest.raises(MultipleResultsFound):
+        row = await User.query.gino.one_or_none()
+
+    result = await User.insert().gino.one_or_none(
+        dict(name='3'), dict(name='4'))
+    assert result is None
+    rows = await User.query.gino.all()
+    assert len(rows) == 5
+    assert set(u.nickname for u in rows) == {'0', '1', '2', '3', '4'}
+
+    with pytest.raises(MultipleResultsFound):
+        row = await User.query.gino.one_or_none()
+
+
+# noinspection PyUnusedLocal
+async def test_one(bind):
+    with pytest.raises(NoResultFound):
+        row = await User.query.gino.one()
+
+    await User.create(nickname='0')
+    row = await User.query.gino.one()
+    assert row.nickname == '0'
+
+    with pytest.raises(NoResultFound):
+        await User.insert().returning(User.nickname).gino.one(
+            dict(name='1'), dict(name='2'))
+    rows = await User.query.gino.all()
+    assert len(await User.query.gino.all()) == 3
+    assert set(u.nickname for u in rows) == {'0', '1', '2'}
+
+    with pytest.raises(MultipleResultsFound):
+        row = await User.query.gino.one()
+
+    with pytest.raises(NoResultFound):
+        await User.insert().gino.one(dict(name='3'), dict(name='4'))
+    rows = await User.query.gino.all()
+    assert len(rows) == 5
+    assert set(u.nickname for u in rows) == {'0', '1', '2', '3', '4'}
+
+    with pytest.raises(MultipleResultsFound):
+        row = await User.query.gino.one()
 
 
 # noinspection PyUnusedLocal

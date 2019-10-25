@@ -45,6 +45,25 @@ async def test_scalar(user):
     assert user.nickname == name
 
 
+async def test_one_or_none(user):
+    name = await User.query.gino.load(User.nickname).one_or_none()
+    assert user.nickname == name
+
+    uid, name = await (User.query.gino.load((User.id, User.nickname))
+                       .one_or_none())
+    assert user.id == uid
+    assert user.nickname == name
+
+
+async def test_one(user):
+    name = await User.query.gino.load(User.nickname).one()
+    assert user.nickname == name
+
+    uid, name = await User.query.gino.load((User.id, User.nickname)).one()
+    assert user.id == uid
+    assert user.nickname == name
+
+
 async def test_model_load(user):
     u = await User.query.gino.load(User.load('nickname', User.team_id)).first()
     assert isinstance(u, User)

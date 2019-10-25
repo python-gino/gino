@@ -25,8 +25,9 @@ class GinoExecutor:
         await User.query.gino.first()
 
     This allows GINO to add the asynchronous query APIs (:meth:`all`,
-    :meth:`first`, :meth:`scalar`, :meth:`status`, :meth:`iterate`) to
-    SQLAlchemy query clauses without messing up with existing synchronous ones.
+    :meth:`first`, :meth:`one`, :meth:`one_or_none`, :meth:`scalar`,
+    :meth:`status`, :meth:`iterate`) to SQLAlchemy query clauses without
+    messing up with existing synchronous ones.
     Calling these asynchronous query APIs has the same restriction - the
     relevant metadata (the :class:`Gino` instance) must be bound to an engine,
     or an :exc:`AttributeError` will be raised.
@@ -134,6 +135,28 @@ class GinoExecutor:
         """
         return await self._query.bind.first(self._query, *multiparams,
                                             **params)
+
+    async def one_or_none(self, *multiparams, **params):
+        """
+        Returns :meth:`engine.one_or_none() <.engine.GinoEngine.one_or_none>`
+        with this query as the first argument, and other arguments followed,
+        where ``engine`` is the :class:`~.engine.GinoEngine` to which the
+        metadata (:class:`Gino`) is bound, while metadata is found in this
+        query.
+
+        """
+        return await self._query.bind.one_or_none(self._query, *multiparams,
+                                                  **params)
+
+    async def one(self, *multiparams, **params):
+        """
+        Returns :meth:`engine.one() <.engine.GinoEngine.one>` with this query
+        as the first argument, and other arguments followed, where ``engine``
+        is the :class:`~.engine.GinoEngine` to which the metadata
+        (:class:`Gino`) is bound, while metadata is found in this query.
+
+        """
+        return await self._query.bind.one(self._query, *multiparams, **params)
 
     async def scalar(self, *multiparams, **params):
         """
@@ -450,6 +473,21 @@ class Gino(sa.MetaData):
 
         """
         return await self.bind.first(clause, *multiparams, **params)
+
+    async def one_or_none(self, clause, *multiparams, **params):
+        """
+        A delegate of :meth:`GinoEngine.one_or_none()
+        <.engine.GinoEngine.one_or_none>`.
+
+        """
+        return await self.bind.one_or_none(clause, *multiparams, **params)
+
+    async def one(self, clause, *multiparams, **params):
+        """
+        A delegate of :meth:`GinoEngine.one() <.engine.GinoEngine.first>`.
+
+        """
+        return await self.bind.one(clause, *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, **params):
         """

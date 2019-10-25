@@ -8,6 +8,7 @@ from aiocontextvars import ContextVar
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
 
+from .exceptions import MultipleResultsFound, NoResultFound
 from .transaction import GinoTransaction
 
 
@@ -179,8 +180,8 @@ class GinoConnection:
     Represents an actual database connection.
 
     This is the root of all query API like :meth:`all`, :meth:`first`,
-    :meth:`scalar` or :meth:`status`, those on engine or query are simply
-    wrappers of methods in this class.
+    :meth:`one`, :meth:`one_or_none`, :meth:`scalar` or :meth:`status`,
+    those on engine or query are simply wrappers of methods in this class.
 
     Usually instances of this class are created by :meth:`.GinoEngine.acquire`.
 
@@ -322,6 +323,50 @@ class GinoConnection:
         """
         result = self._execute(clause, multiparams, params)
         return await result.execute(one=True)
+
+    async def one_or_none(self, clause, *multiparams, **params):
+        """
+        Runs the given query in database, returns at most one result.
+
+        If the query returns no result, this method will return ``None``.
+        If the query returns multiple results, this method will raise
+        :class:`~gino.exceptions.MultipleResultsFound`.
+
+        See :meth:`all` for common query comments.
+
+        """
+        result = self._execute(clause, multiparams, params)
+        ret = await result.execute()
+
+        if ret is None or len(ret) == 0:
+            return None
+
+        if len(ret) == 1:
+            return ret[0]
+
+        raise MultipleResultsFound('Multiple rows found for one_or_none().')
+
+    async def one(self, clause, *multiparams, **params):
+        """
+        Runs the given query in database, returns exactly one result.
+
+        If the query returns no result, this method will raise
+        :class:`~gino.exceptions.NoResultFound`.
+        If the query returns multiple results, this method will raise
+        :class:`~gino.exceptions.MultipleResultsFound`.
+
+        See :meth:`all` for common query comments.
+
+        """
+        try:
+            ret = await self.one_or_none(clause, *multiparams, **params)
+        except MultipleResultsFound:
+            raise MultipleResultsFound('Multiple rows found for one().')
+
+        if ret is None:
+            raise NoResultFound('No row was found for one().')
+
+        return ret
 
     async def scalar(self, clause, *multiparams, **params):
         """
@@ -695,6 +740,22 @@ class GinoEngine:
         """
         async with self.acquire(reuse=True) as conn:
             return await conn.first(clause, *multiparams, **params)
+
+    async def one_or_none(self, clause, *multiparams, **params):
+        """
+        Runs :meth:`~.GinoConnection.one_or_none`, See :meth:`.all`.
+
+        """
+        async with self.acquire(reuse=True) as conn:
+            return await conn.one_or_none(clause, *multiparams, **params)
+
+    async def one(self, clause, *multiparams, **params):
+        """
+        Runs :meth:`~.GinoConnection.one`, See :meth:`.all`.
+
+        """
+        async with self.acquire(reuse=True) as conn:
+            return await conn.one(clause, *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, **params):
         """

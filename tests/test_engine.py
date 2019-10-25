@@ -23,6 +23,8 @@ async def test_basic(engine):
     assert isinstance(await engine.scalar(sa.text('select now()')), datetime)
     assert isinstance((await engine.first('select now()'))[0], datetime)
     assert isinstance((await engine.all('select now()'))[0][0], datetime)
+    assert isinstance((await engine.one('select now()'))[0], datetime)
+    assert isinstance((await engine.one_or_none('select now()'))[0], datetime)
     status, result = await engine.status('select now()')
     assert status == 'SELECT 1'
     assert isinstance(result[0][0], datetime)

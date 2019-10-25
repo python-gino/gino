@@ -384,9 +384,11 @@ Executing Queries
 -----------------
 
 Once you have a :class:`~gino.engine.GinoConnection` instance, you can start
-executing queries with it. There are 4 variants of the execute method:
+executing queries with it. There are 6 variants of the execute method:
 :meth:`~gino.engine.GinoConnection.all`,
 :meth:`~gino.engine.GinoConnection.first`,
+:meth:`~gino.engine.GinoConnection.one`,
+:meth:`~gino.engine.GinoConnection.one_or_none`,
 :meth:`~gino.engine.GinoConnection.scalar` and
 :meth:`~gino.engine.GinoConnection.status`. They are basically the same:
 accepting the same parameters, calling the same underlying methods. The
@@ -399,6 +401,11 @@ difference is how they treat the results:
   or ``None`` if there is no result at all. There is usually some optimization
   behind the scene to efficiently get only the first result, instead of loading
   the full result set into memory.
+* :meth:`~gino.engine.GinoConnection.one` returns exactly one result. If there
+  is no result at all or if there are multiple results, an exception is raised.
+* :meth:`~gino.engine.GinoConnection.one_or_none` is similar to
+  :meth:`~gino.engine.GinoConnection.one`, but it returns ``None`` if there is
+  no result instead or raising an exception.
 * :meth:`~gino.engine.GinoConnection.scalar` is similar to
   :meth:`~gino.engine.GinoConnection.first`, it returns the first value of the
   first result. Quite convenient to just retrieve a scalar value from database,
