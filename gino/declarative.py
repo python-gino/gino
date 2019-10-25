@@ -144,10 +144,7 @@ class Model:
 
     @classmethod
     def _init_table(cls, sub_cls):
-        table_name = getattr(sub_cls, '__tablename__', None)
-        if table_name is None:
-            return
-
+        table_name = None
         columns = []
         inspected_args = []
         updates = {}
@@ -156,6 +153,9 @@ class Model:
             for k, v in getattr(each_cls, '__namespace__',
                                 each_cls.__dict__).items():
                 if callable(v) and getattr(v, '__declared_attr__', False):
+                    if k == '__tablename__':
+                        table_name = v(sub_cls)
+                        continue
                     v = updates[k] = v(sub_cls)
                 if isinstance(v, sa.Column):
                     v = v.copy()
@@ -166,6 +166,10 @@ class Model:
                     updates[k] = sub_cls.__attr_factory__(k, v)
                 elif isinstance(v, (sa.Index, sa.Constraint)):
                     inspected_args.append(v)
+        if table_name is None:
+            table_name = getattr(sub_cls, '__tablename__', None)
+        if table_name is None:
+            return
         sub_cls._column_name_map = column_name_map
 
         # handle __table_args__
