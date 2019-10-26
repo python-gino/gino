@@ -21,7 +21,7 @@ pytest-runner==5.1  # pyup: update minor
 pytest-asyncio==0.10.0  # pyup: update minor
 pytest-tornado5==2.0.0  # pyup: update minor
 pytest-mock==1.11.2  # pyup: update minor
-pytest-cov==2.7.1  # pyup: update minor
+pytest-cov==2.8.1  # pyup: update minor
 
 # docs
 Sphinx==2.2.0  # pyup: update minor
