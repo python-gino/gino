@@ -84,11 +84,18 @@ class Gino(_Gino):
         if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
             @app.middleware('request')
             async def on_request(request):
-                request['connection'] = await self.acquire(lazy=True)
+                conn = await self.acquire(lazy=True)
+                if hasattr(request, 'ctx'):
+                    request.ctx.connection = conn
+                else:
+                    request['connection'] = conn
 
             @app.middleware('response')
             async def on_response(request, _):
-                conn = request.pop('connection', None)
+                if hasattr(request, 'ctx'):
+                    conn = getattr(request.ctx, 'connection', None)
+                else:
+                    conn = request.pop('connection', None)
                 if conn is not None:
                     await conn.release()
 
