@@ -344,7 +344,7 @@ class GinoConnection:
         if len(ret) == 1:
             return ret[0]
 
-        raise MultipleResultsFound('Multiple rows found for one_or_none().')
+        raise MultipleResultsFound('Multiple rows found for one_or_none()')
 
     async def one(self, clause, *multiparams, **params):
         """
@@ -361,10 +361,10 @@ class GinoConnection:
         try:
             ret = await self.one_or_none(clause, *multiparams, **params)
         except MultipleResultsFound:
-            raise MultipleResultsFound('Multiple rows found for one().')
+            raise MultipleResultsFound('Multiple rows found for one()')
 
         if ret is None:
-            raise NoResultFound('No row was found for one().')
+            raise NoResultFound('No row was found for one()')
 
         return ret
 

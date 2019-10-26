@@ -71,16 +71,6 @@ async def test_one_or_none(bind):
     with pytest.raises(MultipleResultsFound):
         row = await User.query.gino.one_or_none()
 
-    result = await User.insert().gino.one_or_none(
-        dict(name='3'), dict(name='4'))
-    assert result is None
-    rows = await User.query.gino.all()
-    assert len(rows) == 5
-    assert set(u.nickname for u in rows) == {'0', '1', '2', '3', '4'}
-
-    with pytest.raises(MultipleResultsFound):
-        row = await User.query.gino.one_or_none()
-
 
 # noinspection PyUnusedLocal
 async def test_one(bind):
@@ -97,15 +87,6 @@ async def test_one(bind):
     rows = await User.query.gino.all()
     assert len(await User.query.gino.all()) == 3
     assert set(u.nickname for u in rows) == {'0', '1', '2'}
-
-    with pytest.raises(MultipleResultsFound):
-        row = await User.query.gino.one()
-
-    with pytest.raises(NoResultFound):
-        await User.insert().gino.one(dict(name='3'), dict(name='4'))
-    rows = await User.query.gino.all()
-    assert len(rows) == 5
-    assert set(u.nickname for u in rows) == {'0', '1', '2', '3', '4'}
 
     with pytest.raises(MultipleResultsFound):
         row = await User.query.gino.one()
