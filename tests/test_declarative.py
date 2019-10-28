@@ -53,6 +53,13 @@ async def test_table_args():
     assert hasattr(Model.__table__.c, 'col2')
     assert hasattr(Model.__table__.c, 'col3')
 
+    class Model(db.Model):
+        @db.declared_attr
+        def __tablename__(cls):
+            return 'model5'
+
+    assert Model.__table__.name == 'model5'
+
 
 async def test_inline_constraints_and_indexes(bind, engine):
     u = await User.create(nickname='test')
