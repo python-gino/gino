@@ -48,6 +48,7 @@ be removed in GINO 1.0.
 0.8.4 (TBD)
 ^^^^^^^^^^^
 
+* Added one() and one_or_none() (Contributed by Ilaï Deutel in #577)
 * Improved Starleet extension compatibility (Contributed by Jim O'Brien in #538)
 * Fixed Starlette connection release during exceptions issue (Contributed by qulaz in #533)
 * Fixed server event compatibility with Sanic 19.6.2 (Contributed by Julio Lacerda in #520)

@@ -36,6 +36,7 @@ Contributors
 * Julio Lacerda <julio.castro.lacerda@gmail.com>
 * qulaz <qulazwork@gmail.com>
 * Jim O'Brien <jim@greenfield.fm>
+* Ilaï Deutel <ilai-deutel@users.noreply.github.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
