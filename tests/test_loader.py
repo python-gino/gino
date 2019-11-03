@@ -351,3 +351,18 @@ async def test_none_as_none_281(user):
         loader = Team.distinct(Team.id).load(add_member=User)
         assert any(not team.members
                    for team in await query.gino.load(loader).all())
+
+
+async def test_model_in_query(user):
+    query = select([User], from_obj=User.outerjoin(Team))
+    query = query.where(Team.company_id==user.team.company.id)
+
+    query = query.alias('users')
+    User1 = User.in_query(query)
+
+    query = query.outerjoin(Team).outerjoin(Company).select()
+    loader = User1.distinct(User1.id).load()
+    users = await query.gino.load(loader).all()
+    assert users[0] != user
+    assert users[0].id == user.id
+    assert users[0].nickname == user.nickname
