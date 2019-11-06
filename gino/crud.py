@@ -1,3 +1,4 @@
+import inspect
 import itertools
 import weakref
 
@@ -724,3 +725,52 @@ class CRUDModel(Model):
 
         """
         return Alias(cls, *args, **kwargs)
+
+    @classmethod
+    def in_query(cls, query):
+        """
+        Convenient method to get a Model object when using subqueries.
+
+        Though with filters and aggregations, subqueries often return same
+        columns as the original table, but SQLAlchemy could not recognize them
+        as the columns are in subqueries, so technically they're columns in the
+        new "table".
+
+        With this method, the columns are loaded into the origintal models when
+        being used in subquries. For example::
+
+            query = query.alias('users')
+            MyUser = User.in_query(query)
+
+            loader = MyUser.distinct(User1.id).load()
+            users = await query.gino.load(loader).all()
+
+        """
+        return _get_query_model(cls, query)
+
+
+def _get_query_model(model, query):
+    return QueryModel(model.__name__, (), dict(_model=model, _query=query))
+
+
+class QueryModel(type):
+    """
+    Metaclass of Model classes used for subqueries.
+
+    """
+    def __getattr__(self, item):
+        rv = getattr(self._query.columns, item,
+                     getattr(self._model.__table__.columns, item,
+                             getattr(self._model, item, DEFAULT)))
+        # replace `cls` in classmethod in models to `self`
+        if inspect.ismethod(rv) and inspect.isclass(rv.__self__):
+            return lambda *args, **kwargs: rv.__func__(self, *args, **kwargs)
+        if rv is DEFAULT:
+            raise AttributeError
+        return rv
+
+    def __iter__(self):
+        return iter(self._query.columns)
+
+    def __call__(self, *args, **kwargs):
+        return self._model(*args, **kwargs)
