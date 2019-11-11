@@ -46,7 +46,7 @@ Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
 0.8.4 (2019-11-09)
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 * Better loader support for models in subqueries (#573 #585)
 * Allowed ``__tablename__`` to be a ``declared_attr`` (#579 #582)
