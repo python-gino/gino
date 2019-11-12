@@ -166,8 +166,9 @@ class Model:
                     updates[k] = sub_cls.__attr_factory__(k, v)
                 elif isinstance(v, (sa.Index, sa.Constraint)):
                     inspected_args.append(v)
-        if table_name is None:
-            table_name = getattr(sub_cls, '__tablename__', None)
+        if getattr(sub_cls, '__tablename__', None) and \
+                not callable(getattr(sub_cls, '__tablename__')):
+            table_name = getattr(sub_cls, '__tablename__')
         if table_name is None:
             return
         sub_cls._column_name_map = column_name_map

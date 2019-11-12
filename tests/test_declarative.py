@@ -260,3 +260,20 @@ async def test_instant_column_name():
         select_col = db.Column(name=db.quoted_name('select', False))
         assert select_col.name == 'select'
         assert not select_col.name.quote
+
+
+async def test_overwrite_declared_table_name():
+    class MyTableNameMixin:
+        @db.declared_attr
+        def __tablename__(cls):
+            return cls.__name__.lower()
+
+    class MyTableWithoutName(MyTableNameMixin, db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+
+    class MyTableWithName(MyTableNameMixin, db.Model):
+        __tablename__ = 'manually_overwritten_name'
+        id = db.Column(db.Integer, primary_key=True)
+
+    assert MyTableWithoutName.__table__.name == 'mytablewithoutname'
+    assert MyTableWithName.__table__.name == 'manually_overwritten_name'
