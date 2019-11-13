@@ -152,11 +152,12 @@ class Model:
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in getattr(each_cls, '__namespace__',
                                 each_cls.__dict__).items():
-                if callable(v) and getattr(v, '__declared_attr__', False):
-                    if k == '__tablename__':
-                        table_name = v(sub_cls)
-                        continue
+                declared_callable_attr = callable(v) and \
+                                         getattr(v, '__declared_attr__', False)
+                if k != '__tablename__' and declared_callable_attr:
                     v = updates[k] = v(sub_cls)
+                elif k == '__tablename__':
+                    table_name = v(sub_cls) if declared_callable_attr else v
                 if isinstance(v, sa.Column):
                     v = v.copy()
                     if not v.name:
@@ -166,9 +167,6 @@ class Model:
                     updates[k] = sub_cls.__attr_factory__(k, v)
                 elif isinstance(v, (sa.Index, sa.Constraint)):
                     inspected_args.append(v)
-        if getattr(sub_cls, '__tablename__', None) and \
-                not callable(getattr(sub_cls, '__tablename__')):
-            table_name = getattr(sub_cls, '__tablename__')
         if table_name is None:
             return
         sub_cls._column_name_map = column_name_map
