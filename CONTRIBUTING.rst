@@ -135,18 +135,18 @@ Then run the tests like so::
     $ export DB_USER=gino DB_PASS=gino DB_NAME=gino
     $ py.test
 
-Here is an example for db server in docker.
+Here is an example for db server in docker. Some tests require ssl so you will need to run postgres with ssl enabled.
 Terminal 1 (server)::
 
-    $ docker run --rm -it -p 5433:5432 postgres:10
+    $ openssl req -new -text -passout pass:abcd -subj /CN=localhost -out server.req -keyout privkey.pem
+    $ openssl rsa -in privkey.pem -passin pass:abcd -out server.key
+    $ openssl req -x509 -in server.req -text -key server.key -out server.crt
+    $ chmod 600 server.key
+    $ docker run --name gino_db --rm -it -p 5433:5432 -v "$(pwd)/server.crt:/var/lib/postgresql/server.crt:ro" -v "$(pwd)/server.key:/var/lib/postgresql/server.key:ro" postgres:12-alpine -c ssl=on -c ssl_cert_file=/var/lib/postgresql/server.crt -c ssl_key_file=/var/lib/postgresql/server.key
 
 Terminal 2 (client)::
 
-    $ psql -h localhost -p 5433 -U postgres
-
-Now run create role/database commands described above.
-
-Terminal 3 (python)::
-
     $ export DB_USER=gino DB_PASS=gino DB_NAME=gino DB_PORT=5433
+    $ docker exec gino_db psql -U postgres -c "CREATE ROLE $DB_USER WITH LOGIN ENCRYPTED PASSWORD '$DB_PASS'"
+    $ docker exec gino_db psql -U postgres -c "CREATE DATABASE $DB_NAME WITH OWNER = $DB_USER;"
     $ pytest tests/test_aiohttp.py

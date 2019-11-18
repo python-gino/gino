@@ -158,11 +158,13 @@ Contribute
 There are a few tasks in GitHub issues marked as ``help wanted``. Please feel
 free to take any of them and pull requests are greatly welcome.
 
-To run tests (please read more in CONTRIBUTING.rst):
+To run tests:
 
 .. code-block:: console
 
    $ python setup.py test
+
+For the tests to be run, a database has to be available (please read more in CONTRIBUTING.rst)
 
 Meanwhile, these are also very much appreciated:
 
