@@ -37,6 +37,7 @@ Contributors
 * qulaz <qulazwork@gmail.com>
 * Jim O'Brien <jim@greenfield.fm>
 * Ilaï Deutel <ilai-deutel@users.noreply.github.com>
+* Roald Storm <roaldstorm@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,

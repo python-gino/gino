@@ -45,6 +45,11 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.5 (2019-11-19)
+^^^^^^^^^^^^^^^^^^
+
+* Improved support for ``__tablename__`` in ``declared_attr`` (Contributed by Roald Storm in #592)
+
 0.8.4 (2019-11-09)
 ^^^^^^^^^^^^^^^^^^
 
