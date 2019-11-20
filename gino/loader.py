@@ -159,6 +159,13 @@ class ModelLoader(Loader):
         return self
 
 
+class SubqueryLoader(ModelLoader):
+    def __init__(self, model, subquery, **extras):
+        super().__init__(model, **extras)
+        self.columns = [subquery.corresponding_column(column) for column
+                        in model]
+
+
 class AliasLoader(ModelLoader):
     def __init__(self, alias, *columns, **extras):
         super().__init__(alias, *columns, **extras)
