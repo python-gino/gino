@@ -25,6 +25,6 @@ pytest-cov==2.8.1  # pyup: update minor
 
 # docs
 Sphinx==2.2.0  # pyup: update minor
-Pygments==2.4.0  # pyup: update minor
+Pygments==2.5.1  # pyup: update minor
 sphinxcontrib-asyncio==0.2.0  # pyup: update minor
 sphinx-rtd-theme==0.4.2  # pyup: update minor
