@@ -20,7 +20,7 @@ pytest==5.2.2  # pyup: update minor
 pytest-runner==5.1  # pyup: update minor
 pytest-asyncio==0.10.0  # pyup: update minor
 pytest-tornado5==2.0.0  # pyup: update minor
-pytest-mock==1.11.2  # pyup: update minor
+pytest-mock==1.13.0  # pyup: update minor
 pytest-cov==2.8.1  # pyup: update minor
 
 # docs
