@@ -233,3 +233,20 @@ async def test_t291_t402(bind):
         assert custom_profile2 == 123
     finally:
         await PropsTest.gino.drop()
+
+
+async def test_json_path(bind):
+    from gino.dialects.asyncpg import JSONB
+
+    class PathTest(db.Model):
+        __tablename__ = 'path_test_json_path'
+        data = db.Column(JSONB())
+
+    await PathTest.gino.create()
+    try:
+        t1 = await PathTest.create(data=dict(a=dict(b='c')))
+        t2 = await PathTest.query.where(
+            PathTest.data[('a', 'b')].astext == 'c').gino.first()
+        assert t1.data == t2.data
+    finally:
+        await PathTest.gino.drop()

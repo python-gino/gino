@@ -9,7 +9,8 @@ from sqlalchemy.dialects.postgresql import (  # noqa: F401
     CreateEnumType,
     DropEnumType,
     JSON,
-    JSONB
+    JSONB,
+    json,
 )
 from sqlalchemy.dialects.postgresql.base import (
     ENUM,
@@ -333,6 +334,20 @@ class GinoNullType(sqltypes.NullType):
         return super().result_processor(dialect, coltype)
 
 
+class AsyncpgJSONPathType(json.JSONPathType):
+    def bind_processor(self, dialect):
+        super_proc = self.string_bind_processor(dialect)
+
+        def process(value):
+            assert isinstance(value, util.collections_abc.Sequence)
+            if super_proc:
+                return [super_proc(util.text_type(elem)) for elem in value]
+            else:
+                return [util.text_type(elem) for elem in value]
+
+        return process
+
+
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     driver = 'asyncpg'
@@ -350,6 +365,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
             ENUM: AsyncEnum,
             sqltypes.Enum: AsyncEnum,
             sqltypes.NullType: GinoNullType,
+            sqltypes.JSON.JSONPathType: AsyncpgJSONPathType,
         }
     )
 
