@@ -13,7 +13,7 @@ quart==0.10.0;python_version>="3.7"  # pyup: update minor
 starlette==0.12.0;python_version>="3.6"  # pyup: update minor
 
 # tests
-coverage==4.5.1  # pyup: update minor
+coverage==5.0  # pyup: update minor
 flake8==3.7.1  # pyup: update minor
 tox==3.14.0  # pyup: update minor
 pytest==5.2.2  # pyup: update minor
