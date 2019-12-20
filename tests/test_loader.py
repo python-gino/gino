@@ -319,6 +319,24 @@ async def test_distinct_none(bind):
     assert not hasattr(u, 'team')
 
 
+async def test_distinct_tuple_loader(user):
+    from gino.loader import ColumnLoader
+
+    query = db.select([Company,
+                       Team,
+                       db.literal_column("'test'").label('test_column')],
+                      use_labels=True) \
+        .select_from(Company.outerjoin(Team))
+
+    companies = await query.gino.load((
+        Company.distinct(Company.id).load(add_team=Team.distinct(Team.id)),
+        ColumnLoader(query.c.test_column)
+    )).all()
+    assert len(companies) == 1
+    assert len(companies[0][0].teams) == 2
+    assert companies[0][1] == 'test'
+
+
 async def test_tuple_loader_279(user):
     from gino.loader import TupleLoader
     query = db.select([User, Team])
