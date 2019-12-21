@@ -1,0 +1,55 @@
+name: test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.5', '3.6', '3.7', '3.8' ]
+        postgres-version: [ '9.6', '12.1' ]
+    services:
+      postgres:
+        image: fantix/postgres-ssl:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_USER: gino
+        ports:
+        - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: virtualenv cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles(format('{0}{1}', github.workspace, '/poetry.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-poetry-
+    - name: Install Python dependencies
+      run: |
+        curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+        $HOME/.poetry/bin/poetry install
+    - name: Test with pytest
+      env:
+        DB_HOST: localhost
+        DB_USER: gino
+      run: |
+        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=95 --cov-report xml
+    - name: Check code format with black
+      if: matrix.python-version >= '3.6'
+      run: |
+          $HOME/.poetry/bin/poetry run black --check src
+    - name: Submit coverage report
+      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1'
+      env:
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
+      run: |
+        pip install codacy-coverage
+        python-codacy-coverage -r coverage.xml

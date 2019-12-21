@@ -1,0 +1,167 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.dialects.asyncpg.rst:2
+msgid "gino.dialects.asyncpg module"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncEnum:1 of
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.ENUM`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgCompiler:1 of
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.base.PGCompiler`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgCursor:1 of
+msgid "Bases: :class:`gino.dialects.base.Cursor`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDBAPI:1 of
+msgid "Bases: :class:`gino.dialects.base.BaseDBAPI`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect:1 of
+msgid ""
+"Bases: :class:`sqlalchemy.dialects.postgresql.base.PGDialect`, "
+":class:`gino.dialects.base.AsyncDialectMixin`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.get_isolation_level:1 of
+msgid "Given an asyncpg connection, return its isolation level."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.has_sequence:1 of
+msgid "Check the existence of a particular sequence in the database."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.has_sequence:3 of
+msgid ""
+"Given a :class:`.Connection` object and a string `sequence_name`, return "
+"True if the given sequence exists in the database, False otherwise."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.has_table:1 of
+msgid "Check the existence of a particular table in the database."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.has_table:3 of
+msgid ""
+"Given a :class:`.Connection` object and a string `table_name`, return "
+"True if the given table (possibly within the specified `schema`) exists "
+"in the database, False otherwise."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:1 of
+msgid "return a callable which sets up a newly created DBAPI connection."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:3 of
+msgid ""
+"This is used to set dialect-wide per-connection options such as isolation"
+" modes, unicode modes, etc."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:6 of
+msgid ""
+"If a callable is returned, it will be assembled into a pool listener that"
+" receives the direct DBAPI connection, with all wrappers removed."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.on_connect:9 of
+msgid "If None is returned, no listener will be generated."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgDialect.set_isolation_level:1 of
+msgid "Given an asyncpg connection, set its isolation level."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgExecutionContext:1 of
+msgid ""
+"Bases: :class:`gino.dialects.base.ExecutionContextOverride`, "
+":class:`sqlalchemy.dialects.postgresql.base.PGExecutionContext`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgIterator:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType:1 of
+msgid "Bases: :class:`sqlalchemy.dialects.postgresql.json.JSONPathType`"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType.bind_processor:1 of
+msgid "Return a conversion function for processing bind values."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType.bind_processor:3 of
+msgid ""
+"Returns a callable which will receive a bind parameter value as the sole "
+"positional argument and will return a value to send to the DB-API."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType.bind_processor:7
+#: gino.dialects.asyncpg.GinoNullType.result_processor:7 of
+msgid "If processing is not necessary, the method should return ``None``."
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType.bind_processor
+#: gino.dialects.asyncpg.GinoNullType.result_processor of
+msgid "Parameters"
+msgstr ""
+
+#: gino.dialects.asyncpg.AsyncpgJSONPathType.bind_processor:9
+#: gino.dialects.asyncpg.GinoNullType.result_processor:9 of
+msgid "Dialect instance in use."
+msgstr ""
+
+#: gino.dialects.asyncpg.DBAPICursor:1 of
+msgid "Bases: :class:`gino.dialects.base.DBAPICursor`"
+msgstr ""
+
+#: gino.dialects.asyncpg.GinoNullType:1 of
+msgid "Bases: :class:`sqlalchemy.sql.sqltypes.NullType`"
+msgstr ""
+
+#: gino.dialects.asyncpg.GinoNullType.result_processor:1 of
+msgid "Return a conversion function for processing result row values."
+msgstr ""
+
+#: gino.dialects.asyncpg.GinoNullType.result_processor:3 of
+msgid ""
+"Returns a callable which will receive a result row column value as the "
+"sole positional argument and will return a value to return to the user."
+msgstr ""
+
+#: gino.dialects.asyncpg.GinoNullType.result_processor:11 of
+msgid "DBAPI coltype argument received in cursor.description."
+msgstr ""
+
+#: gino.dialects.asyncpg.NullPool:1 gino.dialects.asyncpg.Pool:1 of
+msgid "Bases: :class:`gino.dialects.base.Pool`"
+msgstr ""
+
+#: gino.dialects.asyncpg.PreparedStatement:1 of
+msgid "Bases: :class:`gino.dialects.base.PreparedStatement`"
+msgstr ""
+
+#: gino.dialects.asyncpg.Transaction:1 of
+msgid "Bases: :class:`gino.dialects.base.Transaction`"
+msgstr ""
+

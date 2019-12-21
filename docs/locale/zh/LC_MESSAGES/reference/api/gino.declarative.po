@@ -1,0 +1,57 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.declarative.rst:2
+msgid "gino.declarative module"
+msgstr ""
+
+#: gino.declarative.ColumnAttribute:1 gino.declarative.Model:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: gino.declarative.declared_attr:1 of
+msgid "Mark a class-level method as a factory of attribute."
+msgstr ""
+
+#: gino.declarative.declared_attr:3 of
+msgid ""
+"This is intended to be used as decorators on class-level methods of a "
+":class:`~Model` class. When initializing the class as well as its "
+"subclasses, the decorated factory method will be called for each class, "
+"the returned result will be set on the class in place of the factory "
+"method under the same name."
+msgstr ""
+
+#: gino.declarative.declared_attr:9 of
+msgid ""
+"``@declared_attr`` is implemented differently than "
+":class:`~sqlalchemy.ext.declarative.declared_attr` of SQLAlchemy, but "
+"they are both more often used on mixins to dynamically declare indices or"
+" constraints (also works for column and ``__table_args__``, or even "
+"normal class attributes)::"
+msgstr ""
+
+#: gino.declarative.declared_attr:38 of
+msgid "This doesn't work if the model already had a ``__table__``."
+msgstr ""
+
+#: gino.declarative.InvertDict:1 of
+msgid "Bases: :class:`dict`"
+msgstr ""
+

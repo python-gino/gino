@@ -1,0 +1,341 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:3
+msgid "Loaders and Relationship"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:5
+msgid "Table of Contents"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:7
+msgid "Loaders are used to load database row results into objects."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:9
+msgid ""
+"GINO doesn't support automated relationship. We insist explicit code "
+"style in asynchronous programming and that conflicts with some usual ORM "
+"relationship patterns. Instead, GINO provides a rich loader system to "
+"assist you with manual relationships through foreign keys or whatever "
+"magic. That means, you are responsible for writing the queries, and GINO "
+"could assemble objects for you from the database result with loaders you "
+"defined."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:18
+msgid "Model Loader"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:20
+msgid ""
+"The Model Loader is the magic behind GINO CRUD to translate database rows"
+" into model objects. Through CRUD, Model Loaders are assembled internally"
+" for you, you can still use it directly. For example, an ordinary query "
+"that returns rows may look like this::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:28
+msgid ""
+"In order to load rows into ``User`` objects, you can provide an execution"
+" option ``loader`` with a new :class:`~gino.loader.ModelLoader` "
+"instance::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:37
+msgid ""
+"The :class:`~gino.loader.ModelLoader` would then load each database row "
+"into a ``User`` object. As this is frequently used, GINO made it a "
+"shortcut::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:44
+msgid "And another shortcut::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:52
+msgid ""
+"``User`` as ``loader`` is transformed into ``ModelLoader(User)`` by "
+":meth:`Loader.get() <gino.loader.Loader.get>`, explained later in "
+"\"Loader Expression\"."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:56
+msgid "And again::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:61
+msgid "This is identical to the normal CRUD query::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:67
+msgid "Loader Expression"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:69
+msgid ""
+"So Loaders are actually row post-processors, they define how the database"
+" rows should be processed and returned. Other than "
+":class:`~gino.loader.ModelLoader`, there're also other loaders that could"
+" turn the database rows into different results like based on your "
+"definition. GINO provides the Loader Expression feature for you to easily"
+" assemble complex loaders."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:75
+msgid "Here is an example using all loaders at once::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:86
+msgid ""
+"Let's check this piece by piece. Overall, the argument of "
+":meth:`~gino.api.GinoExecutor.load` is a tuple. This is interpreted into "
+"a :class:`~gino.loader.TupleLoader`, with each item of the tuple "
+"interpreted as a Loader Expression recursively. That means, it is "
+"possible to nest tuples. The result of a "
+":class:`~gino.loader.TupleLoader` is a tuple."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:92
+msgid ""
+":class:`~sqlalchemy.schema.Column` in Loader Expressions are interpreted "
+"as :class:`~gino.loader.ColumnLoader`. It simply outputs the value of the"
+" given column in the database row. It is your responsibility to select "
+"the column in the query. Please note, :class:`~gino.loader.ColumnLoader` "
+"uses the given column as index to look for the value, not the name of the"
+" column. This is a SQLAlchemy feature to support selecting multiple "
+"columns with the same name from different tables in the same query, "
+"especially for ORM. So if you are using raw textual SQL and wishing to "
+"use :class:`~gino.loader.ColumnLoader`, you'll have to declare columns "
+"for the query::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:112
+msgid ""
+"Let's get back to previous example. The second item in the tuple is a "
+"GINO model class. As we've presented previously, it is interpreted into a"
+" :class:`~gino.loader.ModelLoader`. By default, it loads the values of "
+"all the columns of the give model, and create a new model instance with "
+"the values."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:119
+msgid ""
+"For a complex loader expression, the same row is given to all loaders, so"
+" it doesn't matter ``User.id`` is already used before the model loader."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:122
+msgid ""
+"The last item in the tuple is a callable, it will be called for each row "
+"with two arguments: the first argument is the row itself, while the "
+"second is a contextual value provided by outer loader, we'll get to that "
+"later. Similar to :func:`map`, the return value of the call will be the "
+"loaded result."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:127
+msgid ""
+"At last, if none of the above types matches a Loader Expression, it will "
+"be treated as is. Like the ``'|'`` separator, it will show up as the "
+"third item in every result returned by the query."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:133
+msgid "Many-to-One Relationship"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:135
+msgid ""
+"A classic many-to-one relationship is also known as referencing - the "
+"model on the \"many\" end keeps a single reference to the model on the "
+"\"one\" end. Although GINO does not enforce it, usually people use a "
+"foreign key for the reference::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:148
+msgid ""
+"So every child has a single parent (or no parent at all), while one "
+"parent may have multiple children. GINO provides an easy way to load "
+"children with their parents::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:155
+msgid ""
+"As you may have noticed, ``Child.load`` is exactly the shortcut to create"
+" :class:`~gino.loader.ModelLoader` in the very first example. With some "
+"additional keyword arguments, ``Child.load(parent=Parent)`` is still a "
+":class:`~gino.loader.ModelLoader` for ``Child``, the model loader is at "
+"the same time a **query builder**. It is identical to do this::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:164
+msgid ""
+"The :attr:`~gino.loader.Loader.query` dynamically generates a SQLAlchemy "
+"query based on the knowledge of the loader, and set the loader as "
+"execution option at the same time. The :class:`~gino.loader.Loader` "
+"simply forwarded unknown attributes to its "
+":attr:`~gino.loader.Loader.query`, that's why ``.query`` can be omitted."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:170
+msgid ""
+"For :class:`~gino.loader.ModelLoader`, all keyword arguments are "
+"interpreted as subloaders, their results will be set to the attributes of"
+" the result model under the corresponding keys using :func:`setattr`. For"
+" example, ``Parent`` is interpreted as ``ModelLoader(Parent)`` which "
+"loads ``Parent`` instances, and ``Parent`` instances are set as the "
+"``parent`` attribute of the outer ``Child`` instance."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:179
+msgid ""
+"If multiple children references the same parent, then each child owns a "
+"unique parent instance with identical values."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:184
+msgid ""
+"You don't have to define ``parent`` attribute on ``Child``. But if you "
+"do, you gain the ability to customize how parent is stored or retrieved. "
+"For example, let's store the parent instance as ``_parent``::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:202
+msgid ""
+"The query builder works recursively. For "
+":class:`~gino.loader.ModelLoader`, it uses ``LEFT OUTER JOIN`` to connect"
+" the ``FROM`` clauses, in order to achieve many-to-one scenario. The "
+"``ON`` clause is determined automatically by foreign keys. You can also "
+"customize the ``ON`` clause in case there is no foreign key (a promise is"
+" a promise)::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:212
+msgid "And subloaders can be nested::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:217
+msgid ""
+"By now, GINO supports only loading many-to-one joined query. To modify a "
+"relationship, just modify the reference column values."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:222
+msgid "Self Referencing"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:226
+msgid "Experimental feature."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:228
+msgid ""
+"Self referencing is usually used to create a tree-like structure. For "
+"example::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:235
+msgid "In order to load leaf categories with their parents, an alias is needed::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:239
+msgid "Then the query would be something like this::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:250
+msgid "The generated SQL looks like this:"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:264
+msgid "Other Relationships"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:266
+msgid ""
+"GINO 0.7.4 introduced an experimental distinct feature to reduce a result"
+" set with loaders, combining rows under specified conditions. This made "
+"it possible to build one-to-many relationships. Using the same parent-"
+"child example above, we could load distinct parents with all their "
+"children::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:298
+msgid ""
+"Here the query is still child outer-joining parent, but the loader is "
+"loading parent instances with distinct IDs only, while storing all their "
+"children through the ``add_child`` setter property. In detail for each "
+"row, a parent instance is firstly loaded if no parent instance with the "
+"same ID was loaded previously, or the same parent instance will be "
+"reused. Then a child instance is loaded from the same row, and fed to the"
+" possibly reused parent instance by ``parent.add_child = new_child``."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:306
+msgid ""
+"Distinct loaders can be nested to load hierarchical data, but it cannot "
+"be used as a query builder to automatically generate queries."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:309
+msgid ""
+"GINO provides no additional support for one-to-one relationship - the "
+"user should make sure that the query produces rows of distinct instance "
+"pairs, and load them with regular GINO model loaders. When in doubt, the "
+"distinct feature can be used on both sides, but you'll have to manually "
+"deal with the conflict if more than one related instances are found. For "
+"example, we could keep only the last child for each parent::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:344
+msgid "Similarly, you can build many-to-many relationships in the same way::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:388
+msgid ""
+"Likewise, there is for now no way to modify the relationships "
+"automatically, you'll have to manually create, delete or modify "
+"``ParentXChild`` instances."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:393
+msgid "Advanced Usage of Loaders"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:395
+msgid ""
+"You could use combined loaders flexibly in complex queries - loading "
+"relationships is just one special use case. For `example "
+"<https://github.com/fantix/gino/issues/308>`_, you could load the count "
+"of visits at the same time of loading each user, by using a tuple loader "
+"with two items - model loader for the user, and column loader for the "
+"count::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:454
+msgid "Using alias to get ID-ascending pairs from the same table::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/loaders.rst:463
+msgid ""
+"Potentially there could be a lot of different use cases of loaders. We'll"
+" add more inspiration here in the future."
+msgstr ""
+

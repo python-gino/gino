@@ -1,0 +1,7 @@
+Explanation
+===========
+
+.. toctree::
+   :glob:
+
+   explanation/*

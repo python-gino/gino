@@ -1,0 +1,389 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.api.rst:2
+msgid "gino.api module"
+msgstr ""
+
+#: gino.api.Gino:1 of
+msgid "Bases: :class:`sqlalchemy.sql.schema.MetaData`"
+msgstr ""
+
+#: gino.api.Gino:1 of
+msgid "All-in-one API class of GINO, providing several shortcuts."
+msgstr ""
+
+#: gino.api.Gino:3 of
+msgid ""
+"This class is a subclass of SQLAlchemy "
+":class:`~sqlalchemy.schema.MetaData`, therefore its instances can be used"
+" as a normal :class:`~sqlalchemy.schema.MetaData` object, e.g. used in "
+"`Alembic <http://alembic.zzzcomputing.com/>`_. In usual cases, you would "
+"want to define one global :class:`~.Gino` instance, usually under the "
+"name of ``db``, representing the database used in your application."
+msgstr ""
+
+#: gino.api.Gino:10 of
+msgid ""
+"You may define tables in `the official way <http://bit.ly/2G25fdc>`_ "
+"SQLAlchemy core recommended, but more often in GINO we define model "
+"classes with ``db.Model`` as their parent class to represent tables, for "
+"its objective interface and CRUD operations. Please read :doc:`/how-"
+"to/crud` for more information."
+msgstr ""
+
+#: gino.api.Gino:16 of
+msgid ""
+"For convenience, :class:`Gino` instance delegated all properties publicly"
+" exposed by :mod:`sqlalchemy`, so that you can define tables / models "
+"without importing :mod:`sqlalchemy`::"
+msgstr ""
+
+#: gino.api.Gino:22 of
+msgid ""
+"Similar to :class:`~sqlalchemy.schema.MetaData`, a :class:`~.Gino` object"
+" can bind to a :class:`~gino.engine.GinoEngine` instance, hereby allowing"
+" `\"implicit execution\" <http://bit.ly/2oTUcKY>`_ through the ``gino`` "
+"extension on :class:`~sqlalchemy.sql.expression.Executable` or "
+":class:`~sqlalchemy.schema.SchemaItem` constructs::"
+msgstr ""
+
+#: gino.api.Gino:31 of
+msgid ""
+"Differently, GINO encourages the use of implicit execution and manages "
+"transactional context correctly."
+msgstr ""
+
+#: gino.api.Gino:34 of
+msgid "Binding to a connection object is not supported."
+msgstr ""
+
+#: gino.api.Gino:36 of
+msgid ""
+"To set a bind property, you can simply set your "
+":class:`~gino.engine.GinoEngine` object on :attr:`db.bind <Gino.bind>`, "
+"or set it to ``None`` to unbind. However, the creation of engine usually "
+"happens at the same time. Therefore, GINO provided several convenient "
+"ways doing so:"
+msgstr ""
+
+#: gino.api.Gino:42 of
+msgid ":meth:`~Gino.with_bind` returning an asynchronous context manager::"
+msgstr ""
+
+#: gino.api.Gino:46 of
+msgid ":meth:`~Gino.set_bind` and :meth:`~Gino.pop_bind`::"
+msgstr ""
+
+#: gino.api.Gino:51 of
+msgid "Directly ``await`` on :class:`~.Gino` instance::"
+msgstr ""
+
+#: gino.api.Gino:58 of
+msgid "SQLAlchemy allows creating the engine by::"
+msgstr ""
+
+#: gino.api.Gino:62 of
+msgid ""
+"While in GINO this only sets a string to :attr:`~.Gino.bind`, because "
+"creating an engine requires ``await``, which is exactly what "
+":meth:`~.Gino.set_bind` does."
+msgstr ""
+
+#: gino.api.Gino:66 of
+msgid ""
+"At last, :class:`Gino` delegates all query APIs on the bound "
+":class:`~.engine.GinoEngine`."
+msgstr ""
+
+#: gino.api.Gino.Model:1 of
+msgid ""
+"Declarative base class for models, subclass of "
+":class:`gino.declarative.Model`. Defining subclasses of this class will "
+"result new tables added to this :class:`Gino` metadata."
+msgstr ""
+
+#: gino.api.Gino.acquire:1 of
+msgid "A delegate of :meth:`GinoEngine.acquire() <.engine.GinoEngine.acquire>`."
+msgstr ""
+
+#: gino.api.Gino.all:1 of
+msgid "A delegate of :meth:`GinoEngine.all() <.engine.GinoEngine.all>`."
+msgstr ""
+
+#: gino.api.Gino.bind:1 of
+msgid "An :class:`~.engine.GinoEngine` to which this :class:`Gino` is bound."
+msgstr ""
+
+#: gino.api.Gino.bind:3 of
+msgid ""
+"This is a simple property with no getter or setter hook - what you set is"
+" what you get. To achieve the same result as it is in SQLAlchemy - "
+"setting a string or :class:`~sqlalchemy.engine.url.URL` and getting an "
+"engine instance, use :meth:`set_bind` (or ``await`` on this :class:`Gino`"
+" object after setting a string or :class:`~sqlalchemy.engine.url.URL`)."
+msgstr ""
+
+#: gino.api.Gino.compile:1 of
+msgid "A delegate of :meth:`GinoEngine.compile() <.engine.GinoEngine.compile>`."
+msgstr ""
+
+#: gino.api.Gino.first:1 of
+msgid "A delegate of :meth:`GinoEngine.first() <.engine.GinoEngine.first>`."
+msgstr ""
+
+#: gino.api.Gino.iterate:1 of
+msgid "A delegate of :meth:`GinoEngine.iterate() <.engine.GinoEngine.iterate>`."
+msgstr ""
+
+#: gino.api.Gino.model_base_classes:1 of
+msgid "Overridable default model classes to build the :attr:`Model`."
+msgstr ""
+
+#: gino.api.Gino.model_base_classes:3 of
+msgid "Default is :class:`(CRUDModel, ) <gino.crud.CRUDModel>`."
+msgstr ""
+
+#: gino.api.Gino.no_delegate:1 of
+msgid ""
+"A set of symbols from :mod:`sqlalchemy` which is not delegated by "
+":class:`Gino`."
+msgstr ""
+
+#: gino.api.Gino.one:1 of
+msgid "A delegate of :meth:`GinoEngine.one() <.engine.GinoEngine.first>`."
+msgstr ""
+
+#: gino.api.Gino.one_or_none:1 of
+msgid ""
+"A delegate of :meth:`GinoEngine.one_or_none() "
+"<.engine.GinoEngine.one_or_none>`."
+msgstr ""
+
+#: gino.api.Gino.pop_bind:1 of
+msgid "Unbind self, and return the bound engine."
+msgstr ""
+
+#: gino.api.Gino.pop_bind:3 of
+msgid "This is usually used in a chained call to close the engine::"
+msgstr ""
+
+#: gino.api.Gino.pop_bind gino.api.Gino.set_bind gino.api.Gino.with_bind of
+msgid "Returns"
+msgstr ""
+
+#: gino.api.Gino.pop_bind:7 of
+msgid ":class:`~.engine.GinoEngine` or ``None`` if self is not bound."
+msgstr ""
+
+#: gino.api.Gino.query_executor:1 of
+msgid ""
+"The overridable ``gino`` extension class on "
+":class:`~sqlalchemy.sql.expression.Executable`."
+msgstr ""
+
+#: gino.api.Gino.query_executor:4 of
+msgid ""
+"This class will be set as the getter method of the property ``gino`` on "
+":class:`~sqlalchemy.sql.expression.Executable` and its subclasses, if "
+"``ext`` and ``query_ext`` arguments are both ``True``. Default is "
+":class:`GinoExecutor`."
+msgstr ""
+
+#: gino.api.Gino.scalar:1 of
+msgid "A delegate of :meth:`GinoEngine.scalar() <.engine.GinoEngine.scalar>`."
+msgstr ""
+
+#: gino.api.Gino.set_bind:1 of
+msgid "Bind self to the given :class:`~.engine.GinoEngine` and return it."
+msgstr ""
+
+#: gino.api.Gino.set_bind:3 of
+msgid ""
+"If the given ``bind`` is a string or :class:`~sqlalchemy.engine.url.URL`,"
+" all arguments will be sent to :func:`~gino.create_engine` to create a "
+"new engine, and return it."
+msgstr ""
+
+#: gino.api.Gino.set_bind:7 of
+msgid ":class:`~.engine.GinoEngine`"
+msgstr ""
+
+#: gino.api.Gino.status:1 of
+msgid "A delegate of :meth:`GinoEngine.status() <.engine.GinoEngine.status>`."
+msgstr ""
+
+#: gino.api.Gino.transaction:1 of
+msgid ""
+"A delegate of :meth:`GinoEngine.transaction() "
+"<.engine.GinoEngine.transaction>`."
+msgstr ""
+
+#: gino.api.Gino.with_bind:1 of
+msgid "Shortcut for :meth:`set_bind` and :meth:`pop_bind` plus closing engine."
+msgstr ""
+
+#: gino.api.Gino.with_bind:3 of
+msgid ""
+"This method accepts the same arguments of :func:`~gino.create_engine`. "
+"This allows inline creating an engine and binding self on enter, and "
+"unbinding self and closing the engine on exit::"
+msgstr ""
+
+#: gino.api.Gino.with_bind:11 of
+msgid "An asynchronous context manager."
+msgstr ""
+
+#: gino.api.GinoExecutor:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: gino.api.GinoExecutor:1 of
+msgid ""
+"The default ``gino`` extension on "
+":class:`~sqlalchemy.sql.expression.Executable` constructs for implicit "
+"execution."
+msgstr ""
+
+#: gino.api.GinoExecutor:5 of
+msgid ""
+"Instances of this class are created when visiting the ``gino`` property "
+"of :class:`~sqlalchemy.sql.expression.Executable` instances (also "
+"referred as queries or clause elements), for example::"
+msgstr ""
+
+#: gino.api.GinoExecutor:11 of
+msgid ""
+"This allows GINO to add the asynchronous query APIs (:meth:`all`, "
+":meth:`first`, :meth:`one`, :meth:`one_or_none`, :meth:`scalar`, "
+":meth:`status`, :meth:`iterate`) to SQLAlchemy query clauses without "
+"messing up with existing synchronous ones. Calling these asynchronous "
+"query APIs has the same restriction - the relevant metadata (the "
+":class:`Gino` instance) must be bound to an engine, or an "
+":exc:`AttributeError` will be raised."
+msgstr ""
+
+#: gino.api.GinoExecutor:21 of
+msgid ""
+"Executable clause elements that are completely irrelevant with any table "
+"- for example ``db.select([db.text('now()')])`` - has no metadata, hence "
+"no engine. Therefore, this will always fail::"
+msgstr ""
+
+#: gino.api.GinoExecutor:27 of
+msgid ""
+"You should use :meth:`conn.scalar() <.engine.GinoConnection.scalar>`, "
+":meth:`engine.scalar() <.engine.GinoEngine.scalar>` or even "
+":meth:`db.scalar() <.Gino.scalar>` in this case."
+msgstr ""
+
+#: gino.api.GinoExecutor.all:1 of
+msgid ""
+"Returns :meth:`engine.all() <.engine.GinoEngine.all>` with this query as "
+"the first argument, and other arguments followed, where ``engine`` is the"
+" :class:`~.engine.GinoEngine` to which the metadata (:class:`Gino`) is "
+"bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.first:1 of
+msgid ""
+"Returns :meth:`engine.first() <.engine.GinoEngine.first>` with this query"
+" as the first argument, and other arguments followed, where ``engine`` is"
+" the :class:`~.engine.GinoEngine` to which the metadata (:class:`Gino`) "
+"is bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.iterate:1 of
+msgid ""
+"Returns :meth:`engine.iterate() <.engine.GinoEngine.iterate>` with this "
+"query as the first argument, and other arguments followed, where "
+"``engine`` is the :class:`~.engine.GinoEngine` to which the metadata "
+"(:class:`Gino`) is bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.load:1 of
+msgid "Shortcut to set execution option ``loader`` in a chaining call."
+msgstr ""
+
+#: gino.api.GinoExecutor.load:3 of
+msgid "For example to load ``Book`` instances with their authors::"
+msgstr ""
+
+#: gino.api.GinoExecutor.load:8 gino.api.GinoExecutor.model:3
+#: gino.api.GinoExecutor.return_model:3 gino.api.GinoExecutor.timeout:3 of
+msgid ""
+"Read :meth:`~gino.engine.GinoConnection.execution_options` for more "
+"information."
+msgstr ""
+
+#: gino.api.GinoExecutor.model:1 of
+msgid "Shortcut to set execution option ``model`` in a chaining call."
+msgstr ""
+
+#: gino.api.GinoExecutor.one:1 of
+msgid ""
+"Returns :meth:`engine.one() <.engine.GinoEngine.one>` with this query as "
+"the first argument, and other arguments followed, where ``engine`` is the"
+" :class:`~.engine.GinoEngine` to which the metadata (:class:`Gino`) is "
+"bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.one_or_none:1 of
+msgid ""
+"Returns :meth:`engine.one_or_none() <.engine.GinoEngine.one_or_none>` "
+"with this query as the first argument, and other arguments followed, "
+"where ``engine`` is the :class:`~.engine.GinoEngine` to which the "
+"metadata (:class:`Gino`) is bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.query:1 of
+msgid "Get back the chained :class:`~sqlalchemy.sql.expression.Executable`."
+msgstr ""
+
+#: gino.api.GinoExecutor.query:3 of
+msgid ""
+"In a chained query calls, occasionally the previous query clause is "
+"needed after a ``.gino.`` chain, you can use ``.query.`` to resume the "
+"chain back. For example::"
+msgstr ""
+
+#: gino.api.GinoExecutor.return_model:1 of
+msgid "Shortcut to set execution option ``return_model`` in a chaining call."
+msgstr ""
+
+#: gino.api.GinoExecutor.scalar:1 of
+msgid ""
+"Returns :meth:`engine.scalar() <.engine.GinoEngine.scalar>` with this "
+"query as the first argument, and other arguments followed, where "
+"``engine`` is the :class:`~.engine.GinoEngine` to which the metadata "
+"(:class:`Gino`) is bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.status:1 of
+msgid ""
+"Returns :meth:`engine.status() <.engine.GinoEngine.status>` with this "
+"query as the first argument, and other arguments followed, where "
+"``engine`` is the :class:`~.engine.GinoEngine` to which the metadata "
+"(:class:`Gino`) is bound, while metadata is found in this query."
+msgstr ""
+
+#: gino.api.GinoExecutor.timeout:1 of
+msgid "Shortcut to set execution option ``timeout`` in a chaining call."
+msgstr ""
+

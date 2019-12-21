@@ -2,24 +2,27 @@
 GINO
 ====
 
-.. image:: https://img.shields.io/pypi/v/gino.svg
+.. image:: https://img.shields.io/pypi/v/gino?logo=python&logoColor=white
+        :alt: PyPI Release Version
         :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/travis/fantix/gino/master.svg
-        :target: https://travis-ci.org/fantix/gino
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
+        :alt: GitHub Workflow Status
+        :target: https://github.com/python-gino/gino/actions?query=workflow%3Apytest
 
-.. image:: https://img.shields.io/coveralls/github/fantix/gino/master.svg
-        :target: https://coveralls.io/github/fantix/gino?branch=master
+.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
+        :alt: Codacy coverage
+        :target: https://app.codacy.com/gh/python-gino/gino/dashboard
 
-.. image:: https://img.shields.io/readthedocs/python-gino/latest.svg
+.. image:: https://img.shields.io/readthedocs/python-gino?logo=read-the-docs&logoColor=white
         :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+        :alt: Read the Docs
 
-.. image:: https://pyup.io/repos/github/fantix/gino/shield.svg
-        :target: https://pyup.io/repos/github/fantix/gino/
-        :alt: Updates
+.. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
+        :target: https://app.dependabot.com/accounts/python-gino/projects/129260
+        :alt: Dependabot
 
-.. image:: https://img.shields.io/gitter/room/python-gino/Lobby.svg
+.. image:: https://img.shields.io/gitter/room/python-gino/Lobby?logo=gitter
         :target: https://gitter.im/python-gino/Lobby
         :alt: Gitter chat
 
@@ -226,6 +229,6 @@ GINO is developed proudly with |PyCharm|.
 .. _`Python 3.7`: https://docs.python.org/3.7/library/contextvars.html
 .. _AintQ: https://github.com/fantix/aintq
 .. _ExchangeratesAPI: https://github.com/madisvain/exchangeratesapi
-.. |PyCharm| image:: ./docs/pycharm.svg
+.. |PyCharm| image:: ./docs/images/pycharm.svg
         :height: 20px
         :target: https://www.jetbrains.com/?from=GINO

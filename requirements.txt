@@ -1,3 +1,0 @@
-asyncpg~=0.18
-SQLAlchemy~=1.2
-aiocontextvars~=0.2

@@ -1,0 +1,108 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.transaction.rst:2
+msgid "gino.transaction module"
+msgstr ""
+
+#: gino.transaction.GinoTransaction:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: gino.transaction.GinoTransaction:1 of
+msgid ""
+"Represents an underlying database transaction and its connection, "
+"offering methods to manage this transaction."
+msgstr ""
+
+#: gino.transaction.GinoTransaction:4 of
+msgid ""
+":class:`.GinoTransaction` is supposed to be created by either "
+":meth:`gino.engine.GinoConnection.transaction`, or "
+":meth:`gino.engine.GinoEngine.transaction`, or "
+":meth:`gino.api.Gino.transaction`, shown as follows::"
+msgstr ""
+
+#: gino.transaction.GinoTransaction:26 of
+msgid ""
+"When in use with asynchronous context manager, :class:`.GinoTransaction` "
+"will be in **managed** mode, while the last example with ``await`` will "
+"put the :class:`.GinoTransaction` in **manual** mode where you have to "
+"call the :meth:`.commit` or :meth:`.rollback` to manually close the "
+"transaction."
+msgstr ""
+
+#: gino.transaction.GinoTransaction:31 of
+msgid ""
+"In **managed** mode the transaction will be automatically committed or "
+"rolled back on exiting the ``async with`` block depending on whether "
+"there is an exception or not. Meanwhile, you can explicitly exit the "
+"transaction early by :meth:`.raise_commit` or :meth:`.raise_rollback` "
+"which will raise an internal exception managed by the asynchronous "
+"context manager and interpreted as a commit or rollback action. In a "
+"nested transaction situation, the two exit-early methods always close up "
+"the very transaction which the two methods are referenced upon - all "
+"children transactions are either committed or rolled back "
+"correspondingly, while no parent transaction was ever touched. For "
+"example::"
+msgstr ""
+
+#: gino.transaction.GinoTransaction:55 of
+msgid ""
+"The internal exception raised from :meth:`.raise_commit` and "
+":meth:`.raise_rollback` is a subclass of :exc:`BaseException`, so normal "
+"``try ... except Exception:`` can't trap the commit or rollback."
+msgstr ""
+
+#: gino.transaction.GinoTransaction.commit:1 of
+msgid "Only available in manual mode: manually commit this transaction."
+msgstr ""
+
+#: gino.transaction.GinoTransaction.connection:1 of
+msgid ""
+"Accesses to the :class:`~gino.engine.GinoConnection` of this transaction."
+" This is useful if when the transaction is started from ``db`` or "
+"``engine`` where the connection is implicitly acquired for you together "
+"with the transaction."
+msgstr ""
+
+#: gino.transaction.GinoTransaction.raise_commit:1 of
+msgid ""
+"Only available in managed mode: skip rest of the code in this transaction"
+" and commit immediately by raising an internal exception, which will be "
+"caught and handled by the asynchronous context manager::"
+msgstr ""
+
+#: gino.transaction.GinoTransaction.raise_rollback:1 of
+msgid ""
+"Only available in managed mode: skip rest of the code in this transaction"
+" and rollback immediately by raising an internal exception, which will be"
+" caught and handled by the asynchronous context manager::"
+msgstr ""
+
+#: gino.transaction.GinoTransaction.raw_transaction:1 of
+msgid ""
+"Accesses to the underlying transaction object, whose type depends on the "
+"dialect in use."
+msgstr ""
+
+#: gino.transaction.GinoTransaction.rollback:1 of
+msgid "Only available in manual mode: manually rollback this transaction."
+msgstr ""
+

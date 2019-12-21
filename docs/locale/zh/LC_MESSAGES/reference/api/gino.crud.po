@@ -1,0 +1,487 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.crud.rst:2
+msgid "gino.crud module"
+msgstr ""
+
+#: gino.crud.Alias:1 gino.crud.UpdateRequest:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+
+#: gino.crud.Alias:1 gino.crud.CRUDModel.alias:1 of
+msgid "Experimental proxy for table alias on model."
+msgstr ""
+
+#: gino.crud.CRUDModel:1 of
+msgid "Bases: :class:`gino.declarative.Model`"
+msgstr ""
+
+#: gino.crud.CRUDModel:1 of
+msgid "The base class for models with CRUD support."
+msgstr ""
+
+#: gino.crud.CRUDModel:3 of
+msgid ""
+"Don't inherit from this class directly, because it has no metadata. Use "
+":attr:`db.Model <gino.api.Gino.Model>` instead."
+msgstr ""
+
+#: gino.crud.CRUDModel.append_where_primary_key:1 of
+msgid ""
+"Append where clause to locate this model instance by primary on the given"
+" query, and return the new query."
+msgstr ""
+
+#: gino.crud.CRUDModel.append_where_primary_key:4 of
+msgid ""
+"This is mostly used internally in GINO, but also available for such "
+"usage::"
+msgstr ""
+
+#: gino.crud.CRUDModel.append_where_primary_key:9 of
+msgid "which is identical to::"
+msgstr ""
+
+#: gino.crud.CRUDModel.append_where_primary_key:13 of
+msgid "Use :meth:`.lookup` instead."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:1 of
+msgid ""
+"This ``create`` behaves a bit different on model classes compared to "
+"model instances."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:4 of
+msgid ""
+"On model classes, ``create`` will create a new model instance and insert "
+"it into database. On model instances, ``create`` will just insert the "
+"instance into the database."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:8 of
+msgid ""
+"Under the hood :meth:`.create` uses ``INSERT ... RETURNING ...`` to "
+"create the new model instance and load it with database default data if "
+"not specified."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:12 of
+msgid "Some examples::"
+msgstr ""
+
+#: gino.crud.CRUDModel.create gino.crud.CRUDModel.delete
+#: gino.crud.CRUDModel.get gino.crud.UpdateRequest.apply of
+msgid "Parameters"
+msgstr ""
+
+#: gino.crud.CRUDModel.create:18 gino.crud.CRUDModel.get:12 of
+msgid ""
+"A :class:`~gino.engine.GinoEngine` to execute the ``INSERT`` statement "
+"with, or ``None`` (default) to use the bound engine on the metadata "
+"(:class:`~gino.api.Gino`)."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:22 gino.crud.CRUDModel.delete:28
+#: gino.crud.CRUDModel.get:16 gino.crud.UpdateRequest.apply:6 of
+msgid ""
+"Seconds to wait for the database to finish executing, ``None`` for wait "
+"forever. By default it will use the ``timeout`` execution option value if"
+" unspecified."
+msgstr ""
+
+#: gino.crud.CRUDModel.create:26 of
+msgid ""
+"Keyword arguments are pairs of attribute names and their initial values. "
+"Only available when called on a model class."
+msgstr ""
+
+#: gino.crud.CRUDModel.create gino.crud.CRUDModel.get
+#: gino.crud.CRUDModel.lookup gino.crud.UpdateRequest.apply of
+msgid "Returns"
+msgstr ""
+
+#: gino.crud.CRUDModel.create:29 of
+msgid "The instance of this model class (newly created or existing)."
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:1 of
+msgid ""
+"Similar to :meth:`.update`, this ``delete`` is also different on model "
+"classes than on model instances."
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:4 of
+msgid ""
+"On model classes ``delete`` is an attribute of type "
+":class:`~sqlalchemy.sql.expression.Delete` for massive deletes, for "
+"example::"
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:10 of
+msgid ""
+"Similarly you can add a "
+":meth:`~sqlalchemy.sql.expression.Delete.returning` clause to the query "
+"and it shall return the deleted rows as model objects."
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:13 of
+msgid ""
+"And on model instances, ``delete()`` is a method to remove the "
+"corresponding row in the database of this model instance. and returns the"
+" status returned from the database::"
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:21 of
+msgid ""
+"``delete()`` only removes the row from database, it does not affect the "
+"current model instance."
+msgstr ""
+
+#: gino.crud.CRUDModel.delete:24 of
+msgid ""
+"An optional :class:`~gino.engine.GinoEngine` if current metadata "
+"(:class:`~gino.api.Gino`) has no bound engine, or specifying a different "
+":class:`~gino.engine.GinoEngine` to execute the ``DELETE``."
+msgstr ""
+
+#: gino.crud.CRUDModel.distinct:1 of
+msgid ""
+"Experimental loader feature to yield only distinct instances by given "
+"columns."
+msgstr ""
+
+#: gino.crud.CRUDModel.get:1 of
+msgid "Get an instance of this model class by primary key."
+msgstr ""
+
+#: gino.crud.CRUDModel.get:3 gino.crud.CRUDModel.select:13 of
+msgid "For example::"
+msgstr ""
+
+#: gino.crud.CRUDModel.get:7 of
+msgid ""
+"Value of the primary key. For composite primary keys this should be a "
+"tuple of values for all keys in database order, or a dict of names (or "
+"position numbers in database order starting from zero) of all primary "
+"keys to their values."
+msgstr ""
+
+#: gino.crud.CRUDModel.get:20 of
+msgid "An instance of this model class, or ``None`` if no such row."
+msgstr ""
+
+#: gino.crud.CRUDModel.in_query:1 of
+msgid "Convenient method to get a Model object when using subqueries."
+msgstr ""
+
+#: gino.crud.CRUDModel.in_query:3 of
+msgid ""
+"Though with filters and aggregations, subqueries often return same "
+"columns as the original table, but SQLAlchemy could not recognize them as"
+" the columns are in subqueries, so technically they're columns in the new"
+" \"table\"."
+msgstr ""
+
+#: gino.crud.CRUDModel.in_query:8 of
+msgid ""
+"With this method, the columns are loaded into the origintal models when "
+"being used in subquries. For example::"
+msgstr ""
+
+#: gino.crud.CRUDModel.load:1 of
+msgid ""
+"Populates a :class:`.loader.Loader` instance to be used by the ``loader``"
+" execution option in order to customize the loading behavior to load "
+"specified fields into instances of this model."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:5 of
+msgid ""
+"The basic usage of this method is to provide the ``loader`` execution "
+"option (if you are looking for reloading the instance from database, "
+"check :meth:`.get` or :attr:`.query`) for a given query."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:10 of
+msgid ""
+"This method takes both positional arguments and keyword arguments with "
+"very different meanings. The positional arguments should be column names "
+"as strings, specifying only these columns should be loaded into the model"
+" instance (other values are discarded even if they are retrieved from "
+"database). Meanwhile, the keyword arguments should be loaders for "
+"instance attributes. For example::"
+msgstr ""
+
+#: gino.crud.CRUDModel.load:21 of
+msgid "``gino.load`` is a shortcut for setting the execution option ``loader``."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:24 of
+msgid ""
+"This will populate a ``User`` instance with only ``id`` and ``name`` "
+"values, all the rest are simply ``None`` even if the query actually "
+"returned all the column values."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:33 of
+msgid ""
+"This will load two instances of model ``User`` and ``Team``, returning "
+"the ``User`` instance with ``u.team`` set to the ``Team`` instance."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:36 of
+msgid ""
+"Both positional and keyword arguments can be used ath the same time. If "
+"they are both omitted, like ``Team.load()``, it is equivalent to just "
+"``Team`` as a loader."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:40 of
+msgid ""
+"Additionally, a :class:`.loader.Loader` instance can also be used to "
+"generate queries, as its structure is usually the same as the query::"
+msgstr ""
+
+#: gino.crud.CRUDModel.load:45 of
+msgid "This generates a query like this::"
+msgstr ""
+
+#: gino.crud.CRUDModel.load:51 of
+msgid ""
+"The :class:`~.loader.Loader` delegates attributes on the ``query``, so "
+"``.query`` can be omitted. The ``LEFT JOIN`` is built-in behavior, while "
+"the ``ON`` clause is generated based on foreign key. If there is no "
+"foreign key, or the condition should be customized, you can use this::"
+msgstr ""
+
+#: gino.crud.CRUDModel.load:60 of
+msgid ""
+"And you can use both :meth:`~.load` and :meth:`~.on` at the same time in "
+"a chain, in whatever order suits you."
+msgstr ""
+
+#: gino.crud.CRUDModel.load:65 gino.crud.CRUDModel.select:27 of
+msgid ":meth:`~gino.engine.GinoConnection.execution_options`"
+msgstr ""
+
+#: gino.crud.CRUDModel.lookup:1 of
+msgid "Generate where-clause expression to locate this model instance."
+msgstr ""
+
+#: gino.crud.CRUDModel.lookup:3 of
+msgid ""
+"By default this method uses current values of all primary keys, and you "
+"can override it to behave differently. Most instance-level CRUD "
+"operations depend on this method internally. Particularly while "
+":meth:`.lookup` is called in :meth:`.update`, the where condition is used"
+" in :meth:`.UpdateRequest.apply`, so that queries like ``UPDATE ... SET "
+"id = NEW WHERE id = OLD`` could work correctly."
+msgstr ""
+
+#: gino.crud.CRUDModel.on:1 of
+msgid "Customize the on-clause for the auto-generated outer join query."
+msgstr ""
+
+#: gino.crud.CRUDModel.on:5 of
+msgid ""
+"This has no effect when provided as the ``loader`` execution option for a"
+" given query."
+msgstr ""
+
+#: gino.crud.CRUDModel.on:10 of
+msgid ":meth:`.load`"
+msgstr ""
+
+#: gino.crud.CRUDModel.query:1 of
+msgid ""
+"Get a SQLAlchemy query clause of the table behind this model. This equals"
+" to :func:`sqlalchemy.select([self.__table__]) "
+"<sqlalchemy.sql.expression.select>`. If this attribute is retrieved on a "
+"model instance, then a where clause to locate this instance by its "
+"primary key is appended to the returning query clause. This model type is"
+" set as the execution option ``model`` in the returning clause, so by "
+"default the query yields instances of this model instead of database "
+"rows."
+msgstr ""
+
+#: gino.crud.CRUDModel.select:1 of
+msgid "Build a query to retrieve only specified columns from this table."
+msgstr ""
+
+#: gino.crud.CRUDModel.select:3 of
+msgid ""
+"This method accepts positional string arguments as names of attributes to"
+" retrieve, and returns a :class:`~sqlalchemy.sql.expression.Select` for "
+"query. The returning query object is always set with two execution "
+"options:"
+msgstr ""
+
+#: gino.crud.CRUDModel.select:7 of
+msgid "``model`` is set to this model type"
+msgstr ""
+
+#: gino.crud.CRUDModel.select:8 of
+msgid "``return_model`` is set to ``False``"
+msgstr ""
+
+#: gino.crud.CRUDModel.select:10 of
+msgid ""
+"So that by default it always return rows instead of model instances, "
+"while column types can be inferred correctly by the ``model`` option."
+msgstr ""
+
+#: gino.crud.CRUDModel.select:18 of
+msgid ""
+"If :meth:`.select` is invoked on a model instance, then a ``WHERE`` "
+"clause to locate this instance by its primary key is appended to the "
+"returning query clause. This is useful when you want to retrieve a latest"
+" value of a field on current model instance from database::"
+msgstr ""
+
+#: gino.crud.CRUDModel.to_dict:1 of
+msgid "Convenient method to generate a dict from this model instance."
+msgstr ""
+
+#: gino.crud.CRUDModel.to_dict:3 of
+msgid ""
+"Keys will be attribute names, while values are loaded from memory (not "
+"from database). If there are :class:`~gino.json_support.JSONProperty` "
+"attributes in this model, their source JSON field will not be included in"
+" the returning dict - instead the JSON attributes will be."
+msgstr ""
+
+#: gino.crud.CRUDModel.to_dict:10 of
+msgid ":mod:`.json_support`"
+msgstr ""
+
+#: gino.crud.CRUDModel.update:1 of
+msgid ""
+"This ``update`` behaves quite different on model classes rather than "
+"model instances."
+msgstr ""
+
+#: gino.crud.CRUDModel.update:4 of
+msgid ""
+"On model classes, ``update`` is an attribute of type "
+":class:`~sqlalchemy.sql.expression.Update` for massive updates, for "
+"example::"
+msgstr ""
+
+#: gino.crud.CRUDModel.update:10 of
+msgid ""
+"Like :attr:`.query`, the update query also has the ``model`` execution "
+"option of this model, so if you use the "
+":meth:`~sqlalchemy.sql.expression.Update.returning` clause, the query "
+"shall return model objects."
+msgstr ""
+
+#: gino.crud.CRUDModel.update:15 of
+msgid ""
+"However on model instances, ``update()`` is a method which accepts "
+"keyword arguments only and returns an :class:`.UpdateRequest` to update "
+"this single model instance. The keyword arguments are pairs of attribute "
+"names and new values. This is the same as :meth:`.UpdateRequest.update`, "
+"feel free to read more about it. A normal usage example would be like "
+"this::"
+msgstr ""
+
+#: gino.crud.CRUDModel.update:23 of
+msgid ""
+"Here, the :meth:`await ... apply() <.UpdateRequest.apply>` executes the "
+"actual ``UPDATE`` SQL in the database, while ``user.update()`` only makes"
+" changes in the memory, and collect all changes into an "
+":class:`.UpdateRequest` instance."
+msgstr ""
+
+#: gino.crud.QueryModel:1 of
+msgid "Bases: :class:`type`"
+msgstr ""
+
+#: gino.crud.QueryModel:1 of
+msgid "Metaclass of Model classes used for subqueries."
+msgstr ""
+
+#: gino.crud.UpdateRequest:1 of
+msgid ""
+"A collection of attributes and their new values to update on one model "
+"instance."
+msgstr ""
+
+#: gino.crud.UpdateRequest:4 of
+msgid ""
+":class:`.UpdateRequest` instances are created by "
+":attr:`.CRUDModel.update`, don't instantiate manually unless required. "
+"Every :class:`.UpdateRequest` instance is bound to one model instance, "
+"all updates are for that one specific model instance and its database "
+"row."
+msgstr ""
+
+#: gino.crud.UpdateRequest.apply:1 of
+msgid "Apply pending updates into database by executing an ``UPDATE`` SQL."
+msgstr ""
+
+#: gino.crud.UpdateRequest.apply:3 of
+msgid ""
+"A :class:`~gino.engine.GinoEngine` to execute the SQL, or ``None`` "
+"(default) to use the bound engine in the metadata."
+msgstr ""
+
+#: gino.crud.UpdateRequest.apply:10 of
+msgid "``self`` for chaining calls."
+msgstr ""
+
+#: gino.crud.UpdateRequest.update:1 of
+msgid ""
+"Set given attributes on the bound model instance, and add them into the "
+"update collections for :meth:`.apply`."
+msgstr ""
+
+#: gino.crud.UpdateRequest.update:4 of
+msgid ""
+"Given keyword-only arguments are pairs of attribute names and values to "
+"update. This is not a coroutine, calling :meth:`.update` will have "
+"instant effect on the bound model instance - its in-memory values will be"
+" updated immediately. Therefore this can be used individually as a "
+"shortcut to update several attributes in a batch::"
+msgstr ""
+
+#: gino.crud.UpdateRequest.update:12 of
+msgid ""
+":meth:`.update` returns ``self`` for chaining calls to either "
+":meth:`.apply` or another :meth:`.update`. If one attribute is updated "
+"several times by the same :class:`.UpdateRequest`, then only the last "
+"value is remembered for :meth:`.apply`."
+msgstr ""
+
+#: gino.crud.UpdateRequest.update:17 of
+msgid ""
+"Updated values can be SQLAlchemy expressions, for example an atomic "
+"increment for user balance looks like this::"
+msgstr ""
+
+#: gino.crud.UpdateRequest.update:24 of
+msgid ""
+"Expression values will not affect the in-memory attribute value on "
+":meth:`.update` before :meth:`.apply`, because it has no knowledge of the"
+" latest value in the database. After :meth:`.apply` the new value will be"
+" automatically reloaded from database with ``RETURNING`` clause."
+msgstr ""
+

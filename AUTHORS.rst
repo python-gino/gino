@@ -2,6 +2,8 @@
 Credits
 =======
 
+.. contents:: Table of Contents
+
 Development Lead
 ----------------
 

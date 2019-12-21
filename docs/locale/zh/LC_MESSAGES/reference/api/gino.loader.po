@@ -1,0 +1,37 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/api/gino.loader.rst:2
+msgid "gino.loader module"
+msgstr ""
+
+#: gino.loader.AliasLoader:1 of
+msgid "Bases: :class:`gino.loader.ModelLoader`"
+msgstr ""
+
+#: gino.loader.CallableLoader:1 gino.loader.ColumnLoader:1
+#: gino.loader.ModelLoader:1 gino.loader.TupleLoader:1
+#: gino.loader.ValueLoader:1 of
+msgid "Bases: :class:`gino.loader.Loader`"
+msgstr ""
+
+#: gino.loader.Loader:1 of
+msgid "Bases: :class:`object`"
+msgstr ""
+

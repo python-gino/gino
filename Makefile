@@ -1,4 +1,4 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-test clean-pyc clean-build help
 .DEFAULT_GOAL := help
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
@@ -43,47 +43,25 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test: ## remove test and coverage artifacts
-	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
 
-lint: ## check style with flake8
-	flake8 gino tests
+lint: ## check style with black
+	black --check src
 
-test: ## run tests quickly with the default Python
-	py.test
-
-
-test-all: ## run tests on every Python version with tox
-	tox
+test: lint ## run tests quickly with the default Python
+	pytest --cov --cov-fail-under=95 --no-cov-on-fail
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source gino -m pytest
-	coverage report -m
-	coverage html
+	pytest --cov --cov-report html
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/gino.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -efo docs/ gino
-	rm docs/modules.rst
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	@echo "open file://`pwd`/docs/_build/html/index.html"
-	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D -w -i '*gino.rst' .
-
-release: clean ## package and upload a release
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+release: clean build ## package and upload a release
+	poetry publish
 
 dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+	poetry build
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+	poetry install

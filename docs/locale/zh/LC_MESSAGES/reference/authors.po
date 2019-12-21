@@ -1,0 +1,150 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Fantix King <fantix.king@gmail.com>, 2019
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: 2019-12-26 17:37+0000\n"
+"Last-Translator: Fantix King <fantix.king@gmail.com>, 2019\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:3
+msgid "Credits"
+msgstr "制作人员"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:5
+msgid "Table of Contents"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:8
+msgid "Development Lead"
+msgstr "原作者"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:10
+msgid "Fantix King <fantix.king@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:13
+msgid "Maintainers"
+msgstr "维护者"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:15
+msgid "Tony Wang <wwwjfy@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:18
+msgid "Contributors"
+msgstr "贡献者"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:20
+msgid "Neal Wang <qdzzyb2015@gamil.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:21
+msgid "Binghan Li <lbhsot@163.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:22
+msgid "Vladimir Goncharov <dev.zelta@gmail.com>"
+msgstr "Vladimir Goncharov <dev.zelta@gmail.com>"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:23
+msgid "Kinware <oss@kinware.com>"
+msgstr "Kinware <oss@kinware.com>"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:24
+msgid "Kentoseth <kentoseth@devcroo.com>"
+msgstr "Kentoseth <kentoseth@devcroo.com>"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:25
+msgid "Ádám Barancsuk <adam.barancsuk@gmail.com>"
+msgstr "Ádám Barancsuk <adam.barancsuk@gmail.com>"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:26
+msgid "Sergey Kovalev <s_kovalev@wargaming.net>"
+msgstr "Sergey Kovalev <s_kovalev@wargaming.net>"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:27
+msgid "jonahfang"
+msgstr "jonahfang"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:28
+msgid "Yurii Shtrikker <nbb.unitto@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:29
+msgid "Nicolas Crocfer <ncrocfer@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:30
+msgid "Denys Badzo <badzyo360@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:31
+msgid "Pavol Vargovcik <pavol.vargovcik@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:32
+msgid "Mykyta Holubakha <hilobakho@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:33
+msgid "Jekel <jekel@psyspace.ru>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:34
+msgid "Martin Zaťko <martin.zatko@kiwi.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:35
+msgid "Pascal van Kooten <kootenpv@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:36
+msgid "Michał Dziewulski <michal@dziewulski.pl>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:37
+msgid "Simeon J Morgan <smorgan@digitalfeed.net>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:38
+msgid "Julio Lacerda <julio.castro.lacerda@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:39
+msgid "qulaz <qulazwork@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:40
+msgid "Jim O'Brien <jim@greenfield.fm>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:41
+msgid "Ilaï Deutel <ilai-deutel@users.noreply.github.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:42
+msgid "Roald Storm <roaldstorm@gmail.com>"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/reference/authors.rst:45
+msgid ""
+"Special thanks to my wife Daisy and her outsourcing company `DecentFoX "
+"Studio`_, for offering me the opportunity to build this project. We are open"
+" for global software project outsourcing on Python, iOS and Android "
+"development."
+msgstr ""

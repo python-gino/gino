@@ -1,0 +1,225 @@
+[main]
+host = https://www.transifex.com
+
+[gino_1_0.explanation]
+file_filter = locale/<lang>/LC_MESSAGES/explanation.po
+source_file = _build/gettext/explanation.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to]
+file_filter = locale/<lang>/LC_MESSAGES/how-to.po
+source_file = _build/gettext/how-to.pot
+source_lang = en
+type = PO
+
+[gino_1_0.index]
+file_filter = locale/<lang>/LC_MESSAGES/index.po
+source_file = _build/gettext/index.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference]
+file_filter = locale/<lang>/LC_MESSAGES/reference.po
+source_file = _build/gettext/reference.pot
+source_lang = en
+type = PO
+
+[gino_1_0.tutorials]
+file_filter = locale/<lang>/LC_MESSAGES/tutorials.po
+source_file = _build/gettext/tutorials.pot
+source_lang = en
+type = PO
+
+[gino_1_0.explanation--engine]
+file_filter = locale/<lang>/LC_MESSAGES/explanation/engine.po
+source_file = _build/gettext/explanation/engine.pot
+source_lang = en
+type = PO
+
+[gino_1_0.explanation--why]
+file_filter = locale/<lang>/LC_MESSAGES/explanation/why.po
+source_file = _build/gettext/explanation/why.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--contributing]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/contributing.po
+source_file = _build/gettext/how-to/contributing.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--crud]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/crud.po
+source_file = _build/gettext/how-to/crud.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--faq]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/faq.po
+source_file = _build/gettext/how-to/faq.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--loaders]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/loaders.po
+source_file = _build/gettext/how-to/loaders.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--pool]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/pool.po
+source_file = _build/gettext/how-to/pool.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--sanic]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/sanic.po
+source_file = _build/gettext/how-to/sanic.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--schema]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/schema.po
+source_file = _build/gettext/how-to/schema.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--tornado]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/tornado.po
+source_file = _build/gettext/how-to/tornado.pot
+source_lang = en
+type = PO
+
+[gino_1_0.how-to--transaction]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/transaction.po
+source_file = _build/gettext/how-to/transaction.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api.po
+source_file = _build/gettext/reference/api.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--authors]
+file_filter = locale/<lang>/LC_MESSAGES/reference/authors.po
+source_file = _build/gettext/reference/authors.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--history]
+file_filter = locale/<lang>/LC_MESSAGES/reference/history.po
+source_file = _build/gettext/reference/history.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_aiocontextvars]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.aiocontextvars.po
+source_file = _build/gettext/reference/api/gino.aiocontextvars.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_api]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.api.po
+source_file = _build/gettext/reference/api/gino.api.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_crud]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.crud.po
+source_file = _build/gettext/reference/api/gino.crud.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_declarative]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.declarative.po
+source_file = _build/gettext/reference/api/gino.declarative.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_dialects_asyncpg]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.dialects.asyncpg.po
+source_file = _build/gettext/reference/api/gino.dialects.asyncpg.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_dialects_base]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.dialects.base.po
+source_file = _build/gettext/reference/api/gino.dialects.base.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_dialects]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.dialects.po
+source_file = _build/gettext/reference/api/gino.dialects.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_engine]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.engine.po
+source_file = _build/gettext/reference/api/gino.engine.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_exceptions]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.exceptions.po
+source_file = _build/gettext/reference/api/gino.exceptions.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_ext]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.ext.po
+source_file = _build/gettext/reference/api/gino.ext.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_json_support]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.json_support.po
+source_file = _build/gettext/reference/api/gino.json_support.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_loader]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.loader.po
+source_file = _build/gettext/reference/api/gino.loader.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.po
+source_file = _build/gettext/reference/api/gino.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_schema]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.schema.po
+source_file = _build/gettext/reference/api/gino.schema.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_strategies]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.strategies.po
+source_file = _build/gettext/reference/api/gino.strategies.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_transaction]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.transaction.po
+source_file = _build/gettext/reference/api/gino.transaction.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--modules]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/modules.po
+source_file = _build/gettext/reference/api/modules.pot
+source_lang = en
+type = PO
+
+[gino_1_0.tutorials--tutorial]
+file_filter = locale/<lang>/LC_MESSAGES/tutorials/tutorial.po
+source_file = _build/gettext/tutorials/tutorial.pot
+source_lang = en
+type = PO
+

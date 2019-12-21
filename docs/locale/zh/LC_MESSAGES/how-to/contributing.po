@@ -1,0 +1,247 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017-present, Fantix King
+# This file is distributed under the same license as the GINO package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Fantix King <fantix.king@gmail.com>, 2019
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GINO\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-23 02:02-0600\n"
+"PO-Revision-Date: 2019-12-26 17:37+0000\n"
+"Last-Translator: Fantix King <fantix.king@gmail.com>, 2019\n"
+"Language-Team: Chinese (https://www.transifex.com/decentfox-studio/teams/84194/zh/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:5
+msgid "Contributing"
+msgstr "贡献"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:7
+msgid "Table of Contents"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:9
+msgid ""
+"Contributions are welcome, and they are greatly appreciated! Every little "
+"bit helps, and credit will always be given."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:12
+msgid "You can contribute in many ways:"
+msgstr "您可以通过多种方式做出贡献:"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:15
+msgid "Types of Contributions"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:18
+msgid "Report Bugs"
+msgstr "报告错误"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:20
+msgid "Report bugs at https://github.com/fantix/gino/issues."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:22
+msgid "If you are reporting a bug, please include:"
+msgstr "如果您要报告错误，请包括："
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:24
+msgid "Your operating system name and version."
+msgstr "您的操作系统名称和版本。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:25
+msgid ""
+"Any details about your local setup that might be helpful in troubleshooting."
+msgstr "有关本地设置的任何详细信息都可能有助于排除故障。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:26
+msgid "Detailed steps to reproduce the bug."
+msgstr "重现错误的详细步骤。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:29
+msgid "Fix Bugs"
+msgstr "修复错误"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:31
+msgid ""
+"Look through the GitHub issues for bugs. Anything tagged with \"bug\" and "
+"\"help wanted\" is open to whoever wants to implement it."
+msgstr "在GitHub issues 查找错误。任何人都可以将标记为“bug”和“help wanted”并且是打开状态的问题修复。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:35
+msgid "Implement Features"
+msgstr "实现功能"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:37
+msgid ""
+"Look through the GitHub issues for features. Anything tagged with "
+"\"enhancement\" and \"help wanted\" is open to whoever wants to implement "
+"it."
+msgstr "在GitHub issues 查找功能。任何人都可以将标记为“增强”和“需要帮助”的打开状态的需求实现。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:41
+msgid "Write Documentation"
+msgstr "写文档"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:43
+msgid ""
+"GINO could always use more documentation, whether as part of the official "
+"GINO docs, in docstrings, or even on the web in blog posts, articles, and "
+"such."
+msgstr "GINO需要更多的使用文档，无论是作为官方GINO文档的一部分，还是文档字符串，甚至是博客，文章等等。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:48
+msgid "Submit Feedback"
+msgstr "提交反馈"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:50
+msgid ""
+"The best way to send feedback is to file an issue at "
+"https://github.com/fantix/gino/issues."
+msgstr "发送反馈的最佳方式是在https://github.com/fantix/gino/issues提交问题。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:52
+msgid "If you are proposing a feature:"
+msgstr "如果您要提出一项功能："
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:54
+msgid "Explain in detail how it would work."
+msgstr "详细解释它是如何工作的。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:55
+msgid "Keep the scope as narrow as possible, to make it easier to implement."
+msgstr "为了更容易实现，请保持范围尽可能窄。"
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:56
+msgid ""
+"Remember that this is a volunteer-driven project, and that contributions are"
+" welcome :)"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:60
+msgid "Get Started!"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:62
+msgid ""
+"Ready to contribute? Here's how to set up `gino` for local development."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:64
+msgid "Fork the `gino` repo on GitHub."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:65
+msgid "Clone your fork locally::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:69
+msgid "Create a branch for local development::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:74
+msgid "Now you can make your changes locally."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:76
+msgid "Create virtual environment. Example for virtualenvwrapper::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:80
+msgid "Activate the environment and install requirements::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:84
+msgid ""
+"When you're done making changes, check that your changes pass syntax "
+"checks::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:88
+msgid ""
+"7. And tests (including other Python versions with tox). For tests you you "
+"will need running database server (see \"Tips\" section below for "
+"configuration details)::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:94
+msgid "For docs run::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:98
+msgid "It will build and open up docs in your browser."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:100
+msgid "Commit your changes and push your branch to GitHub::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:106
+msgid "Submit a pull request through the GitHub website."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:109
+msgid "Pull Request Guidelines"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:111
+msgid ""
+"Before you submit a pull request, check that it meets these guidelines:"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:113
+msgid "The pull request should include tests."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:114
+msgid ""
+"If the pull request adds functionality, the docs should be updated. Put your"
+" new functionality into a function with a docstring, and add the feature to "
+"the list in README.rst."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:117
+msgid ""
+"The pull request should work for Python 3.6. Check https://travis-"
+"ci.org/fantix/gino/pull_requests and make sure that the tests pass for all "
+"supported Python versions."
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:122
+msgid "Tips"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:124
+msgid "To run a subset of tests::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:128
+msgid ""
+"By default the tests run against a default installed postgres database. If "
+"you wish to run against a separate database for the tests you can do this by"
+" first creating a new database and user using 'psql' or similar::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:135
+msgid "Then run the tests like so::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:140
+msgid ""
+"Here is an example for db server in docker. Some tests require ssl so you "
+"will need to run postgres with ssl enabled. Terminal 1 (server)::"
+msgstr ""
+
+#: /Volumes/Home/fantix/PycharmProjects/gino/docs/how-to/contributing.rst:149
+msgid "Terminal 2 (client)::"
+msgstr ""

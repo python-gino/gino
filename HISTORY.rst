@@ -2,6 +2,8 @@
 History
 =======
 
+.. contents:: Table of Contents
+
 GINO 0.8
 --------
 
