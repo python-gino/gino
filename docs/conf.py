@@ -75,5 +75,5 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
 
-locale_dirs = ['locale/']   # path is example but recommended.
-gettext_compact = False     # optional.
+locale_dirs = ["locale/"]  # path is example but recommended.
+gettext_compact = False  # optional.

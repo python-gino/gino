@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 # noinspection PyUnusedLocal
 async def test_create(bind):
-    nickname = 'test_create_{}'.format(random.random())
+    nickname = "test_create_{}".format(random.random())
     u = await User.create(nickname=nickname)
     assert u.id is not None
     assert u.nickname == nickname
@@ -39,14 +39,16 @@ async def test_unbind(asyncpg_pool):
 
 
 async def test_db_api(bind, random_name):
-    assert await db.scalar(
-        User.insert().values(name=random_name).returning(
-            User.nickname)) == random_name
-    assert (await db.first(User.query.where(
-        User.nickname == random_name))).nickname == random_name
-    assert len(
-        await db.all(User.query.where(User.nickname == random_name))) == 1
-    assert (await db.status(User.delete.where(
-        User.nickname == random_name)))[0] == 'DELETE 1'
+    assert (
+        await db.scalar(User.insert().values(name=random_name).returning(User.nickname))
+        == random_name
+    )
+    assert (
+        await db.first(User.query.where(User.nickname == random_name))
+    ).nickname == random_name
+    assert len(await db.all(User.query.where(User.nickname == random_name))) == 1
+    assert (await db.status(User.delete.where(User.nickname == random_name)))[
+        0
+    ] == "DELETE 1"
     stmt, params = db.compile(User.query.where(User.id == 3))
     assert params[0] == 3

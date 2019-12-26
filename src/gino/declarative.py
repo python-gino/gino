@@ -21,7 +21,7 @@ class ColumnAttribute:
         instance.__values__[self.prop_name] = value
 
     def __delete__(self, instance):
-        raise AttributeError('Cannot delete value.')
+        raise AttributeError("Cannot delete value.")
 
 
 class InvertDict(dict):
@@ -31,15 +31,19 @@ class InvertDict(dict):
         for k, v in self.items():
             if v in self._inverted_dict:
                 raise GinoException(
-                    'Column name {} already maps to {}'.format(
-                        v, self._inverted_dict[v]))
+                    "Column name {} already maps to {}".format(
+                        v, self._inverted_dict[v]
+                    )
+                )
             self._inverted_dict[v] = k
 
     def __setitem__(self, key, value):
         if value in self._inverted_dict and self._inverted_dict[value] != key:
             raise GinoException(
-                'Column name {} already maps to {}'.format(
-                    value, self._inverted_dict[value]))
+                "Column name {} already maps to {}".format(
+                    value, self._inverted_dict[value]
+                )
+            )
         super().__setitem__(key, value)
         self._inverted_dict[value] = key
 
@@ -57,8 +61,10 @@ class Dict(collections.OrderedDict):
 class ModelType(type):
     def _check_abstract(self):
         if self.__table__ is None:
-            raise TypeError('GINO model {} is abstract, no table is '
-                            'defined.'.format(self.__name__))
+            raise TypeError(
+                "GINO model {} is abstract, no table is "
+                "defined.".format(self.__name__)
+            )
 
     def __iter__(self):
         self._check_abstract()
@@ -67,14 +73,14 @@ class ModelType(type):
 
     def __getattr__(self, item):
         try:
-            if item in {'insert', 'join', 'outerjoin', 'gino'}:
+            if item in {"insert", "join", "outerjoin", "gino"}:
                 self._check_abstract()
                 return getattr(self.__table__, item)
             raise AttributeError
         except AttributeError:
             raise AttributeError(
-                "type object '{}' has no attribute '{}'".format(
-                    self.__name__, item))
+                "type object '{}' has no attribute '{}'".format(self.__name__, item)
+            )
 
     @classmethod
     def __prepare__(mcs, name, bases, **kwargs):
@@ -84,7 +90,7 @@ class ModelType(type):
         rv = type.__new__(mcs, name, bases, namespace)
         rv.__namespace__ = namespace
         if rv.__table__ is None:
-            rv.__table__ = getattr(rv, '_init_table')(rv)
+            rv.__table__ = getattr(rv, "_init_table")(rv)
         return rv
 
 
@@ -150,11 +156,11 @@ class Model:
         updates = {}
         column_name_map = InvertDict()
         for each_cls in sub_cls.__mro__[::-1]:
-            for k, v in getattr(each_cls, '__namespace__',
-                                each_cls.__dict__).items():
-                declared_callable_attr = (
-                    callable(v) and getattr(v, '__declared_attr__', False))
-                if k == '__tablename__':
+            for k, v in getattr(each_cls, "__namespace__", each_cls.__dict__).items():
+                declared_callable_attr = callable(v) and getattr(
+                    v, "__declared_attr__", False
+                )
+                if k == "__tablename__":
                     if declared_callable_attr:
                         table_name = v(sub_cls)
                     else:
@@ -176,8 +182,9 @@ class Model:
         sub_cls._column_name_map = column_name_map
 
         # handle __table_args__
-        table_args = updates.get('__table_args__',
-                                 getattr(sub_cls, '__table_args__', None))
+        table_args = updates.get(
+            "__table_args__", getattr(sub_cls, "__table_args__", None)
+        )
         args, table_kw = (), {}
         if isinstance(table_args, dict):
             table_kw = table_args
@@ -190,23 +197,24 @@ class Model:
         args = (*columns, *inspected_args, *args)
         for item in args:
             try:
-                _table = getattr(item, 'table', None)
+                _table = getattr(item, "table", None)
             except InvalidRequestError:
                 _table = None
             if _table is not None:
                 raise ValueError(
-                    '{} is already attached to another table. Please do not '
-                    'use the same item twice. A common mistake is defining '
-                    'constraints and indices in a super class - we are working'
-                    ' on making it possible.')
+                    "{} is already attached to another table. Please do not "
+                    "use the same item twice. A common mistake is defining "
+                    "constraints and indices in a super class - we are working"
+                    " on making it possible."
+                )
         rv = sa.Table(table_name, sub_cls.__metadata__, *args, **table_kw)
         for k, v in updates.items():
             setattr(sub_cls, k, v)
         return rv
 
 
-def declarative_base(metadata, model_classes=(Model,), name='Model'):
-    return ModelType(name, model_classes, {'__metadata__': metadata})
+def declarative_base(metadata, model_classes=(Model,), name="Model"):
+    return ModelType(name, model_classes, {"__metadata__": metadata})
 
 
 # noinspection PyProtectedMember
@@ -216,5 +224,10 @@ def inspect_model_type(target):
     return sa.inspection.inspect(target.__table__)
 
 
-__all__ = ['ColumnAttribute', 'Model', 'declarative_base', 'declared_attr',
-           'InvertDict']
+__all__ = [
+    "ColumnAttribute",
+    "Model",
+    "declarative_base",
+    "declared_attr",
+    "InvertDict",
+]

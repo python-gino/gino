@@ -45,7 +45,8 @@ class GinoExecutor:
         :meth:`db.scalar() <.Gino.scalar>` in this case.
 
     """
-    __slots__ = ('_query',)
+
+    __slots__ = ("_query",)
 
     def __init__(self, query):
         self._query = query
@@ -133,8 +134,7 @@ class GinoExecutor:
         (:class:`Gino`) is bound, while metadata is found in this query.
 
         """
-        return await self._query.bind.first(self._query, *multiparams,
-                                            **params)
+        return await self._query.bind.first(self._query, *multiparams, **params)
 
     async def one_or_none(self, *multiparams, **params):
         """
@@ -145,8 +145,7 @@ class GinoExecutor:
         query.
 
         """
-        return await self._query.bind.one_or_none(self._query, *multiparams,
-                                                  **params)
+        return await self._query.bind.one_or_none(self._query, *multiparams, **params)
 
     async def one(self, *multiparams, **params):
         """
@@ -166,8 +165,7 @@ class GinoExecutor:
         (:class:`Gino`) is bound, while metadata is found in this query.
 
         """
-        return await self._query.bind.scalar(self._query, *multiparams,
-                                             **params)
+        return await self._query.bind.scalar(self._query, *multiparams, **params)
 
     async def status(self, *multiparams, **params):
         """
@@ -177,8 +175,7 @@ class GinoExecutor:
         (:class:`Gino`) is bound, while metadata is found in this query.
 
         """
-        return await self._query.bind.status(self._query, *multiparams,
-                                             **params)
+        return await self._query.bind.status(self._query, *multiparams, **params)
 
     def iterate(self, *multiparams, **params):
         """
@@ -190,8 +187,7 @@ class GinoExecutor:
         """
         connection = self._query.bind.current_connection
         if connection is None:
-            raise ValueError(
-                'No Connection in context, please provide one')
+            raise ValueError("No Connection in context, please provide one")
         return connection.iterate(self._query, *multiparams, **params)
 
 
@@ -311,15 +307,22 @@ class Gino(sa.MetaData):
 
     """
 
-    no_delegate = {'create_engine', 'engine_from_config'}
+    no_delegate = {"create_engine", "engine_from_config"}
     """
     A set of symbols from :mod:`sqlalchemy` which is not delegated by
     :class:`Gino`.
 
     """
 
-    def __init__(self, bind=None, model_classes=None, query_ext=True,
-                 schema_ext=True, ext=True, **kwargs):
+    def __init__(
+        self,
+        bind=None,
+        model_classes=None,
+        query_ext=True,
+        schema_ext=True,
+        ext=True,
+        **kwargs
+    ):
         """
         :param bind: A :class:`~.engine.GinoEngine` instance to bind. Also
                      accepts string or :class:`~sqlalchemy.engine.url.URL`,
@@ -387,8 +390,7 @@ class Gino(sa.MetaData):
 
         """
         if self._bind is None:
-            return _PlaceHolder(
-                UninitializedError('Gino engine is not initialized.'))
+            return _PlaceHolder(UninitializedError("Gino engine is not initialized."))
         return self._bind
 
     # noinspection PyMethodOverriding,PyAttributeOutsideInit
@@ -411,6 +413,7 @@ class Gino(sa.MetaData):
             bind = make_url(bind)
         if isinstance(bind, URL):
             from . import create_engine
+
             bind = await create_engine(bind, loop=loop, **kwargs)
         self.bind = bind
         return bind
@@ -450,6 +453,7 @@ class Gino(sa.MetaData):
         async def init():
             await self.set_bind(self.bind)
             return self
+
         return init().__await__()
 
     def compile(self, elem, *multiparams, **params):
@@ -529,17 +533,17 @@ class Gino(sa.MetaData):
 
 
 class _PlaceHolder:
-    __slots__ = '_exception'
+    __slots__ = "_exception"
 
     def __init__(self, exception):
         self._exception = exception
 
     def __getattribute__(self, item):
-        if item == '_exception':
+        if item == "_exception":
             return super().__getattribute__(item)
         raise self._exception
 
     def __setattr__(self, key, value):
-        if key == '_exception':
+        if key == "_exception":
             return super().__setattr__(key, value)
         raise self._exception

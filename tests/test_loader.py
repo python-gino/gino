@@ -49,8 +49,7 @@ async def test_one_or_none(user):
     name = await User.query.gino.load(User.nickname).one_or_none()
     assert user.nickname == name
 
-    uid, name = await (User.query.gino.load((User.id, User.nickname))
-                       .one_or_none())
+    uid, name = await (User.query.gino.load((User.id, User.nickname)).one_or_none())
     assert user.id == uid
     assert user.nickname == name
 
@@ -65,7 +64,7 @@ async def test_one(user):
 
 
 async def test_model_load(user):
-    u = await User.query.gino.load(User.load('nickname', User.team_id)).first()
+    u = await User.query.gino.load(User.load("nickname", User.team_id)).first()
     assert isinstance(u, User)
     assert u.id is None
     assert u.nickname == user.nickname
@@ -86,8 +85,7 @@ async def test_216_model_load_passive_partial(user):
 
 
 async def test_load_relationship(user):
-    u = await User.outerjoin(Team).select().gino.load(
-        User.load(team=Team)).first()
+    u = await User.outerjoin(Team).select().gino.load(User.load(team=Team)).first()
     assert isinstance(u, User)
     assert u.id == user.id
     assert u.nickname == user.nickname
@@ -98,15 +96,21 @@ async def test_load_relationship(user):
 
 async def test_load_nested(user):
     for u in (
-        await User.outerjoin(Team).outerjoin(Company).select().gino.load(
-            User.load(team=Team.load(company=Company))).first(),
+        await User.outerjoin(Team)
+        .outerjoin(Company)
+        .select()
+        .gino.load(User.load(team=Team.load(company=Company)))
+        .first(),
         await User.load(team=Team.load(company=Company)).gino.first(),
-        await User.load(team=Team.load(company=Company.on(
-                Team.company_id == Company.id))).gino.first(),
-        await User.load(team=Team.load(company=Company).on(
-                User.team_id == Team.id)).gino.first(),
-        await User.load(team=Team.on(User.team_id == Team.id).load(
-            company=Company)).gino.first(),
+        await User.load(
+            team=Team.load(company=Company.on(Team.company_id == Company.id))
+        ).gino.first(),
+        await User.load(
+            team=Team.load(company=Company).on(User.team_id == Team.id)
+        ).gino.first(),
+        await User.load(
+            team=Team.on(User.team_id == Team.id).load(company=Company)
+        ).gino.first(),
     ):
         assert isinstance(u, User)
         assert u.id == user.id
@@ -126,8 +130,7 @@ async def test_func(user):
         rv.team.company = Company(id=row[Company.id], name=row[Company.name])
         return rv
 
-    u = await User.outerjoin(Team).outerjoin(Company).select().gino.load(
-        loader).first()
+    u = await User.outerjoin(Team).outerjoin(Company).select().gino.load(loader).first()
     assert isinstance(u, User)
     assert u.id == user.id
     assert u.nickname == user.nickname
@@ -152,15 +155,19 @@ async def test_adjacency_list(user):
         rv.team.parent = Team(id=row[group.id], name=row[group.name])
         return rv
 
-    for exp in (loader,
-                User.load(team=Team.load(parent=group)),
-                User.load(team=Team.load(parent=group.load('id', 'name'))),
-                User.load(team=Team.load(parent=group.load()))):
-        u = await User.outerjoin(
-            Team
-        ).outerjoin(
-            group, Team.parent_id == group.id
-        ).select().gino.load(exp).first()
+    for exp in (
+        loader,
+        User.load(team=Team.load(parent=group)),
+        User.load(team=Team.load(parent=group.load("id", "name"))),
+        User.load(team=Team.load(parent=group.load())),
+    ):
+        u = (
+            await User.outerjoin(Team)
+            .outerjoin(group, Team.parent_id == group.id)
+            .select()
+            .gino.load(exp)
+            .first()
+        )
 
         assert isinstance(u, User)
         assert u.id == user.id
@@ -177,7 +184,7 @@ async def test_alias_loader_columns(user):
     user_alias = User.alias()
     base_query = user_alias.outerjoin(Team).select()
 
-    query = base_query.execution_options(loader=AliasLoader(user_alias, 'id'))
+    query = base_query.execution_options(loader=AliasLoader(user_alias, "id"))
     u = await query.gino.first()
     assert u.id is not None
 
@@ -189,7 +196,7 @@ async def test_multiple_models_in_one_query(bind):
     ua1 = User.alias()
     ua2 = User.alias()
     join_query = select([ua1, ua2]).where(ua1.id < ua2.id)
-    result = await join_query.gino.load((ua1.load('id'), ua2.load('id'))).all()
+    result = await join_query.gino.load((ua1.load("id"), ua2.load("id"))).all()
     assert len(result) == 3
     for u1, u2 in result:
         assert u1.id is not None
@@ -198,12 +205,8 @@ async def test_multiple_models_in_one_query(bind):
 
 
 async def test_loader_with_aggregation(user):
-    count_col = count().label('count')
-    user_count = select(
-        [User.team_id, count_col]
-    ).group_by(
-        User.team_id
-    ).alias()
+    count_col = count().label("count")
+    user_count = select([User.team_id, count_col]).group_by(User.team_id).alias()
     query = Team.outerjoin(user_count).select()
     result = await query.gino.load(
         (Team.id, Team.name, user_count.columns.team_id, count_col)
@@ -225,8 +228,9 @@ async def test_loader_with_aggregation(user):
 
 async def test_adjacency_list_query_builder(user):
     group = Team.alias()
-    u = await User.load(team=Team.load(parent=group.on(
-        Team.parent_id == group.id))).gino.first()
+    u = await User.load(
+        team=Team.load(parent=group.on(Team.parent_id == group.id))
+    ).gino.first()
 
     assert isinstance(u, User)
     assert u.id == user.id
@@ -241,11 +245,13 @@ async def test_adjacency_list_query_builder(user):
 
 async def test_literal(user):
     sample = tuple(random.random() for _ in range(5))
-    now = db.Column('time', db.DateTime())
-    row = await db.first(db.text(
-        'SELECT now() AT TIME ZONE \'UTC\''
-    ).columns(now).gino.load(
-        sample + (lambda r, c: datetime.utcnow(), now,)).query)
+    now = db.Column("time", db.DateTime())
+    row = await db.first(
+        db.text("SELECT now() AT TIME ZONE 'UTC'")
+        .columns(now)
+        .gino.load(sample + (lambda r, c: datetime.utcnow(), now,))
+        .query
+    )
     assert row[:5] == sample
     assert isinstance(row[-2], datetime)
     assert isinstance(row[-1], datetime)
@@ -255,14 +261,15 @@ async def test_literal(user):
 async def test_load_one_to_many(user):
     # noinspection PyListCreation
     uids = [user.id]
-    uids.append((await User.create(nickname='1', team_id=user.team.id)).id)
-    uids.append((await User.create(nickname='1', team_id=user.team.id)).id)
-    uids.append((await User.create(nickname='2',
-                                   team_id=user.team.parent.id)).id)
+    uids.append((await User.create(nickname="1", team_id=user.team.id)).id)
+    uids.append((await User.create(nickname="1", team_id=user.team.id)).id)
+    uids.append((await User.create(nickname="2", team_id=user.team.parent.id)).id)
     query = User.outerjoin(Team).outerjoin(Company).select()
     companies = await query.gino.load(
         Company.distinct(Company.id).load(
-            add_team=Team.load(add_member=User).distinct(Team.id))).all()
+            add_team=Team.load(add_member=User).distinct(Team.id)
+        )
+    ).all()
     assert len(companies) == 1
     company = companies[0]
     assert isinstance(company, Company)
@@ -277,7 +284,7 @@ async def test_load_one_to_many(user):
                     assert isinstance(u, User)
                     assert u.id == user.id
                     uids.remove(u.id)
-                if u.nickname in {'1', '2'}:
+                if u.nickname in {"1", "2"}:
                     uids.remove(u.id)
         else:
             assert len(team.members) == 1
@@ -286,8 +293,7 @@ async def test_load_one_to_many(user):
 
     # test distinct many-to-one
     query = User.outerjoin(Team).select().where(Team.id == user.team.id)
-    users = await query.gino.load(
-        User.load(team=Team.distinct(Team.id))).all()
+    users = await query.gino.load(User.load(team=Team.distinct(Team.id))).all()
     assert len(users) == 3
     assert users[0].team is users[1].team
     assert users[0].team is users[2].team
@@ -307,20 +313,21 @@ async def test_distinct_none(bind):
     loader = User.load(team=Team)
 
     u = await query.gino.load(loader).first()
-    assert not hasattr(u, 'team')
+    assert not hasattr(u, "team")
 
     u = await User.load(team=Team).query.where(User.id == u.id).gino.first()
-    assert not hasattr(u, 'team')
+    assert not hasattr(u, "team")
 
     query = User.outerjoin(Team).select().where(User.id == u.id)
     loader = User.load(team=Team.distinct(Team.id))
 
     u = await query.gino.load(loader).first()
-    assert not hasattr(u, 'team')
+    assert not hasattr(u, "team")
 
 
 async def test_tuple_loader_279(user):
     from gino.loader import TupleLoader
+
     query = db.select([User, Team])
     async with db.transaction():
         async for row in query.gino.load((User, Team)).iterate():
@@ -332,32 +339,28 @@ async def test_tuple_loader_279(user):
 async def test_none_as_none_281(user):
     import gino
 
-    if gino.__version__ < '0.9':
+    if gino.__version__ < "0.9":
         query = Team.outerjoin(User).select()
         loader = Team, User.none_as_none()
-        assert any(row[1] is None
-                   for row in await query.gino.load(loader).all())
+        assert any(row[1] is None for row in await query.gino.load(loader).all())
 
         loader = Team.distinct(Team.id).load(add_member=User.none_as_none())
-        assert any(not team.members
-                   for team in await query.gino.load(loader).all())
+        assert any(not team.members for team in await query.gino.load(loader).all())
 
-    if gino.__version__ >= '0.8.0':
+    if gino.__version__ >= "0.8.0":
         query = Team.outerjoin(User).select()
         loader = Team, User
-        assert any(row[1] is None
-                   for row in await query.gino.load(loader).all())
+        assert any(row[1] is None for row in await query.gino.load(loader).all())
 
         loader = Team.distinct(Team.id).load(add_member=User)
-        assert any(not team.members
-                   for team in await query.gino.load(loader).all())
+        assert any(not team.members for team in await query.gino.load(loader).all())
 
 
 async def test_model_in_query(user):
     query = select([User], from_obj=User.outerjoin(Team))
-    query = query.where(Team.company_id==user.team.company.id)
+    query = query.where(Team.company_id == user.team.company.id)
 
-    query = query.alias('users')
+    query = query.alias("users")
     User1 = User.in_query(query)
 
     query = query.outerjoin(Team).outerjoin(Company).select()

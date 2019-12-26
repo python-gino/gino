@@ -10,14 +10,13 @@ from gino import Gino
 from gino.dialects.asyncpg import JSONB
 
 DB_ARGS = dict(
-    host=os.getenv('DB_HOST', 'localhost'),
-    port=os.getenv('DB_PORT', 5432),
-    user=os.getenv('DB_USER', 'postgres'),
-    password=os.getenv('DB_PASS', ''),
-    database=os.getenv('DB_NAME', 'postgres'),
+    host=os.getenv("DB_HOST", "localhost"),
+    port=os.getenv("DB_PORT", 5432),
+    user=os.getenv("DB_USER", "postgres"),
+    password=os.getenv("DB_PASS", ""),
+    database=os.getenv("DB_NAME", "postgres"),
 )
-PG_URL = 'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
-    **DB_ARGS)
+PG_URL = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**DB_ARGS)
 db = Gino()
 
 
@@ -27,30 +26,25 @@ def random_name(length=8) -> str:
 
 
 def _random_name(length=8):
-    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+    return "".join(random.choice(string.ascii_letters) for _ in range(length))
 
 
 class UserType(enum.Enum):
-    USER = 'USER'
+    USER = "USER"
 
 
 class User(db.Model):
-    __tablename__ = 'gino_users'
+    __tablename__ = "gino_users"
 
     id = db.Column(db.BigInteger(), primary_key=True)
-    nickname = db.Column('name', db.Unicode(), default=_random_name)
-    profile = db.Column('props', JSONB(), nullable=False, server_default='{}')
-    type = db.Column(
-        db.Enum(UserType),
-        nullable=False,
-        default=UserType.USER,
-    )
+    nickname = db.Column("name", db.Unicode(), default=_random_name)
+    profile = db.Column("props", JSONB(), nullable=False, server_default="{}")
+    type = db.Column(db.Enum(UserType), nullable=False, default=UserType.USER,)
     realname = db.StringProperty()
     age = db.IntegerProperty(default=18)
     balance = db.IntegerProperty(default=0)
-    birthday = db.DateTimeProperty(
-        default=lambda i: datetime.utcfromtimestamp(0))
-    team_id = db.Column(db.ForeignKey('gino_teams.id'))
+    birthday = db.DateTimeProperty(default=lambda i: datetime.utcfromtimestamp(0))
+    team_id = db.Column(db.ForeignKey("gino_teams.id"))
 
     @balance.after_get
     def balance(self, val):
@@ -59,32 +53,32 @@ class User(db.Model):
         return float(val)
 
     def __repr__(self):
-        return '{}<{}>'.format(self.nickname, self.id)
+        return "{}<{}>".format(self.nickname, self.id)
 
 
 class Friendship(db.Model):
-    __tablename__ = 'gino_friendship'
+    __tablename__ = "gino_friendship"
 
     my_id = db.Column(db.BigInteger(), primary_key=True)
     friend_id = db.Column(db.BigInteger(), primary_key=True)
 
     def __repr__(self):
-        return 'Friends<{}, {}>'.format(self.my_id, self.friend_id)
+        return "Friends<{}, {}>".format(self.my_id, self.friend_id)
 
 
 class Relation(db.Model):
-    __tablename__ = 'gino_relation'
+    __tablename__ = "gino_relation"
 
     name = db.Column(db.Text(), primary_key=True)
 
 
 class Team(db.Model):
-    __tablename__ = 'gino_teams'
+    __tablename__ = "gino_teams"
 
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(), default=_random_name)
-    parent_id = db.Column(db.ForeignKey('gino_teams.id'))
-    company_id = db.Column(db.ForeignKey('gino_companies.id'))
+    parent_id = db.Column(db.ForeignKey("gino_teams.id"))
+    company_id = db.Column(db.ForeignKey("gino_companies.id"))
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -100,7 +94,7 @@ class Team(db.Model):
 
 
 class Company(db.Model):
-    __tablename__ = 'gino_companies'
+    __tablename__ = "gino_companies"
 
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(), default=_random_name)
@@ -120,7 +114,7 @@ class Company(db.Model):
 
 
 class UserSetting(db.Model):
-    __tablename__ = 'gino_user_settings'
+    __tablename__ = "gino_user_settings"
 
     # No constraints defined on columns
     id = db.Column(db.BigInteger())
@@ -131,11 +125,11 @@ class UserSetting(db.Model):
     col2 = db.Column(db.Integer, default=2)
 
     # Define indexes and constraints inline
-    id_pkey = db.PrimaryKeyConstraint('id')
-    user_id_fk = db.ForeignKeyConstraint(['user_id'], ['gino_users.id'])
-    user_id_setting_unique = db.UniqueConstraint('user_id', 'setting')
-    col1_check = db.CheckConstraint('col1 >= 1 AND col1 <= 5')
-    col2_idx = db.Index('col2_idx', 'col2')
+    id_pkey = db.PrimaryKeyConstraint("id")
+    user_id_fk = db.ForeignKeyConstraint(["user_id"], ["gino_users.id"])
+    user_id_setting_unique = db.UniqueConstraint("user_id", "setting")
+    col1_check = db.CheckConstraint("col1 >= 1 AND col1 <= 5")
+    col2_idx = db.Index("col2_idx", "col2")
 
 
 def qsize(engine):

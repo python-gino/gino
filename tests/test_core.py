@@ -14,23 +14,25 @@ async def test_engine_only():
     metadata = MetaData()
 
     users = Table(
-        'users', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('name', String),
-        Column('fullname', String),
+        "users",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column("name", String),
+        Column("fullname", String),
     )
 
     Table(
-        'addresses', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('user_id', None, ForeignKey('users.id')),
-        Column('email_address', String, nullable=False)
+        "addresses",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column("user_id", None, ForeignKey("users.id")),
+        Column("email_address", String, nullable=False),
     )
 
     engine = await gino.create_engine(PG_URL)
     await GinoSchemaVisitor(metadata).create_all(engine)
     try:
-        ins = users.insert().values(name='jack', fullname='Jack Jones')
+        ins = users.insert().values(name="jack", fullname="Jack Jones")
         await engine.status(ins)
         res = await engine.all(users.select())
         assert isinstance(res[0], RowProxy)
@@ -44,25 +46,26 @@ async def test_core():
     db = Gino()
 
     users = db.Table(
-        'users', db,
-        db.Column('id', db.Integer, primary_key=True),
-        db.Column('name', db.String),
-        db.Column('fullname', db.String),
+        "users",
+        db,
+        db.Column("id", db.Integer, primary_key=True),
+        db.Column("name", db.String),
+        db.Column("fullname", db.String),
     )
 
     db.Table(
-        'addresses', db,
-        db.Column('id', db.Integer, primary_key=True),
-        db.Column('user_id', None, db.ForeignKey('users.id')),
-        db.Column('email_address', db.String, nullable=False)
+        "addresses",
+        db,
+        db.Column("id", db.Integer, primary_key=True),
+        db.Column("user_id", None, db.ForeignKey("users.id")),
+        db.Column("email_address", db.String, nullable=False),
     )
 
     async with db.with_bind(PG_URL):
         await db.gino.create_all()
         try:
             await users.insert().values(
-                name='jack',
-                fullname='Jack Jones',
+                name="jack", fullname="Jack Jones",
             ).gino.status()
             res = await users.select().gino.all()
             assert isinstance(res[0], RowProxy)
@@ -76,23 +79,23 @@ async def test_orm():
     db = Gino()
 
     class User(db.Model):
-        __tablename__ = 'users'
+        __tablename__ = "users"
 
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String)
         fullname = db.Column(db.String)
 
     class Address(db.Model):
-        __tablename__ = 'addresses'
+        __tablename__ = "addresses"
 
         id = db.Column(db.Integer, primary_key=True)
-        user_id = db.Column(None, db.ForeignKey('users.id'))
+        user_id = db.Column(None, db.ForeignKey("users.id"))
         email_address = db.Column(db.String, nullable=False)
 
     async with db.with_bind(PG_URL):
         await db.gino.create_all()
         try:
-            await User.create(name='jack', fullname='Jack Jones')
+            await User.create(name="jack", fullname="Jack Jones")
             res = await User.query.gino.all()
             assert isinstance(res[0], User)
         finally:

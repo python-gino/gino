@@ -11,7 +11,7 @@ DEFAULT = object()
 
 
 class BaseDBAPI:
-    paramstyle = 'numeric'
+    paramstyle = "numeric"
     Error = Exception
 
     # noinspection PyPep8Naming
@@ -79,15 +79,19 @@ class PreparedStatement:
     def iterate(self, *params, **kwargs):
         return _PreparedIterableCursor(self, params, kwargs)
 
-    async def _do_execute(self, multiparams, params, one=False,
-                          return_model=True, status=False):
+    async def _do_execute(
+        self, multiparams, params, one=False, return_model=True, status=False
+    ):
         ctx = self.context.connection.execute(
-            self.clause, *multiparams, **params).context
+            self.clause, *multiparams, **params
+        ).context
         if ctx.executemany:
-            raise ValueError('PreparedStatement does not support multiple '
-                             'parameters.')
-        assert ctx.statement == self.context.statement, (
-            'Prepared statement generated different SQL with parameters')
+            raise ValueError(
+                "PreparedStatement does not support multiple " "parameters."
+            )
+        assert (
+            ctx.statement == self.context.statement
+        ), "Prepared statement generated different SQL with parameters"
         params = []
         for val in ctx.parameters[0]:
             params.append(val)
@@ -109,8 +113,7 @@ class PreparedStatement:
         return await self._do_execute(multiparams, params, one=True)
 
     async def scalar(self, *multiparams, **params):
-        rv = await self._do_execute(multiparams, params, one=True,
-                                    return_model=False)
+        rv = await self._do_execute(multiparams, params, one=True, return_model=False)
         if rv:
             return rv[0]
         else:
@@ -136,12 +139,12 @@ class _PreparedIterableCursor:
         self._kwargs = kwargs
 
     def __aiter__(self):
-        return getattr(self._prepared, '_get_iterator')(*self._params,
-                                                        **self._kwargs)
+        return getattr(self._prepared, "_get_iterator")(*self._params, **self._kwargs)
 
     def __await__(self):
-        return getattr(self._prepared, '_get_cursor')(
-            *self._params, **self._kwargs).__await__()
+        return getattr(self._prepared, "_get_cursor")(
+            *self._params, **self._kwargs
+        ).__await__()
 
 
 class _IterableCursor:
@@ -150,8 +153,9 @@ class _IterableCursor:
 
     async def _iterate(self):
         prepared = await self._context.cursor.prepare(self._context)
-        return prepared.iterate(*self._context.parameters[0],
-                                timeout=self._context.timeout)
+        return prepared.iterate(
+            *self._context.parameters[0], timeout=self._context.timeout
+        )
 
     async def _get_cursor(self):
         return await (await self._iterate())
@@ -199,12 +203,13 @@ class _ResultProxy:
         cursor = context.cursor
         if context.executemany:
             return await cursor.async_execute(
-                context.statement, context.timeout, param_groups,
-                many=True)
+                context.statement, context.timeout, param_groups, many=True
+            )
         else:
             args = param_groups[0]
             rows = await cursor.async_execute(
-                context.statement, context.timeout, args, 1 if one else 0)
+                context.statement, context.timeout, args, 1 if one else 0
+            )
             item = context.process_rows(rows, return_model=return_model)
             if one:
                 if item:
@@ -217,7 +222,7 @@ class _ResultProxy:
 
     def iterate(self):
         if self._context.executemany:
-            raise ValueError('too many multiparams')
+            raise ValueError("too many multiparams")
         return _IterableCursor(self._context)
 
     async def prepare(self, clause):
@@ -241,35 +246,34 @@ class Cursor:
 class ExecutionContextOverride:
     def _compiled_first_opt(self, key, default=DEFAULT):
         rv = DEFAULT
-        opts = getattr(getattr(self, 'compiled', None), 'execution_options',
-                       None)
+        opts = getattr(getattr(self, "compiled", None), "execution_options", None)
         if opts:
             rv = opts.get(key, DEFAULT)
         if rv is DEFAULT:
             # noinspection PyUnresolvedReferences
             rv = self.execution_options.get(key, default)
         if rv is DEFAULT:
-            raise LookupError('No such execution option!')
+            raise LookupError("No such execution option!")
         return rv
 
     @util.memoized_property
     def return_model(self):
-        return self._compiled_first_opt('return_model', True)
+        return self._compiled_first_opt("return_model", True)
 
     @util.memoized_property
     def model(self):
-        rv = self._compiled_first_opt('model', None)
+        rv = self._compiled_first_opt("model", None)
         if isinstance(rv, weakref.ref):
             rv = rv()
         return rv
 
     @util.memoized_property
     def timeout(self):
-        return self._compiled_first_opt('timeout', None)
+        return self._compiled_first_opt("timeout", None)
 
     @util.memoized_property
     def loader(self):
-        return self._compiled_first_opt('loader', None)
+        return self._compiled_first_opt("loader", None)
 
     def process_rows(self, rows, return_model=True):
         # noinspection PyUnresolvedReferences
@@ -291,8 +295,9 @@ class ExecutionContextOverride:
         return _ResultProxy(self)
 
     @classmethod
-    def _init_compiled_prepared(cls, dialect, connection, dbapi_connection,
-                                compiled, parameters):
+    def _init_compiled_prepared(
+        cls, dialect, connection, dbapi_connection, compiled, parameters
+    ):
         self = cls.__new__(cls)
         self.root_connection = connection
         self._dbapi_connection = dbapi_connection
@@ -305,16 +310,18 @@ class ExecutionContextOverride:
         assert compiled.can_execute
 
         self.execution_options = compiled.execution_options.union(
-            connection._execution_options)
+            connection._execution_options
+        )
 
         self.result_column_struct = (
-            compiled._result_columns, compiled._ordered_columns,
-            compiled._textual_ordered_columns)
+            compiled._result_columns,
+            compiled._ordered_columns,
+            compiled._textual_ordered_columns,
+        )
 
         self.unicode_statement = util.text_type(compiled)
         if not dialect.supports_unicode_statements:
-            self.statement = self.unicode_statement.encode(
-                self.dialect.encoding)
+            self.statement = self.unicode_statement.encode(self.dialect.encoding)
         else:
             self.statement = self.unicode_statement
 
@@ -331,7 +338,8 @@ class ExecutionContextOverride:
             self.is_crud = True
             self._is_explicit_returning = bool(compiled.statement._returning)
             self._is_implicit_returning = bool(
-                compiled.returning and not compiled.statement._returning)
+                compiled.returning and not compiled.statement._returning
+            )
 
         if self.dialect.positional:
             self.parameters = [dialect.execute_sequence_format()]
@@ -342,8 +350,9 @@ class ExecutionContextOverride:
         return self
 
     @classmethod
-    def _init_statement_prepared(cls, dialect, connection, dbapi_connection,
-                                 statement, parameters):
+    def _init_statement_prepared(
+        cls, dialect, connection, dbapi_connection, statement, parameters
+    ):
         """Initialize execution context for a string SQL statement."""
 
         self = cls.__new__(cls)
@@ -362,8 +371,9 @@ class ExecutionContextOverride:
 
         self.executemany = False
 
-        if not dialect.supports_unicode_statements and \
-                isinstance(statement, util.text_type):
+        if not dialect.supports_unicode_statements and isinstance(
+            statement, util.text_type
+        ):
             self.unicode_statement = statement
             self.statement = dialect._encoder(statement)[0]
         else:
@@ -379,7 +389,8 @@ class AsyncDialectMixin:
 
     def _init_mixin(self):
         self._sa_conn = _SAConnection(
-            _SAEngine(self), _DBAPIConnection(self.cursor_cls))
+            _SAEngine(self), _DBAPIConnection(self.cursor_cls)
+        )
 
     @classmethod
     def dbapi(cls):

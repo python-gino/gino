@@ -61,11 +61,13 @@ def _get_column(model, column_or_name) -> Column:
     if isinstance(column_or_name, Column):
         if column_or_name in model:
             return column_or_name
-        raise AttributeError('Column {} does not belong to model {}'.format(
-            column_or_name, model))
+        raise AttributeError(
+            "Column {} does not belong to model {}".format(column_or_name, model)
+        )
 
-    raise TypeError('Unknown column {} with type {}'.
-                    format(column_or_name, type(column_or_name)))
+    raise TypeError(
+        "Unknown column {} with type {}".format(column_or_name, type(column_or_name))
+    )
 
 
 class ModelLoader(Loader):
@@ -76,8 +78,7 @@ class ModelLoader(Loader):
             self.columns = [_get_column(model, name) for name in columns]
         else:
             self.columns = model
-        self.extras = dict((key, self.get(value))
-                           for key, value in extras.items())
+        self.extras = dict((key, self.get(value)) for key, value in extras.items())
         self.on_clause = None
         self._none_as_none = True
 
@@ -130,16 +131,14 @@ class ModelLoader(Loader):
         for key, subloader in self.extras.items():
             from_clause = subloader.get_from()
             if from_clause is not None:
-                rv = rv.outerjoin(from_clause,
-                                  getattr(subloader, 'on_clause', None))
+                rv = rv.outerjoin(from_clause, getattr(subloader, "on_clause", None))
         return rv
 
     def load(self, *columns, **extras):
         if columns:
             self.columns = [_get_column(self.model, name) for name in columns]
 
-        self.extras.update((key, self.get(value))
-                           for key, value in extras.items())
+        self.extras.update((key, self.get(value)) for key, value in extras.items())
         return self
 
     def on(self, on_clause):
@@ -153,8 +152,9 @@ class ModelLoader(Loader):
     def none_as_none(self, enabled=True):
         if not enabled:
             warnings.warn(
-                'The none_as_none feature will be always enabled in 1.0',
-                PendingDeprecationWarning)
+                "The none_as_none feature will be always enabled in 1.0",
+                PendingDeprecationWarning,
+            )
         self._none_as_none = enabled
         return self
 
@@ -177,8 +177,7 @@ class TupleLoader(Loader):
         self.loaders = tuple(self.get(value) for value in values)
 
     def do_load(self, row, context):
-        return tuple(loader.do_load(row, context)[0]
-                     for loader in self.loaders), True
+        return tuple(loader.do_load(row, context)[0] for loader in self.loaders), True
 
 
 class CallableLoader(Loader):
