@@ -11,7 +11,7 @@ from .models import db, DB_ARGS, PG_URL, random_name
 ECHO = False
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def sa_engine():
     rv = sqlalchemy.create_engine(PG_URL, echo=ECHO)
     db.create_all(rv)
@@ -26,8 +26,8 @@ async def engine(sa_engine):
     e = await gino.create_engine(PG_URL, echo=ECHO)
     await yield_(e)
     await e.close()
-    sa_engine.execute('DELETE FROM gino_user_settings')
-    sa_engine.execute('DELETE FROM gino_users')
+    sa_engine.execute("DELETE FROM gino_user_settings")
+    sa_engine.execute("DELETE FROM gino_users")
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
@@ -36,8 +36,8 @@ async def engine(sa_engine):
 async def bind(sa_engine):
     async with db.with_bind(PG_URL, echo=ECHO) as e:
         await yield_(e)
-    sa_engine.execute('DELETE FROM gino_user_settings')
-    sa_engine.execute('DELETE FROM gino_users')
+    sa_engine.execute("DELETE FROM gino_user_settings")
+    sa_engine.execute("DELETE FROM gino_users")
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
@@ -46,8 +46,8 @@ async def bind(sa_engine):
 async def asyncpg_pool(sa_engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
         await yield_(rv)
-        await rv.execute('DELETE FROM gino_user_settings')
-        await rv.execute('DELETE FROM gino_users')
+        await rv.execute("DELETE FROM gino_user_settings")
+        await rv.execute("DELETE FROM gino_users")
 
 
 @pytest.fixture

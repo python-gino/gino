@@ -32,8 +32,7 @@ class _BaseDBAPIConnection:
 
     async def acquire(self, *, timeout=None):
         if self._closed:
-            raise ValueError(
-                'This connection is already released permanently.')
+            raise ValueError("This connection is already released permanently.")
         return await self._acquire(timeout)
 
     async def _acquire(self, timeout):
@@ -109,15 +108,16 @@ _bypass_no_param = _bypass_no_param()
 
 # noinspection PyAbstractClass
 class _SAConnection(Connection):
-    def _execute_context(self, dialect, constructor,
-                         statement, parameters,
-                         *args):
+    def _execute_context(self, dialect, constructor, statement, parameters, *args):
         if parameters == [_bypass_no_param]:
-            constructor = getattr(self.dialect.execution_ctx_cls,
-                                  constructor.__name__ + '_prepared',
-                                  constructor)
-        return super()._execute_context(dialect, constructor, statement,
-                                        parameters, *args)
+            constructor = getattr(
+                self.dialect.execution_ctx_cls,
+                constructor.__name__ + "_prepared",
+                constructor,
+            )
+        return super()._execute_context(
+            dialect, constructor, statement, parameters, *args
+        )
 
 
 # noinspection PyAbstractClass
@@ -129,7 +129,7 @@ class _SAEngine(Engine):
 
 
 class _AcquireContext:
-    __slots__ = ['_acquire', '_conn']
+    __slots__ = ["_acquire", "_conn"]
 
     def __init__(self, acquire):
         self._acquire = acquire
@@ -148,7 +148,7 @@ class _AcquireContext:
 
 
 class _TransactionContext:
-    __slots__ = ['_conn_ctx', '_tx_ctx']
+    __slots__ = ["_conn_ctx", "_tx_ctx"]
 
     def __init__(self, conn_ctx, args):
         self._conn_ctx = conn_ctx
@@ -275,7 +275,7 @@ class GinoConnection:
             if dbapi_conn:
                 await dbapi_conn.release(True)
             else:
-                raise ValueError('This connection is already released.')
+                raise ValueError("This connection is already released.")
         else:
             await self._dbapi_conn.release(permanent)
 
@@ -344,7 +344,7 @@ class GinoConnection:
         if len(ret) == 1:
             return ret[0]
 
-        raise MultipleResultsFound('Multiple rows found for one_or_none()')
+        raise MultipleResultsFound("Multiple rows found for one_or_none()")
 
     async def one(self, clause, *multiparams, **params):
         """
@@ -361,10 +361,10 @@ class GinoConnection:
         try:
             ret = await self.one_or_none(clause, *multiparams, **params)
         except MultipleResultsFound:
-            raise MultipleResultsFound('Multiple rows found for one()')
+            raise MultipleResultsFound("Multiple rows found for one()")
 
         if ret is None:
-            raise NoResultFound('No row was found for one()')
+            raise NoResultFound("No row was found for one()")
 
         return ret
 
@@ -521,20 +521,17 @@ class GinoConnection:
             whatever they are.
 
         """
-        return type(self)(self._dialect,
-                          self._sa_conn.execution_options(**opt))
+        return type(self)(self._dialect, self._sa_conn.execution_options(**opt))
 
     async def _run_visitor(self, visitorcallable, element, **kwargs):
-        await visitorcallable(self.dialect, self,
-                              **kwargs).traverse_single(element)
+        await visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
 
     async def prepare(self, clause):
-        return await self._execute(
-            clause, (_bypass_no_param,), {}).prepare(clause)
+        return await self._execute(clause, (_bypass_no_param,), {}).prepare(clause)
 
 
 class _ContextualStack:
-    __slots__ = ('_ctx', '_stack')
+    __slots__ = ("_ctx", "_stack")
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -586,16 +583,19 @@ class GinoEngine:
     """Customizes the connection class to use, default is
     :class:`.GinoConnection`."""
 
-    def __init__(self, dialect, pool, loop,
-                 logging_name=None, echo=None, execution_options=None):
+    def __init__(
+        self, dialect, pool, loop, logging_name=None, echo=None, execution_options=None
+    ):
         self._sa_engine = _SAEngine(
             dialect,
-            logging_name=logging_name, echo=echo,
-            execution_options=execution_options)
+            logging_name=logging_name,
+            echo=echo,
+            execution_options=execution_options,
+        )
         self._dialect = dialect
         self._pool = pool
         self._loop = loop
-        self._ctx = ContextVar('gino', default=None)
+        self._ctx = ContextVar("gino", default=None)
 
     @property
     def dialect(self):
@@ -677,20 +677,22 @@ class GinoEngine:
         :return: A :class:`.GinoConnection` object.
 
         """
-        return _AcquireContext(functools.partial(
-            self._acquire, timeout, reuse, lazy, reusable))
+        return _AcquireContext(
+            functools.partial(self._acquire, timeout, reuse, lazy, reusable)
+        )
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
         stack = _ContextualStack(self._ctx)
         if reuse and stack:
-            dbapi_conn = _ReusingDBAPIConnection(self._dialect.cursor_cls,
-                                                 stack.top)
+            dbapi_conn = _ReusingDBAPIConnection(self._dialect.cursor_cls, stack.top)
             reusable = False
         else:
             dbapi_conn = _DBAPIConnection(self._dialect.cursor_cls, self._pool)
-        rv = self.connection_cls(self._dialect,
-                                 _SAConnection(self._sa_engine, dbapi_conn),
-                                 stack if reusable else None)
+        rv = self.connection_cls(
+            self._dialect,
+            _SAConnection(self._sa_engine, dbapi_conn),
+            stack if reusable else None,
+        )
         dbapi_conn.gino_conn = rv
         if not lazy:
             await dbapi_conn.acquire(timeout=timeout)
@@ -782,8 +784,7 @@ class GinoEngine:
         """
         return self._dialect.compile(clause, *multiparams, **params)
 
-    def transaction(self, *args, timeout=None, reuse=True, reusable=True,
-                    **kwargs):
+    def transaction(self, *args, timeout=None, reuse=True, reusable=True, **kwargs):
         """
         Borrows a new connection and starts a transaction with it.
 
@@ -817,8 +818,10 @@ class GinoEngine:
           :class:`~gino.transaction.GinoTransaction`
 
         """
-        return _TransactionContext(self.acquire(
-            timeout=timeout, reuse=reuse, reusable=reusable), (args, kwargs))
+        return _TransactionContext(
+            self.acquire(timeout=timeout, reuse=reuse, reusable=reusable),
+            (args, kwargs),
+        )
 
     def iterate(self, clause, *multiparams, **params):
         """
@@ -831,8 +834,7 @@ class GinoEngine:
         """
         connection = self.current_connection
         if connection is None:
-            raise ValueError(
-                'No Connection in context, please provide one')
+            raise ValueError("No Connection in context, please provide one")
         return connection.iterate(clause, *multiparams, **params)
 
     def update_execution_options(self, **opt):
@@ -850,4 +852,4 @@ class GinoEngine:
 
     async def _run_visitor(self, *args, **kwargs):
         async with self.acquire(reuse=True) as conn:
-            await getattr(conn, '_run_visitor')(*args, **kwargs)
+            await getattr(conn, "_run_visitor")(*args, **kwargs)

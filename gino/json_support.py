@@ -4,7 +4,7 @@ import sqlalchemy as sa
 
 from .exceptions import UnknownJSONPropertyError
 
-DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%f'
+DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 NONE = object()
 
 
@@ -24,7 +24,7 @@ class Hook:
 
 
 class JSONProperty:
-    def __init__(self, default=None, prop_name='profile'):
+    def __init__(self, default=None, prop_name="profile"):
         self.name = None
         self.default = default
         self.prop_name = prop_name
@@ -34,8 +34,7 @@ class JSONProperty:
 
     def __get__(self, instance, owner):
         if instance is None:
-            exp = self.make_expression(
-                getattr(owner, self.prop_name)[self.name])
+            exp = self.make_expression(getattr(owner, self.prop_name)[self.name])
             return self.expression.call(owner, exp)
         val = self.get_profile(instance).get(self.name, NONE)
         if val is NONE:
@@ -46,8 +45,7 @@ class JSONProperty:
         return self.after_get.call(instance, val)
 
     def __set__(self, instance, value):
-        self.get_profile(instance)[self.name] = self.before_set.call(
-            instance, value)
+        self.get_profile(instance)[self.name] = self.before_set.call(instance, value)
 
     def __delete__(self, instance):
         self.get_profile(instance).pop(self.name, None)
@@ -56,15 +54,12 @@ class JSONProperty:
         if instance.__profile__ is None:
             props = type(instance).__dict__
             instance.__profile__ = {}
-            for key, value in (
-                getattr(instance, self.prop_name, None) or {}
-            ).items():
+            for key, value in (getattr(instance, self.prop_name, None) or {}).items():
                 if key not in props:
                     raise UnknownJSONPropertyError(
-                        '`{}` is found in `{}` of instance {}, '
-                        'but it is not defined'.format(
-                            key, self.prop_name, instance
-                        ))
+                        "`{}` is found in `{}` of instance {}, "
+                        "but it is not defined".format(key, self.prop_name, instance)
+                    )
                 instance.__profile__[key] = props[key].decode(value)
         return instance.__profile__
 
@@ -177,6 +172,12 @@ class ArrayProperty(JSONProperty):
         return val
 
 
-__all__ = ['JSONProperty', 'StringProperty', 'DateTimeProperty',
-           'IntegerProperty', 'BooleanProperty', 'ObjectProperty',
-           'ArrayProperty']
+__all__ = [
+    "JSONProperty",
+    "StringProperty",
+    "DateTimeProperty",
+    "IntegerProperty",
+    "BooleanProperty",
+    "ObjectProperty",
+    "ArrayProperty",
+]

@@ -39,8 +39,8 @@ class _Select:
             q = sa.select([getattr(owner, x) for x in args])
             if instance is not None:
                 q = q.where(instance.lookup())
-            return q.execution_options(model=weakref.ref(owner),
-                                       return_model=False)
+            return q.execution_options(model=weakref.ref(owner), return_model=False)
+
         return select
 
 
@@ -79,7 +79,8 @@ class UpdateRequest:
     specific model instance and its database row.
 
     """
-    def __init__(self, instance: 'CRUDModel'):
+
+    def __init__(self, instance: "CRUDModel"):
         self._instance = instance
         self._values = {}
         self._props = {}
@@ -116,8 +117,10 @@ class UpdateRequest:
         """
         if self._locator is None:
             raise TypeError(
-                'Model {} has no table, primary key or custom lookup()'.format(
-                    self._instance.__class__.__name__))
+                "Model {} has no table, primary key or custom lookup()".format(
+                    self._instance.__class__.__name__
+                )
+            )
         cls = type(self._instance)
         values = self._values.copy()
 
@@ -137,36 +140,38 @@ class UpdateRequest:
         for prop_name, updates in json_updates.items():
             prop = getattr(cls, prop_name)
             from .dialects.asyncpg import JSONB
+
             if isinstance(prop.type, JSONB):
                 if self._literal:
                     values[prop_name] = prop.concat(updates)
                 else:
                     values[prop_name] = prop.concat(
-                        sa.func.jsonb_build_object(
-                            *itertools.chain(*updates.items())))
+                        sa.func.jsonb_build_object(*itertools.chain(*updates.items()))
+                    )
             else:
-                raise TypeError('{} is not supported to update json '
-                                'properties in Gino. Please consider using '
-                                'JSONB.'.format(prop.type))
+                raise TypeError(
+                    "{} is not supported to update json "
+                    "properties in Gino. Please consider using "
+                    "JSONB.".format(prop.type)
+                )
 
         opts = dict(return_model=False)
         if timeout is not DEFAULT:
-            opts['timeout'] = timeout
-        clause = type(self._instance).update.where(
-            self._locator,
-        ).values(
-            **self._instance._get_sa_values(values),
-        ).returning(
-            *[getattr(cls, key) for key in values],
-        ).execution_options(**opts)
+            opts["timeout"] = timeout
+        clause = (
+            type(self._instance)
+            .update.where(self._locator,)
+            .values(**self._instance._get_sa_values(values),)
+            .returning(*[getattr(cls, key) for key in values],)
+            .execution_options(**opts)
+        )
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(clause)
         if not row:
             raise NoSuchRowError()
         for k, v in row.items():
-            self._instance.__values__[
-                self._instance._column_name_map.invert_get(k)] = v
+            self._instance.__values__[self._instance._column_name_map.invert_get(k)] = v
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -208,11 +213,11 @@ class UpdateRequest:
         for key, value in values.items():
             prop = cls.__dict__.get(key)
             if isinstance(prop, json_support.JSONProperty):
-                value_from = '__profile__'
+                value_from = "__profile__"
                 method = self._set_prop
                 k = prop
             else:
-                value_from = '__values__'
+                value_from = "__values__"
                 method = self._set
                 k = key
             if not isinstance(value, ClauseElement):
@@ -227,6 +232,7 @@ class Alias:
     Experimental proxy for table alias on model.
 
     """
+
     def __init__(self, model, *args, **kwargs):
         # noinspection PyProtectedMember
         model._check_abstract()
@@ -234,9 +240,11 @@ class Alias:
         self.alias = model.__table__.alias(*args, **kwargs)
 
     def __getattr__(self, item):
-        rv = getattr(self.alias.columns, item,
-                     getattr(self.alias, item,
-                             getattr(self.model, item, DEFAULT)))
+        rv = getattr(
+            self.alias.columns,
+            item,
+            getattr(self.alias, item, getattr(self.model, item, DEFAULT)),
+        )
         if rv is DEFAULT:
             raise AttributeError
         return rv
@@ -429,16 +437,15 @@ class CRUDModel(Model):
                 if isinstance(v, json_support.JSONProperty):
                     if not hasattr(sub_cls, v.prop_name):
                         raise AttributeError(
-                            'Requires "{}" JSON[B] column.'.format(
-                                v.prop_name))
+                            'Requires "{}" JSON[B] column.'.format(v.prop_name)
+                        )
                     v.name = k
         if rv is not None:
             rv.__model__ = weakref.ref(sub_cls)
         return rv
 
     @classmethod
-    async def _create_without_instance(cls, bind=None, timeout=DEFAULT,
-                                       **values):
+    async def _create_without_instance(cls, bind=None, timeout=DEFAULT, **values):
         return await cls(**values)._create(bind=bind, timeout=timeout)
 
     async def _create(self, bind=None, timeout=DEFAULT):
@@ -462,13 +469,14 @@ class CRUDModel(Model):
         # insert into database
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
-            opts['timeout'] = timeout
+            opts["timeout"] = timeout
         # noinspection PyArgumentList
-        q = cls.__table__.insert().values(
-            **self._get_sa_values(self.__values__)
-        ).returning(
-            *cls
-        ).execution_options(**opts)
+        q = (
+            cls.__table__.insert()
+            .values(**self._get_sa_values(self.__values__))
+            .returning(*cls)
+            .execution_options(**opts)
+        )
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(q)
@@ -517,9 +525,9 @@ class CRUDModel(Model):
         columns = cls.__table__.primary_key.columns
         if len(ident_) != len(columns):
             raise ValueError(
-                'Incorrect number of values as primary key: '
-                'expected {}, got {}.'.format(
-                    len(columns), len(ident_)))
+                "Incorrect number of values as primary key: "
+                "expected {}, got {}.".format(len(columns), len(ident_))
+            )
         clause = cls.query
         for i, c in enumerate(columns):
             try:
@@ -575,9 +583,11 @@ class CRUDModel(Model):
         if exps:
             return sa.and_(*exps)
         else:
-            raise LookupError('Instance-level CRUD operations not allowed on '
-                              'models without primary keys or lookup(), please'
-                              ' use model-level CRUD operations instead.')
+            raise LookupError(
+                "Instance-level CRUD operations not allowed on "
+                "models without primary keys or lookup(), please"
+                " use model-level CRUD operations instead."
+            )
 
     def _update(self, **values):
         return self._update_request_cls(self).update(**values)
@@ -758,10 +768,15 @@ class QueryModel(type):
     Metaclass of Model classes used for subqueries.
 
     """
+
     def __getattr__(self, item):
-        rv = getattr(self._query.columns, item,
-                     getattr(self._model.__table__.columns, item,
-                             getattr(self._model, item, DEFAULT)))
+        rv = getattr(
+            self._query.columns,
+            item,
+            getattr(
+                self._model.__table__.columns, item, getattr(self._model, item, DEFAULT)
+            ),
+        )
         # replace `cls` in classmethod in models to `self`
         if inspect.ismethod(rv) and inspect.isclass(rv.__self__):
             return lambda *args, **kwargs: rv.__func__(self, *args, **kwargs)

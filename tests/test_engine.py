@@ -19,21 +19,21 @@ async def test_basic(engine):
     async with engine.acquire() as conn:
         assert isinstance(conn.raw_connection, asyncpg.Connection)
     assert init_size == qsize(engine)
-    assert isinstance(await engine.scalar('select now()'), datetime)
-    assert isinstance(await engine.scalar(sa.text('select now()')), datetime)
-    assert isinstance((await engine.first('select now()'))[0], datetime)
-    assert isinstance((await engine.all('select now()'))[0][0], datetime)
-    assert isinstance((await engine.one('select now()'))[0], datetime)
-    assert isinstance((await engine.one_or_none('select now()'))[0], datetime)
-    status, result = await engine.status('select now()')
-    assert status == 'SELECT 1'
+    assert isinstance(await engine.scalar("select now()"), datetime)
+    assert isinstance(await engine.scalar(sa.text("select now()")), datetime)
+    assert isinstance((await engine.first("select now()"))[0], datetime)
+    assert isinstance((await engine.all("select now()"))[0][0], datetime)
+    assert isinstance((await engine.one("select now()"))[0], datetime)
+    assert isinstance((await engine.one_or_none("select now()"))[0], datetime)
+    status, result = await engine.status("select now()")
+    assert status == "SELECT 1"
     assert isinstance(result[0][0], datetime)
     with pytest.raises(ObjectNotExecutableError):
         await engine.all(object())
 
 
 async def test_issue_79():
-    e = await create_engine(PG_URL + '_non_exist', min_size=0)
+    e = await create_engine(PG_URL + "_non_exist", min_size=0)
     with pytest.raises(InvalidCatalogNameError):
         async with e.acquire():
             pass  # pragma: no cover
@@ -48,7 +48,7 @@ async def test_reuse(engine):
         async with engine.acquire(reuse=True) as conn2:
             assert qsize(engine) == init_size - 1
             assert conn1.raw_connection is conn2.raw_connection
-            assert await engine.scalar('select now()')
+            assert await engine.scalar("select now()")
             assert qsize(engine) == init_size - 1
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
@@ -100,8 +100,8 @@ async def test_compile(engine):
 
 
 async def test_logging(mocker):
-    mocker.patch('logging.Logger._log')
-    sql = 'SELECT NOW() AS test_logging'
+    mocker.patch("logging.Logger._log")
+    sql = "SELECT NOW() AS test_logging"
 
     e = await create_engine(PG_URL, echo=False)
     await e.scalar(sql)
@@ -118,14 +118,18 @@ async def test_logging(mocker):
 
 async def test_set_isolation_level():
     with pytest.raises(sa.exc.ArgumentError):
-        await create_engine(PG_URL, isolation_level='non')
-    e = await create_engine(PG_URL, isolation_level='READ_UNCOMMITTED')
+        await create_engine(PG_URL, isolation_level="non")
+    e = await create_engine(PG_URL, isolation_level="READ_UNCOMMITTED")
     async with e.acquire() as conn:
-        assert await e.dialect.get_isolation_level(
-            conn.raw_connection) == 'READ UNCOMMITTED'
-    async with e.transaction(isolation='serializable') as tx:
-        assert await e.dialect.get_isolation_level(
-            tx.connection.raw_connection) == 'SERIALIZABLE'
+        assert (
+            await e.dialect.get_isolation_level(conn.raw_connection)
+            == "READ UNCOMMITTED"
+        )
+    async with e.transaction(isolation="serializable") as tx:
+        assert (
+            await e.dialect.get_isolation_level(tx.connection.raw_connection)
+            == "SERIALIZABLE"
+        )
 
 
 async def test_too_many_engine_args():
@@ -135,15 +139,14 @@ async def test_too_many_engine_args():
 
 # noinspection PyUnusedLocal
 async def test_scalar_return_none(bind):
-    assert await User.query.where(
-        User.nickname == 'nonexist').gino.scalar() is None
+    assert await User.query.where(User.nickname == "nonexist").gino.scalar() is None
 
 
 async def test_asyncpg_0120(bind, mocker):
     # for asyncpg 0.12.0
-    assert await bind.first('rollback') is None
+    assert await bind.first("rollback") is None
 
-    orig = getattr(asyncpg.Connection, '_do_execute')
+    orig = getattr(asyncpg.Connection, "_do_execute")
 
     class Stmt:
         def __init__(self, stmt):
@@ -156,28 +159,30 @@ async def test_asyncpg_0120(bind, mocker):
         result, stmt = await orig(*args, **kwargs)
         return result, Stmt(stmt)
 
-    mocker.patch('asyncpg.Connection._do_execute', new=new)
+    mocker.patch("asyncpg.Connection._do_execute", new=new)
 
-    assert await bind.first('rollback') is None
+    assert await bind.first("rollback") is None
 
 
 async def test_asyncpg_0120_iterate(bind, mocker):
     async with bind.transaction():
-        gen = await db.iterate('rollback')
+        gen = await db.iterate("rollback")
         assert await gen.next() is None
 
-    mocker.patch('asyncpg.prepared_stmt.'
-                 'PreparedStatement.get_attributes').side_effect = TypeError
+    mocker.patch(
+        "asyncpg.prepared_stmt." "PreparedStatement.get_attributes"
+    ).side_effect = TypeError
 
     async with bind.transaction():
-        gen = await db.iterate('rollback')
+        gen = await db.iterate("rollback")
         assert await gen.next() is None
 
 
 async def test_async_metadata():
     import gino
+
     db_ = await gino.Gino(PG_URL)
-    assert isinstance((await db_.scalar('select now()')), datetime)
+    assert isinstance((await db_.scalar("select now()")), datetime)
     await db_.pop_bind().close()
     with pytest.raises(UninitializedError):
         db.bind.first()
@@ -189,7 +194,7 @@ async def test_acquire_timeout():
     async with e.acquire():
         with pytest.raises(asyncio.TimeoutError):
             async with e.acquire(timeout=0.1):
-                assert False, 'Should not reach here'
+                assert False, "Should not reach here"
 
     loop = asyncio.get_event_loop()
     f1 = loop.create_future()
@@ -205,7 +210,7 @@ async def test_acquire_timeout():
         async with e.acquire(lazy=True) as conn:
             conn = conn.execution_options(timeout=0.1)
             with pytest.raises(asyncio.TimeoutError):
-                assert await conn.scalar('select 1')
+                assert await conn.scalar("select 1")
 
     async def third():
         async with e.acquire(reuse=True, timeout=0.4) as conn:
@@ -231,7 +236,7 @@ async def test_lazy(mocker):
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
         assert len(engine._ctx.get()) == 1
-        assert await engine.scalar('select 1')
+        assert await engine.scalar("select 1")
         assert qsize(engine) == init_size - 1
         assert len(engine._ctx.get()) == 1
     assert engine._ctx.get() is None
@@ -250,8 +255,7 @@ async def test_lazy(mocker):
     init_size_2 = qsize(engine)
     ctx = engine.acquire(lazy=True)
     conn = await ctx.__aenter__()
-    t1 = loop.create_task(
-        conn.execution_options(timeout=0.1).scalar('select 1'))
+    t1 = loop.create_task(conn.execution_options(timeout=0.1).scalar("select 1"))
     t2 = loop.create_task(ctx.__aexit__(None, None, None))
     with pytest.raises(asyncio.TimeoutError):
         await t1
@@ -269,10 +273,10 @@ async def test_lazy(mocker):
         await asyncio.sleep(0.1)
         raise ValueError()
 
-    mocker.patch('asyncpg.pool.Pool.acquire', new=acquire_failed)
+    mocker.patch("asyncpg.pool.Pool.acquire", new=acquire_failed)
     ctx = engine.acquire(lazy=True)
     conn = await ctx.__aenter__()
-    t1 = loop.create_task(conn.scalar('select 1'))
+    t1 = loop.create_task(conn.scalar("select 1"))
     t2 = loop.create_task(conn.release(permanent=False))
     with pytest.raises(ValueError):
         await t1
@@ -289,50 +293,50 @@ async def test_lazy(mocker):
 async def test_release(engine):
     init_size = qsize(engine)
     async with engine.acquire() as conn:
-        assert await conn.scalar('select 8') == 8
+        assert await conn.scalar("select 8") == 8
         await conn.release(permanent=False)
-        assert await conn.scalar('select 8') == 8
+        assert await conn.scalar("select 8") == 8
         await conn.release(permanent=False)
-    with pytest.raises(ValueError, match='released permanently'):
-        await conn.scalar('select 8')
-    with pytest.raises(ValueError, match='already released'):
+    with pytest.raises(ValueError, match="released permanently"):
+        await conn.scalar("select 8")
+    with pytest.raises(ValueError, match="already released"):
         await conn.release()
 
     conn = await engine.acquire()
-    assert await conn.scalar('select 8') == 8
+    assert await conn.scalar("select 8") == 8
     await conn.release(permanent=False)
-    assert await conn.scalar('select 8') == 8
+    assert await conn.scalar("select 8") == 8
     await conn.release()
-    with pytest.raises(ValueError, match='released permanently'):
-        await conn.scalar('select 8')
+    with pytest.raises(ValueError, match="released permanently"):
+        await conn.scalar("select 8")
 
     conn1 = await engine.acquire()
     conn2 = await engine.acquire(reuse=True)
     conn3 = await engine.acquire()
     conn4 = await engine.acquire(reuse=True)
-    assert await conn1.scalar('select 8') == 8
-    assert await conn2.scalar('select 8') == 8
-    assert await conn3.scalar('select 8') == 8
-    assert await conn4.scalar('select 8') == 8
+    assert await conn1.scalar("select 8") == 8
+    assert await conn2.scalar("select 8") == 8
+    assert await conn3.scalar("select 8") == 8
+    assert await conn4.scalar("select 8") == 8
 
     await conn1.release(permanent=False)
-    assert await conn2.scalar('select 8') == 8
+    assert await conn2.scalar("select 8") == 8
 
     await conn2.release(permanent=False)
-    assert await conn2.scalar('select 8') == 8
+    assert await conn2.scalar("select 8") == 8
 
     await conn1.release()
-    with pytest.raises(ValueError, match='released permanently'):
-        await conn2.scalar('select 8')
-    assert await conn4.scalar('select 8') == 8
+    with pytest.raises(ValueError, match="released permanently"):
+        await conn2.scalar("select 8")
+    assert await conn4.scalar("select 8") == 8
 
     await conn4.release()
-    with pytest.raises(ValueError, match='released permanently'):
-        await conn4.scalar('select 8')
+    with pytest.raises(ValueError, match="released permanently"):
+        await conn4.scalar("select 8")
 
-    assert await conn3.scalar('select 8') == 8
+    assert await conn3.scalar("select 8") == 8
     await conn3.release(permanent=False)
-    assert await conn3.scalar('select 8') == 8
+    assert await conn3.scalar("select 8") == 8
     assert init_size - 1 == qsize(engine)
     await conn3.release(permanent=False)
     assert init_size == qsize(engine)
@@ -373,7 +377,7 @@ async def test_issue_313(bind):
 
     async def task():
         async with db.acquire(reuse=True):
-            await db.scalar('SELECT now()')
+            await db.scalar("SELECT now()")
 
     await asyncio.gather(*[task() for _ in range(5)])
 
@@ -381,7 +385,7 @@ async def test_issue_313(bind):
 
     async def task():
         async with db.transaction():
-            await db.scalar('SELECT now()')
+            await db.scalar("SELECT now()")
 
     await asyncio.gather(*[task() for _ in range(5)])
 
@@ -390,6 +394,7 @@ async def test_issue_313(bind):
 
 async def test_null_pool():
     from gino.dialects.asyncpg import NullPool
+
     e = await create_engine(PG_URL, pool_class=NullPool)
     async with e.acquire() as conn:
         raw_conn = conn.raw_connection

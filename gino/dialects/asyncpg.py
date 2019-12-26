@@ -38,20 +38,21 @@ class AsyncpgCompiler(PGCompiler):
     @bindtemplate.setter
     def bindtemplate(self, val):
         # noinspection PyAttributeOutsideInit
-        self._bindtemplate = val.replace(':', '$')
+        self._bindtemplate = val.replace(":", "$")
 
     def _apply_numbered_params(self):
-        if hasattr(self, 'string'):
+        if hasattr(self, "string"):
             return super()._apply_numbered_params()
 
 
 # noinspection PyAbstractClass
-class AsyncpgExecutionContext(base.ExecutionContextOverride,
-                              PGExecutionContext):
+class AsyncpgExecutionContext(base.ExecutionContextOverride, PGExecutionContext):
     async def _execute_scalar(self, stmt, type_):
         conn = self.root_connection
-        if isinstance(stmt, util.text_type) and \
-                not self.dialect.supports_unicode_statements:
+        if (
+            isinstance(stmt, util.text_type)
+            and not self.dialect.supports_unicode_statements
+        ):
             stmt = self.dialect._encoder(stmt)[0]
 
         if self.dialect.positional:
@@ -65,8 +66,7 @@ class AsyncpgExecutionContext(base.ExecutionContextOverride,
         if type_ is not None:
             # apply type post processors to the result
             proc = type_._cached_result_processor(
-                self.dialect,
-                self.cursor.description[0][1]
+                self.dialect, self.cursor.description[0][1]
             )
             if proc:
                 return proc(r)
@@ -115,7 +115,8 @@ class PreparedStatement(base.PreparedStatement):
 
     def _get_iterator(self, *params, **kwargs):
         return AsyncpgIterator(
-            self.context, self._prepared.cursor(*params, **kwargs).__aiter__())
+            self.context, self._prepared.cursor(*params, **kwargs).__aiter__()
+        )
 
     async def _get_cursor(self, *params, **kwargs):
         iterator = await self._prepared.cursor(*params, **kwargs)
@@ -165,21 +166,19 @@ class DBAPICursor(base.DBAPICursor):
             conn = await self._conn.acquire(timeout=timeout)
             after = time.monotonic()
             timeout -= after - before
-        _protocol = getattr(conn, '_protocol')
-        timeout = getattr(_protocol, '_get_timeout')(timeout)
+        _protocol = getattr(conn, "_protocol")
+        timeout = getattr(_protocol, "_get_timeout")(timeout)
 
         def executor(state, timeout_):
             if many:
-                return _protocol.bind_execute_many(state, args, '', timeout_)
+                return _protocol.bind_execute_many(state, args, "", timeout_)
             else:
-                return _protocol.bind_execute(state, args, '', limit, True,
-                                              timeout_)
+                return _protocol.bind_execute(state, args, "", limit, True, timeout_)
 
-        with getattr(conn, '_stmt_exclusive_section'):
-            result, stmt = await getattr(conn, '_do_execute')(
-                query, executor, timeout)
+        with getattr(conn, "_stmt_exclusive_section"):
+            result, stmt = await getattr(conn, "_do_execute")(query, executor, timeout)
             try:
-                self._attributes = getattr(stmt, '_get_attributes')()
+                self._attributes = getattr(stmt, "_get_attributes")()
             except TypeError:  # asyncpg <= 0.12.0
                 self._attributes = []
             if not many:
@@ -239,17 +238,20 @@ class NullPool(base.Pool):
         for k in inspect.getfullargspec(asyncpg.connect).kwonlyargs:
             if k in kwargs:
                 self._kwargs[k] = kwargs[k]
-        self._kwargs.update(dict(
-            host=url.host,
-            port=url.port,
-            user=url.username,
-            database=url.database,
-            password=url.password,
-        ))
+        self._kwargs.update(
+            dict(
+                host=url.host,
+                port=url.port,
+                user=url.username,
+                database=url.database,
+                password=url.password,
+            )
+        )
 
     def __await__(self):
         async def return_self():
             return self
+
         return return_self().__await__()
 
     @property
@@ -289,38 +291,38 @@ class Transaction(base.Transaction):
 
 class AsyncEnum(ENUM):
     async def create_async(self, bind=None, checkfirst=True):
-        if not checkfirst or \
-            not await bind.dialect.has_type(
-                bind, self.name, schema=self.schema):
+        if not checkfirst or not await bind.dialect.has_type(
+            bind, self.name, schema=self.schema
+        ):
             await bind.status(CreateEnumType(self))
 
     async def drop_async(self, bind=None, checkfirst=True):
-        if not checkfirst or \
-                await bind.dialect.has_type(bind, self.name,
-                                            schema=self.schema):
+        if not checkfirst or await bind.dialect.has_type(
+            bind, self.name, schema=self.schema
+        ):
             await bind.status(DropEnumType(self))
 
-    async def _on_table_create_async(self, target, bind, checkfirst=False,
-                                     **kw):
-        if checkfirst or (
-                not self.metadata and
-                not kw.get('_is_metadata_operation', False)) and \
-                not self._check_for_name_in_memos(checkfirst, kw):
+    async def _on_table_create_async(self, target, bind, checkfirst=False, **kw):
+        if (
+            checkfirst
+            or (not self.metadata and not kw.get("_is_metadata_operation", False))
+            and not self._check_for_name_in_memos(checkfirst, kw)
+        ):
             await self.create_async(bind=bind, checkfirst=checkfirst)
 
     async def _on_table_drop_async(self, target, bind, checkfirst=False, **kw):
-        if not self.metadata and \
-                not kw.get('_is_metadata_operation', False) and \
-                not self._check_for_name_in_memos(checkfirst, kw):
+        if (
+            not self.metadata
+            and not kw.get("_is_metadata_operation", False)
+            and not self._check_for_name_in_memos(checkfirst, kw)
+        ):
             await self.drop_async(bind=bind, checkfirst=checkfirst)
 
-    async def _on_metadata_create_async(self, target, bind, checkfirst=False,
-                                        **kw):
+    async def _on_metadata_create_async(self, target, bind, checkfirst=False, **kw):
         if not self._check_for_name_in_memos(checkfirst, kw):
             await self.create_async(bind=bind, checkfirst=checkfirst)
 
-    async def _on_metadata_drop_async(self, target, bind, checkfirst=False,
-                                      **kw):
+    async def _on_metadata_drop_async(self, target, bind, checkfirst=False, **kw):
         if not self._check_for_name_in_memos(checkfirst, kw):
             await self.drop_async(bind=bind, checkfirst=checkfirst)
 
@@ -350,15 +352,20 @@ class AsyncpgJSONPathType(json.JSONPathType):
 
 # noinspection PyAbstractClass
 class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
-    driver = 'asyncpg'
+    driver = "asyncpg"
     supports_native_decimal = True
     dbapi_class = AsyncpgDBAPI
     statement_compiler = AsyncpgCompiler
     execution_ctx_cls = AsyncpgExecutionContext
     cursor_cls = DBAPICursor
-    init_kwargs = set(itertools.chain(
-        *[inspect.getfullargspec(f).kwonlydefaults.keys() for f in
-          [asyncpg.create_pool, asyncpg.connect]]))
+    init_kwargs = set(
+        itertools.chain(
+            *[
+                inspect.getfullargspec(f).kwonlydefaults.keys()
+                for f in [asyncpg.create_pool, asyncpg.connect]
+            ]
+        )
+    )
     colspecs = util.update_copy(
         PGDialect.colspecs,
         {
@@ -366,7 +373,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
             sqltypes.Enum: AsyncEnum,
             sqltypes.NullType: GinoNullType,
             sqltypes.JSON.JSONPathType: AsyncpgJSONPathType,
-        }
+        },
     )
 
     def __init__(self, *args, **kwargs):
@@ -380,8 +387,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(url, loop, init=self.on_connect(),
-                                **self._pool_kwargs)
+        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
@@ -389,8 +395,10 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
 
     def on_connect(self):
         if self.isolation_level is not None:
+
             async def connect(conn):
                 await self.set_isolation_level(conn, self.isolation_level)
+
             return connect
         else:
             return None
@@ -400,16 +408,16 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         Given an asyncpg connection, set its isolation level.
 
         """
-        level = level.replace('_', ' ')
+        level = level.replace("_", " ")
         if level not in self._isolation_lookup:
             raise exc.ArgumentError(
                 "Invalid value '%s' for isolation_level. "
-                "Valid isolation levels for %s are %s" %
-                (level, self.name, ", ".join(self._isolation_lookup))
+                "Valid isolation levels for %s are %s"
+                % (level, self.name, ", ".join(self._isolation_lookup))
             )
         await connection.execute(
-            "SET SESSION CHARACTERISTICS AS TRANSACTION "
-            "ISOLATION LEVEL %s" % level)
+            "SET SESSION CHARACTERISTICS AS TRANSACTION " "ISOLATION LEVEL %s" % level
+        )
         await connection.execute("COMMIT")
 
     async def get_isolation_level(self, connection):
@@ -417,19 +425,16 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         Given an asyncpg connection, return its isolation level.
 
         """
-        val = await connection.fetchval('show transaction isolation level')
+        val = await connection.fetchval("show transaction isolation level")
         return val.upper()
 
     async def has_schema(self, connection, schema):
         row = await connection.first(
             sql.text(
-                "select nspname from pg_namespace "
-                "where lower(nspname)=:schema"
+                "select nspname from pg_namespace " "where lower(nspname)=:schema"
             ).bindparams(
                 sql.bindparam(
-                    'schema',
-                    util.text_type(schema.lower()),
-                    type_=sqltypes.Unicode,
+                    "schema", util.text_type(schema.lower()), type_=sqltypes.Unicode,
                 )
             )
         )
@@ -447,9 +452,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "and relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        'name',
-                        util.text_type(table_name),
-                        type_=sqltypes.Unicode
+                        "name", util.text_type(table_name), type_=sqltypes.Unicode
                     ),
                 )
             )
@@ -461,15 +464,11 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        'name',
-                        util.text_type(table_name),
-                        type_=sqltypes.Unicode,
+                        "name", util.text_type(table_name), type_=sqltypes.Unicode,
                     ),
                     sql.bindparam(
-                        'schema',
-                        util.text_type(schema),
-                        type_=sqltypes.Unicode,
-                    )
+                        "schema", util.text_type(schema), type_=sqltypes.Unicode,
+                    ),
                 )
             )
         return bool(row)
@@ -484,9 +483,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "and relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        'name',
-                        util.text_type(sequence_name),
-                        type_=sqltypes.Unicode,
+                        "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
                     )
                 )
             )
@@ -498,15 +495,11 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "n.nspname=:schema and relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        'name',
-                        util.text_type(sequence_name),
-                        type_=sqltypes.Unicode,
+                        "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
                     ),
                     sql.bindparam(
-                        'schema',
-                        util.text_type(schema),
-                        type_=sqltypes.Unicode,
-                    )
+                        "schema", util.text_type(schema), type_=sqltypes.Unicode,
+                    ),
                 )
             )
 
@@ -534,17 +527,13 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
             query = sql.text(query)
         query = query.bindparams(
             sql.bindparam(
-                'typname',
-                util.text_type(type_name),
-                type_=sqltypes.Unicode,
+                "typname", util.text_type(type_name), type_=sqltypes.Unicode,
             ),
         )
         if schema is not None:
             query = query.bindparams(
                 sql.bindparam(
-                    'nspname',
-                    util.text_type(schema),
-                    type_=sqltypes.Unicode,
+                    "nspname", util.text_type(schema), type_=sqltypes.Unicode,
                 ),
             )
         return bool(await connection.scalar(query))

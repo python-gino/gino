@@ -66,6 +66,7 @@ class GinoTransaction:
         normal ``try ... except Exception:`` can't trap the commit or rollback.
 
     """
+
     def __init__(self, conn, args, kwargs):
         self._conn = conn
         self._args = args
@@ -75,8 +76,7 @@ class GinoTransaction:
 
     async def _begin(self):
         raw_conn = await self._conn.get_raw_connection()
-        self._tx = self._conn.dialect.transaction(raw_conn,
-                                                  self._args, self._kwargs)
+        self._tx = self._conn.dialect.transaction(raw_conn, self._args, self._kwargs)
         await self._tx.begin()
         return self
 
@@ -114,7 +114,7 @@ class GinoTransaction:
             assert user.age == 64  # no exception raised before
 
         """
-        assert self._managed, 'Illegal in manual mode, use `commit` instead.'
+        assert self._managed, "Illegal in manual mode, use `commit` instead."
         raise _Break(self, True)
 
     async def commit(self):
@@ -122,8 +122,9 @@ class GinoTransaction:
         Only available in manual mode: manually commit this transaction.
 
         """
-        assert not self._managed, ('Illegal in managed mode, '
-                                   'use `raise_commit` instead.')
+        assert not self._managed, (
+            "Illegal in managed mode, " "use `raise_commit` instead."
+        )
         await self._tx.commit()
 
     def raise_rollback(self):
@@ -142,7 +143,7 @@ class GinoTransaction:
             assert user.age == 64  # no exception raised before
 
         """
-        assert self._managed, 'Illegal in manual mode, use `rollback` instead.'
+        assert self._managed, "Illegal in manual mode, use `rollback` instead."
         raise _Break(self, False)
 
     async def rollback(self):
@@ -150,17 +151,18 @@ class GinoTransaction:
         Only available in manual mode: manually rollback this transaction.
 
         """
-        assert not self._managed, ('Illegal in managed mode, '
-                                   'use `raise_rollback` instead.')
+        assert not self._managed, (
+            "Illegal in managed mode, " "use `raise_rollback` instead."
+        )
         await self._tx.rollback()
 
     def __await__(self):
-        assert self._managed is None, 'Cannot start the same transaction twice'
+        assert self._managed is None, "Cannot start the same transaction twice"
         self._managed = False
         return self._begin().__await__()
 
     async def __aenter__(self):
-        assert self._managed is None, 'Cannot start the same transaction twice'
+        assert self._managed is None, "Cannot start the same transaction twice"
         self._managed = True
         await self._begin()
         return self
