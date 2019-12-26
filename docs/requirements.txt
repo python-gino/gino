@@ -1,0 +1,4 @@
+sphinx-rtd-theme==0.4.3
+sphinxcontrib-apidoc==0.3.0
+sphinx-autobuild==0.7.1
+sphinx-intl[transifex]==2.0.0

@@ -77,3 +77,4 @@ intersphinx_mapping = {
 
 locale_dirs = ["locale/"]  # path is example but recommended.
 gettext_compact = False  # optional.
+master_doc = "index"
