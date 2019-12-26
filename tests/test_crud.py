@@ -288,34 +288,44 @@ async def test_lookup_287(bind):
 
 
 async def test_lookup_custom_name(bind):
-    from gino.exceptions import NoSuchRowError
-
     class ModelWithCustomColumnNames(db.Model):
-        __tablename__ = 'gino_test_custom_column_names'
+        __tablename__ = "gino_test_custom_column_names"
 
-        id = db.Column('other', db.Integer(), primary_key=True)
+        id = db.Column("other", db.Integer(), primary_key=True)
         field = db.Column(db.Text())
 
     await ModelWithCustomColumnNames.gino.create()
 
     try:
         # create
-        m1 = await ModelWithCustomColumnNames.create(id=1, field='A')
-        m2 = await ModelWithCustomColumnNames.create(id=2, field='B')
+        m1 = await ModelWithCustomColumnNames.create(id=1, field="A")
+        m2 = await ModelWithCustomColumnNames.create(id=2, field="B")
 
         # update
-        uq = m1.update(field='C')
+        uq = m1.update(field="C")
         await uq.apply()
 
         # lookup
-        assert set(tuple(x) for x in await ModelWithCustomColumnNames.select('id').gino.all()) == {(1,), (2,)}
+        assert set(
+            tuple(x) for x in await ModelWithCustomColumnNames.select("id").gino.all()
+        ) == {(1,), (2,)}
         assert (await ModelWithCustomColumnNames.get(2)).field == "B"
         assert (await ModelWithCustomColumnNames.get(1)).field == "C"
         assert await ModelWithCustomColumnNames.get(3) is None
 
         # delete
-        assert (await ModelWithCustomColumnNames.delete.where(ModelWithCustomColumnNames.id == 3).gino.status())[0][-1] == '0'
-        assert (await ModelWithCustomColumnNames.delete.where(ModelWithCustomColumnNames.id == 2).gino.status())[0][-1] == '1'
-        assert set(tuple(x) for x in await ModelWithCustomColumnNames.select('id').gino.all()) == {(1,)}
+        assert (
+            await ModelWithCustomColumnNames.delete.where(
+                ModelWithCustomColumnNames.id == 3
+            ).gino.status()
+        )[0][-1] == "0"
+        assert (
+            await ModelWithCustomColumnNames.delete.where(
+                ModelWithCustomColumnNames.id == 2
+            ).gino.status()
+        )[0][-1] == "1"
+        assert set(
+            tuple(x) for x in await ModelWithCustomColumnNames.select("id").gino.all()
+        ) == {(1,)}
     finally:
         await ModelWithCustomColumnNames.gino.drop()

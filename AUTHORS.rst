@@ -40,6 +40,7 @@ Contributors
 * Jim O'Brien <jim@greenfield.fm>
 * Ilaï Deutel <ilai-deutel@users.noreply.github.com>
 * Roald Storm <roaldstorm@gmail.com>
+* Tiago Requeijo <tiago.requeijo.dev@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
