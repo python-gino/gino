@@ -571,8 +571,7 @@ class CRUDModel(Model):
         """
         exps = []
         for c in self.__table__.primary_key.columns:
-            exps.append(c == getattr(self,
-                                     self._column_name_map.invert_get(c.name)))
+            exps.append(c == getattr(self, self._column_name_map.invert_get(c.name)))
         if exps:
             return sa.and_(*exps)
         else:
