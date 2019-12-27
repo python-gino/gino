@@ -8,7 +8,7 @@ GINO
 
 .. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
         :alt: GitHub Workflow Status
-        :target: https://github.com/python-gino/gino/actions?query=workflow%3Apytest
+        :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
 
 .. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
         :alt: Codacy coverage
@@ -28,7 +28,7 @@ GINO
 
 
 GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
-SQLAlchemy_ core for Python asyncio_. Now (early 2018) GINO supports only one
+SQLAlchemy_ core for Python asyncio_. Now (early 2020) GINO supports only one
 dialect asyncpg_.
 
 * Free software: BSD license

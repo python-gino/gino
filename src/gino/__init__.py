@@ -11,4 +11,16 @@ def create_engine(*args, **kwargs):
     return create_engine(*args, **kwargs)
 
 
-__version__ = "1.0.0-alpha"
+def get_version():
+    try:
+        from importlib.metadata import version
+    except ImportError:
+        from importlib_metadata import version
+    return version("gino")
+
+
+# noinspection PyBroadException
+try:
+    __version__ = get_version()
+except Exception:
+    pass
