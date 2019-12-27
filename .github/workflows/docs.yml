@@ -1,0 +1,59 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*.*'
+      - 'v*.*.*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8' ]
+        language: [ 'en', 'zh' ]
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: virtualenv cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-${{ matrix.python-version }}-poetry-${{ hashFiles(format('{0}{1}', github.workspace, '/poetry.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-poetry-
+    - name: Install Python dependencies
+      run: |
+        curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+        $HOME/.poetry/bin/poetry install
+    - name: Download latest translations
+      if: matrix.language != 'en'
+      run: |
+        $HOME/.poetry/bin/poetry run sphinx-intl create-transifexrc
+        $HOME/.poetry/bin/poetry run make -C docs -e LOC="${{ matrix.language }}" pull
+      env:
+        SPHINXINTL_TRANSIFEX_USERNAME: api
+        SPHINXINTL_TRANSIFEX_PASSWORD: ${{ secrets.TRANSIFEX_TOKEN }}
+        LOC: ${{ matrix.language }}
+    - name: Build the documentation
+      run: |
+        $HOME/.poetry/bin/poetry run make -C docs -e SPHINXOPTS="-D language='${{ matrix.language }}'" html
+    - name: Publish to GitHub Pages
+      uses: fantix/ghaction-github-pages@master
+      with:
+        repo: python-gino/python-gino.org
+        target_branch: master
+        target_path: docs/${{ matrix.language }}/${{ github.ref }}
+        keep_history: true
+        allow_empty_commit: false
+        build_dir: docs/_build/html
+        commit_message: Update docs/${{ matrix.language }}/${{ github.ref }} @ ${{ github.sha }}
+      env:
+        GITHUB_PAT: ${{ secrets.GITHUB_PAT }}

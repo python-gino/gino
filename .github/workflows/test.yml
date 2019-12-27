@@ -1,6 +1,14 @@
 name: test
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
+      - v*.*.x
+  pull_request:
+    branches:
+      - master
+      - v*.*.x
 
 jobs:
   test:
