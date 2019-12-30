@@ -3,6 +3,8 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
+from os import path
+
 import gino
 
 # -- Path setup --------------------------------------------------------------
@@ -49,18 +51,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = 'python-gino'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["gino.css"]
-html_logo = "images/logo.png"
-html_theme_options = {
-    "logo_only": True,
-    "titles_only": True,
-}
+# html_logo = "images/logo.png"
 
 # sphinxcontrib.apidoc
 apidoc_module_dir = "../src"
@@ -78,3 +76,9 @@ intersphinx_mapping = {
 locale_dirs = ["locale/"]  # path is example but recommended.
 gettext_compact = False  # optional.
 master_doc = "index"
+
+
+def setup(app):
+    app.add_html_theme(
+        "python-gino", path.abspath(path.join(path.dirname(__file__), "theme"))
+    )

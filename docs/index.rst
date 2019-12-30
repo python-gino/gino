@@ -1,9 +1,5 @@
-Welcome to GINO's documentation! |logo|
-=======================================
-
-.. |logo| image:: images/gino.png
-   :target: https://github.com/python-gino
-   :height: 48px
+Welcome to GINO's documentation!
+================================
 
 .. image:: https://img.shields.io/pypi/v/gino?logo=python&logoColor=white
         :alt: PyPI Release Version

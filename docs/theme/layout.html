@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="{{ pathto('_static/favicon.ico', 1) }}">
+    <title>{{ title|striptags|e }} - {{ docstitle|e }}</title>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
+    <link type="text/css" rel="stylesheet"
+          href="{{ pathto('_static/css/materialize.min.css', 1) }}"
+          media="screen,projection"/>
+    <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}" type="text/css" />
+    <link type="text/css" rel="stylesheet"
+          href="{{ pathto('_static/css/gino.css', 1) }}"/>
+</head>
+<body>
+
+<header>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="nav-wrapper">
+                <a href="{{ pathto(master_doc) }}" class="brand-logo">
+                    <div class="img"
+                         style="background-image: url({{ pathto('_static/logo.png', 1) }}); width: 40px; height: 40px; margin-right: 8px"></div>
+                    <div class="img"
+                         style="background-image: url({{ pathto('_static/logo-name.png', 1) }}); width: 100px; height: 32.5px; margin-top: 4px"></div>
+                </a>
+                <div class="breadcrumbs">
+                    <a class="breadcrumb" style="display: none"></a>
+                    {% for doc in parents %}
+                        <a href="{{ doc.link|e }}" class="breadcrumb">{{ doc.title }}</a>
+                    {% endfor %}
+                    {% if pagename != master_doc %}
+                        <a class="breadcrumb" style="color: #FFFFFF">{{ title }}</a>
+                    {% endif %}
+                </div>
+                <div class="spacer"></div>
+                <div class="search">
+                    <input type="text" id="search" placeholder="Search">
+                    <i class="mdi mdi-magnify"></i>
+                </div>
+                <a class="waves-effect waves-light btn-flat theme-dark" href="/">
+                    <i class="mdi mdi-home"></i>
+                    Home
+                </a>
+                <a class="waves-effect waves-light btn-flat theme-dark"
+                   href="/authors.html">
+                    <i class="mdi mdi-account-group"></i>
+                    Authors
+                </a>
+                <a href="https://github.com/python-gino/gino" target="_blank"
+                   class="github">
+                    <i class="mdi mdi-github-circle"></i>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <div id="sidenav" class="sidenav sidenav-fixed">
+        {{ toctree(maxdepth=2|int,
+                   collapse=true|tobool,
+                   includehidden=true|tobool,
+                   titles_only=true|tobool) }}
+    </div>
+</header>
+
+<main>
+    <div class="row">
+        <div class="col s12 m9 body">
+            {% block body %} {% endblock %}
+        </div>
+
+        <div class="col hide-on-small-only m3 right-nav">
+            <div class="table-of-contents fixed">
+                {% if pagename != master_doc %}
+                    {{ toc }}
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script type="text/javascript"
+        src="{{ pathto('_static/js/materialize.min.js', 1) }}"></script>
+<script type="text/javascript"
+        src="{{ pathto('_static/js/gino.js', 1) }}"></script>
+</body>
+</html>

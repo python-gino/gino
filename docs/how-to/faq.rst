@@ -1,8 +1,6 @@
 Frequently Asked Questions
 ==========================
 
-.. contents:: Table of Contents
-
 ORM or not ORM?
 ---------------
 

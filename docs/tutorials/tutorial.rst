@@ -1,8 +1,6 @@
 Tutorial
 ========
 
-.. contents:: Table of Contents
-
 This tutorial helps beginners to get started with the basic part of GINO.
 Target audiences of this tutorial should have basic knowledge of:
 

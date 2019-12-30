@@ -2,8 +2,6 @@
 Loaders and Relationship
 ========================
 
-.. contents:: Table of Contents
-
 Loaders are used to load database row results into objects.
 
 GINO doesn't support automated relationship. We insist explicit code style in

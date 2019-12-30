@@ -2,8 +2,6 @@
 Schema Declaration
 ==================
 
-.. contents:: Table of Contents
-
 There are 3 ways to declare your database schema to be used with GINO. Because
 GINO is built on top of SQLAlchemy core, either way you are actually declaring
 SQLAlchemy :class:`~sqlalchemy.schema.Table`.

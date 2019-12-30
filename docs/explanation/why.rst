@@ -2,8 +2,6 @@
 Why Asynchronous ORM?
 =====================
 
-.. contents:: Table of Contents
-
 Normally the answer is no, you don't need an asynchronous ORM. Before moving
 on, you should read `this blog post
 <http://techspot.zzzeek.org/2015/02/15/asynchronous-python-and-databases/>`_

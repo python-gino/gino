@@ -2,8 +2,6 @@
 Connection Pool
 ===============
 
-.. contents:: Table of Contents
-
 Other than the default connection pool, alternative pools can be used in
 their own use cases.
 There are options from dialects (currently only

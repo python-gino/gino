@@ -2,8 +2,6 @@
 Transaction
 ===========
 
-.. contents:: Table of Contents
-
 It is crucial to correctly manage transactions in an asynchronous program,
 because you never know how much time an ``await`` will actually wait for, it
 will cause disasters if transactions are on hold for too long. GINO enforces
