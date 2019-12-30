@@ -5,9 +5,25 @@ Welcome to GINO's documentation!
         :alt: PyPI Release Version
         :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?logo=github
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
         :alt: GitHub Workflow Status
-        :target: https://github.com/python-gino/gino/actions?query=workflow%3Apytest
+        :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
+
+.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
+        :alt: Codacy coverage
+        :target: https://app.codacy.com/gh/python-gino/gino/dashboard
+
+.. image:: https://img.shields.io/readthedocs/python-gino?logo=read-the-docs&logoColor=white
+        :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
+        :alt: Read the Docs
+
+.. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
+        :target: https://app.dependabot.com/accounts/python-gino/projects/129260
+        :alt: Dependabot
+
+.. image:: https://img.shields.io/gitter/room/python-gino/Lobby?logo=gitter
+        :target: https://gitter.im/python-gino/Lobby
+        :alt: Gitter chat
 
 GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
 SQLAlchemy_ core for Python asyncio_. Now (early 2020) GINO supports only one
