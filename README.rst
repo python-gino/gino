@@ -7,16 +7,16 @@ GINO
         :target: https://pypi.python.org/pypi/gino
 
 .. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
-        :alt: GitHub Workflow Status
+        :alt: GitHub Workflow Status for tests
         :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
+
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/docs?label=docs&logo=github
+        :alt: GitHub Workflow Status for docs
+        :target: https://python-gino.org/docs/
 
 .. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
         :alt: Codacy coverage
         :target: https://app.codacy.com/gh/python-gino/gino/dashboard
-
-.. image:: https://img.shields.io/readthedocs/python-gino?logo=read-the-docs&logoColor=white
-        :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
-        :alt: Read the Docs
 
 .. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
         :target: https://app.dependabot.com/accounts/python-gino/projects/129260
@@ -165,7 +165,7 @@ To run tests:
 
 .. code-block:: console
 
-   $ python setup.py test
+   $ make install test
 
 For the tests to be run, a database has to be available (please read more in CONTRIBUTING.rst)
 
@@ -214,8 +214,8 @@ GINO is developed proudly with |PyCharm|.
 .. _asyncorm: https://github.com/monobot/asyncorm
 .. _Tornado: http://www.tornadoweb.org/
 .. _Quart: https://gitlab.com/pgjones/quart/
-.. _English: https://python-gino.readthedocs.io/
-.. _Chinese: https://python-gino.readthedocs.io/zh/latest/
+.. _English: https://python-gino.org/docs/en/
+.. _Chinese: https://python-gino.org/docs/zh/
 .. _DecentFoX Studio: https://decentfox.com/
 .. _`Data Mapper Pattern`: https://en.wikipedia.org/wiki/Data_mapper_pattern
 .. _aiohttp: https://github.com/aio-libs/aiohttp

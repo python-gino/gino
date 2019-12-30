@@ -6,16 +6,16 @@ Welcome to GINO's documentation!
         :target: https://pypi.python.org/pypi/gino
 
 .. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
-        :alt: GitHub Workflow Status
+        :alt: GitHub Workflow Status for tests
         :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
+
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/docs?label=docs&logo=github
+        :alt: GitHub Workflow Status for docs
+        :target: https://python-gino.org/docs/
 
 .. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
         :alt: Codacy coverage
         :target: https://app.codacy.com/gh/python-gino/gino/dashboard
-
-.. image:: https://img.shields.io/readthedocs/python-gino?logo=read-the-docs&logoColor=white
-        :target: https://python-gino.readthedocs.io/en/latest/?badge=latest
-        :alt: Read the Docs
 
 .. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
         :target: https://app.dependabot.com/accounts/python-gino/projects/129260
