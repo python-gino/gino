@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="{{ pathto('_static/favicon.ico', 1) }}">
     <title>{{ title|striptags|e }} - {{ docstitle|e }}</title>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async
+            src="https://www.googletagmanager.com/gtag/js?id=UA-3759436-10"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag () {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+
+        gtag('config', '{{ GAID }}');
+    </script>
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
     <link rel="stylesheet"
@@ -90,8 +104,8 @@
             <i class="mdi mdi-translate"></i>
         </a>
         <ul>
-            <li><a href="/docs/en/" class="btn-floating blue">EN</a></li>
-            <li><a href="/docs/zh/" class="btn-floating red">ZH</a></li>
+            <li><a href="/docs/en/{{ VERSION.split('/')[-1] }}" class="btn-floating blue">EN</a></li>
+            <li><a href="/docs/zh/{{ VERSION.split('/')[-1] }}" class="btn-floating red">ZH</a></li>
         </ul>
     </div>
 </main>

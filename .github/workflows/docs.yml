@@ -44,7 +44,23 @@ jobs:
         LOC: ${{ matrix.language }}
     - name: Build the documentation
       run: |
-        $HOME/.poetry/bin/poetry run make -C docs -e SPHINXOPTS="-D language='${{ matrix.language }}'" html
+        $HOME/.poetry/bin/poetry run make -C docs -e SPHINXOPTS="-D language='${{ matrix.language }}' -A GAID='${{ secrets.GAID }}' -A VERSION='${{ github.ref }}'" html
+    - name: Add current version to versions.json
+      shell: python
+      env:
+        LOC: ${{ matrix.language }}
+      run: |
+        import os, json
+        try:
+            with open('docs/versions.json') as f:
+                versions = json.load(f)
+        except Exception:
+            versions = {}
+        by_loc = versions.setdefault(os.environ['LOC'], [])
+        by_loc.append(os.environ['GITHUB_REF'].split('/')[-1])
+        by_loc.sort()
+        with open('docs/versions.json', 'w') as f:
+            json.dump(versions, f)
     - name: Publish to GitHub Pages
       uses: fantix/ghaction-github-pages@master
       with:
