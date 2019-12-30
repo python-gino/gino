@@ -13,7 +13,8 @@
     <link type="text/css" rel="stylesheet"
           href="{{ pathto('_static/css/materialize.min.css', 1) }}"
           media="screen,projection"/>
-    <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}" type="text/css" />
+    <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}"
+          type="text/css"/>
     <link type="text/css" rel="stylesheet"
           href="{{ pathto('_static/css/gino.css', 1) }}"/>
 </head>
@@ -32,7 +33,8 @@
                 <div class="breadcrumbs">
                     <a class="breadcrumb" style="display: none"></a>
                     {% for doc in parents %}
-                        <a href="{{ doc.link|e }}" class="breadcrumb">{{ doc.title }}</a>
+                        <a href="{{ doc.link|e }}"
+                           class="breadcrumb">{{ doc.title }}</a>
                     {% endfor %}
                     {% if pagename != master_doc %}
                         <a class="breadcrumb" style="color: #FFFFFF">{{ title }}</a>
@@ -82,6 +84,15 @@
             </div>
         </div>
 
+    </div>
+    <div class="fixed-action-btn click-to-toggle">
+        <a class="btn-floating btn-large blue">
+            <i class="mdi mdi-translate"></i>
+        </a>
+        <ul>
+            <li><a href="/docs/en/" class="btn-floating blue">EN</a></li>
+            <li><a href="/docs/zh/" class="btn-floating red">ZH</a></li>
+        </ul>
     </div>
 </main>
 

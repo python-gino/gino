@@ -9,10 +9,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     sidenav.scrollTop = current.offsetTop - sidenav.clientHeight / 2;
 
+    // language and version selector
+    M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'), {
+        hoverEnabled: false
+    });
+
+    // customize ScrollSpy
     var ScrollSpy = M.ScrollSpy, $ = window.cash;
-
     ScrollSpy._last = null;
-
     M.ScrollSpy.prototype._handleWindowScroll = function () {
         // viewport rectangle
         var top = M.getDocumentScrollTop() + this.options.scrollOffset || 200;
@@ -59,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
-
     var elems = document.querySelectorAll('.section .section');
     M.ScrollSpy.init(elems, {
         scrollOffset: (window.innerHeight - 64) / 5
