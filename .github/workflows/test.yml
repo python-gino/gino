@@ -55,7 +55,7 @@ jobs:
       run: |
           $HOME/.poetry/bin/poetry run black --check src
     - name: Submit coverage report
-      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1'
+      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1' && github.ref == 'refs/heads/master'
       env:
         CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
       run: |
