@@ -1,4 +1,5 @@
 import warnings
+import types
 
 from sqlalchemy import select
 from sqlalchemy.schema import Column
@@ -117,7 +118,16 @@ class ModelLoader(Loader):
         else:
             for key, value in self.extras.items():
                 value, distinct_ = value.do_load(row, context)
-                if distinct_ is not None:
+                if distinct_ is None:
+                    continue
+
+                if (
+                    hasattr(self.model, key)
+                    and not isinstance(getattr(self.model, key), property)
+                    and isinstance(getattr(self.model, key), types.MethodType)
+                ):
+                    getattr(rv, key)(value)
+                else:
                     setattr(rv, key, value)
             return rv, distinct
 
