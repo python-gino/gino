@@ -93,6 +93,12 @@ class Team(db.Model):
         self._members.add(user)
 
 
+class TeamWithoutMembersSetter(Team):
+
+    def add_member(self, user):
+        self._members.add(user)
+
+
 class Company(db.Model):
     __tablename__ = "gino_companies"
 
@@ -109,6 +115,12 @@ class Company(db.Model):
         return self._teams
 
     @teams.setter
+    def add_team(self, team):
+        self._teams.add(team)
+
+
+class CompanyWithoutTeamsSetter(Company):
+
     def add_team(self, team):
         self._teams.add(team)
 
