@@ -124,7 +124,7 @@ class ModelLoader(Loader):
                 if (
                     hasattr(self.model, key)
                     and not isinstance(getattr(self.model, key), property)
-                    and isinstance(getattr(self.model, key), types.MethodType)
+                    and isinstance(getattr(self.model, key), types.FunctionType)
                 ):
                     getattr(rv, key)(value)
                 else:
