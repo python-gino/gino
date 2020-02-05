@@ -2,6 +2,7 @@ import asyncio
 
 # noinspection PyPackageRequirements
 from quart import Quart, request
+
 # noinspection PyPackageRequirements
 from quart.exceptions import NotFound
 from sqlalchemy.engine.url import URL
@@ -48,7 +49,7 @@ class GinoEngine(_Engine):
 
 
 class QuartStrategy(GinoStrategy):
-    name = 'quart'
+    name = "quart"
     engine_cls = GinoEngine
 
 
@@ -76,6 +77,7 @@ class Gino(_Gino):
     connection, so it's not efficient to hold the connection.
 
     """
+
     model_base_classes = _Gino.model_base_classes + (QuartModelMixin,)
     query_executor = GinoExecutor
 
@@ -85,14 +87,15 @@ class Gino(_Gino):
             self.init_app(app)
 
     def init_app(self, app: Quart):
-        if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
+        if app.config.setdefault("DB_USE_CONNECTION_FOR_REQUEST", True):
+
             @app.before_request
             async def before_request():
                 request.connection = await self.acquire(lazy=True)
 
             @app.after_request
             async def after_response(response):
-                conn = getattr(request, 'connection', None)
+                conn = getattr(request, "connection", None)
                 if conn is not None:
                     await conn.release()
                     del request.connection
@@ -100,25 +103,25 @@ class Gino(_Gino):
 
         @app.before_first_request
         async def before_first_request():
-            dsn = app.config.get('DB_DSN')
+            dsn = app.config.get("DB_DSN")
             if not dsn:
                 dsn = URL(
-                    drivername=app.config.setdefault('DB_DRIVER', 'asyncpg'),
-                    host=app.config.setdefault('DB_HOST', 'localhost'),
-                    port=app.config.setdefault('DB_PORT', 5432),
-                    username=app.config.setdefault('DB_USER', 'postgres'),
-                    password=app.config.setdefault('DB_PASSWORD', ''),
-                    database=app.config.setdefault('DB_DATABASE', 'postgres'),
+                    drivername=app.config.setdefault("DB_DRIVER", "asyncpg"),
+                    host=app.config.setdefault("DB_HOST", "localhost"),
+                    port=app.config.setdefault("DB_PORT", 5432),
+                    username=app.config.setdefault("DB_USER", "postgres"),
+                    password=app.config.setdefault("DB_PASSWORD", ""),
+                    database=app.config.setdefault("DB_DATABASE", "postgres"),
                 )
 
             await self.set_bind(
                 dsn,
-                echo=app.config.setdefault('DB_ECHO', False),
-                min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
-                max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
-                ssl=app.config.setdefault('DB_SSL'),
+                echo=app.config.setdefault("DB_ECHO", False),
+                min_size=app.config.setdefault("DB_POOL_MIN_SIZE", 5),
+                max_size=app.config.setdefault("DB_POOL_MAX_SIZE", 10),
+                ssl=app.config.setdefault("DB_SSL"),
                 loop=asyncio.get_event_loop(),
-                **app.config.setdefault('DB_KWARGS', dict()),
+                **app.config.setdefault("DB_KWARGS", dict()),
             )
 
     async def first_or_404(self, *args, **kwargs):
@@ -128,5 +131,5 @@ class Gino(_Gino):
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('strategy', 'quart')
+        kwargs.setdefault("strategy", "quart")
         return await super().set_bind(bind, loop=loop, **kwargs)

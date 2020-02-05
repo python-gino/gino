@@ -121,7 +121,7 @@ from ..engine import GinoConnection as _Connection, GinoEngine as _Engine
 from ..strategies import GinoStrategy
 
 if tornado.version_info[0] < 5:
-    raise Exception('Only Tornado 5 or later is supported')
+    raise Exception("Only Tornado 5 or later is supported")
 
 
 class TornadoModelMixin:
@@ -161,7 +161,7 @@ class GinoEngine(_Engine):
 
 
 class TornadoStrategy(GinoStrategy):
-    name = 'tornado'
+    name = "tornado"
     engine_cls = GinoEngine
 
 
@@ -196,14 +196,27 @@ class Gino(_Gino):
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('strategy', 'tornado')
+        kwargs.setdefault("strategy", "tornado")
         return await super().set_bind(bind, loop=loop, **kwargs)
 
-    async def init_app(self, app, *, loop=None, dsn='', driver='asyncpg',
-                       host='localhost', port=5432,
-                       user='postgres', password='', database='postgres',
-                       echo=False, pool_min_size=5, pool_max_size=10,
-                       ssl=None, **kwargs):
+    async def init_app(
+        self,
+        app,
+        *,
+        loop=None,
+        dsn="",
+        driver="asyncpg",
+        host="localhost",
+        port=5432,
+        user="postgres",
+        password="",
+        database="postgres",
+        echo=False,
+        pool_min_size=5,
+        pool_max_size=10,
+        ssl=None,
+        **kwargs
+    ):
         """
         Initialize database
 
@@ -235,17 +248,26 @@ class Gino(_Gino):
         elif isinstance(loop, asyncio.BaseEventLoop):
             asyncio_loop = loop
         else:
-            raise RuntimeError('AsyncIOLoop is required to run GINO')
+            raise RuntimeError("AsyncIOLoop is required to run GINO")
 
         if not dsn:
             dsn = URL(
-                drivername=driver, host=host, port=port, username=user,
-                password=password, database=database,
+                drivername=driver,
+                host=host,
+                port=port,
+                username=user,
+                password=password,
+                database=database,
             )
 
         await self.set_bind(
-            dsn, echo=echo, min_size=pool_min_size, max_size=pool_max_size,
-            ssl=ssl, loop=asyncio_loop, **kwargs,
+            dsn,
+            echo=echo,
+            min_size=pool_min_size,
+            max_size=pool_max_size,
+            ssl=ssl,
+            loop=asyncio_loop,
+            **kwargs,
         )
 
         app.db = self
@@ -259,8 +281,7 @@ class DBMixin:
 
     db = None  # type: Gino
 
-    async def init_db(self: [tornado.web.Application, 'DBMixin'],
-                      db: Gino, **kwargs):
+    async def init_db(self: [tornado.web.Application, "DBMixin"], db: Gino, **kwargs):
         await db.init_app(self, **kwargs)
 
 

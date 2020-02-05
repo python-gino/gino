@@ -13,7 +13,7 @@ class SanicModelMixin:
         # noinspection PyUnresolvedReferences
         rv = await cls.get(*args, **kwargs)
         if rv is None:
-            raise NotFound('{} is not found'.format(cls.__name__))
+            raise NotFound("{} is not found".format(cls.__name__))
         return rv
 
 
@@ -22,7 +22,7 @@ class GinoExecutor(_Executor):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise NotFound('No such data')
+            raise NotFound("No such data")
         return rv
 
 
@@ -31,7 +31,7 @@ class GinoConnection(_Connection):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise NotFound('No such data')
+            raise NotFound("No such data")
         return rv
 
 
@@ -42,12 +42,12 @@ class GinoEngine(_Engine):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise NotFound('No such data')
+            raise NotFound("No such data")
         return rv
 
 
 class SanicStrategy(GinoStrategy):
-    name = 'sanic'
+    name = "sanic"
     engine_cls = GinoEngine
 
 
@@ -72,6 +72,7 @@ class Gino(_Gino):
         await request['connection'].release(permanent=False)
 
     """
+
     model_base_classes = _Gino.model_base_classes + (SanicModelMixin,)
     query_executor = GinoExecutor
 
@@ -81,58 +82,59 @@ class Gino(_Gino):
             self.init_app(app)
 
     def init_app(self, app):
-        if app.config.setdefault('DB_USE_CONNECTION_FOR_REQUEST', True):
-            @app.middleware('request')
+        if app.config.setdefault("DB_USE_CONNECTION_FOR_REQUEST", True):
+
+            @app.middleware("request")
             async def on_request(request):
                 conn = await self.acquire(lazy=True)
-                if hasattr(request, 'ctx'):
+                if hasattr(request, "ctx"):
                     request.ctx.connection = conn
                 else:
-                    request['connection'] = conn
+                    request["connection"] = conn
 
-            @app.middleware('response')
+            @app.middleware("response")
             async def on_response(request, _):
-                if hasattr(request, 'ctx'):
-                    conn = getattr(request.ctx, 'connection', None)
+                if hasattr(request, "ctx"):
+                    conn = getattr(request.ctx, "connection", None)
                 else:
-                    conn = request.pop('connection', None)
+                    conn = request.pop("connection", None)
                 if conn is not None:
                     await conn.release()
 
-        @app.listener('after_server_start')
+        @app.listener("after_server_start")
         async def before_server_start(_, loop):
-            if app.config.get('DB_DSN'):
+            if app.config.get("DB_DSN"):
                 dsn = app.config.DB_DSN
             else:
                 dsn = URL(
-                    drivername=app.config.setdefault('DB_DRIVER', 'asyncpg'),
-                    host=app.config.setdefault('DB_HOST', 'localhost'),
-                    port=app.config.setdefault('DB_PORT', 5432),
-                    username=app.config.setdefault('DB_USER', 'postgres'),
-                    password=app.config.setdefault('DB_PASSWORD', ''),
-                    database=app.config.setdefault('DB_DATABASE', 'postgres'),
+                    drivername=app.config.setdefault("DB_DRIVER", "asyncpg"),
+                    host=app.config.setdefault("DB_HOST", "localhost"),
+                    port=app.config.setdefault("DB_PORT", 5432),
+                    username=app.config.setdefault("DB_USER", "postgres"),
+                    password=app.config.setdefault("DB_PASSWORD", ""),
+                    database=app.config.setdefault("DB_DATABASE", "postgres"),
                 )
 
             await self.set_bind(
                 dsn,
-                echo=app.config.setdefault('DB_ECHO', False),
-                min_size=app.config.setdefault('DB_POOL_MIN_SIZE', 5),
-                max_size=app.config.setdefault('DB_POOL_MAX_SIZE', 10),
-                ssl=app.config.setdefault('DB_SSL'),
+                echo=app.config.setdefault("DB_ECHO", False),
+                min_size=app.config.setdefault("DB_POOL_MIN_SIZE", 5),
+                max_size=app.config.setdefault("DB_POOL_MAX_SIZE", 10),
+                ssl=app.config.setdefault("DB_SSL"),
                 loop=loop,
-                **app.config.setdefault('DB_KWARGS', dict()),
+                **app.config.setdefault("DB_KWARGS", dict()),
             )
 
-        @app.listener('before_server_stop')
+        @app.listener("before_server_stop")
         async def after_server_stop(_, loop):
             await self.pop_bind().close()
 
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise NotFound('No such data')
+            raise NotFound("No such data")
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('strategy', 'sanic')
+        kwargs.setdefault("strategy", "sanic")
         return await super().set_bind(bind, loop=loop, **kwargs)

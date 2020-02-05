@@ -13,7 +13,7 @@ class AiohttpModelMixin:
         # noinspection PyUnresolvedReferences
         rv = await cls.get(*args, **kwargs)
         if rv is None:
-            raise HTTPNotFound(reason='{} is not found'.format(cls.__name__))
+            raise HTTPNotFound(reason="{} is not found".format(cls.__name__))
         return rv
 
 
@@ -22,7 +22,7 @@ class GinoExecutor(_Executor):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPNotFound(reason='No such data')
+            raise HTTPNotFound(reason="No such data")
         return rv
 
 
@@ -31,7 +31,7 @@ class GinoConnection(_Connection):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPNotFound(reason='No such data')
+            raise HTTPNotFound(reason="No such data")
         return rv
 
 
@@ -42,12 +42,12 @@ class GinoEngine(_Engine):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPNotFound(reason='No such data')
+            raise HTTPNotFound(reason="No such data")
         return rv
 
 
 class AiohttpStrategy(GinoStrategy):
-    name = 'aiohttp'
+    name = "aiohttp"
     engine_cls = GinoEngine
 
 
@@ -100,6 +100,7 @@ class Gino(_Gino):
         await request['connection'].release(permanent=False)
 
     """
+
     model_base_classes = _Gino.model_base_classes + (AiohttpModelMixin,)
     query_executor = GinoExecutor
 
@@ -108,40 +109,40 @@ class Gino(_Gino):
 
     async def _middleware(self, request, handler):
         async with self.acquire(lazy=True) as connection:
-            request['connection'] = connection
+            request["connection"] = connection
             try:
                 return await handler(request)
             finally:
-                request.pop('connection', None)
+                request.pop("connection", None)
 
-    def init_app(self, app, config=None, *, db_attr_name='db'):
+    def init_app(self, app, config=None, *, db_attr_name="db"):
         app[db_attr_name] = self
 
         if not isinstance(config, dict):
-            config = app['config'].get('gino', {})
+            config = app["config"].get("gino", {})
         else:
             config = config.copy()
 
         async def before_server_start(_):
-            if 'dsn' in config:
-                dsn = config['dsn']
+            if "dsn" in config:
+                dsn = config["dsn"]
             else:
                 dsn = URL(
-                    drivername=config.setdefault('driver', 'asyncpg'),
-                    host=config.setdefault('host', 'localhost'),
-                    port=config.setdefault('port', 5432),
-                    username=config.setdefault('user', 'postgres'),
-                    password=config.setdefault('password', ''),
-                    database=config.setdefault('database', 'postgres'),
+                    drivername=config.setdefault("driver", "asyncpg"),
+                    host=config.setdefault("host", "localhost"),
+                    port=config.setdefault("port", 5432),
+                    username=config.setdefault("user", "postgres"),
+                    password=config.setdefault("password", ""),
+                    database=config.setdefault("database", "postgres"),
                 )
 
             await self.set_bind(
                 dsn,
-                echo=config.setdefault('echo', False),
-                min_size=config.setdefault('pool_min_size', 5),
-                max_size=config.setdefault('pool_max_size', 10),
-                ssl=config.setdefault('ssl'),
-                **config.setdefault('kwargs', dict()),
+                echo=config.setdefault("echo", False),
+                min_size=config.setdefault("pool_min_size", 5),
+                max_size=config.setdefault("pool_max_size", 10),
+                ssl=config.setdefault("ssl"),
+                **config.setdefault("kwargs", dict()),
             )
 
         async def after_server_stop(_):
@@ -153,9 +154,9 @@ class Gino(_Gino):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPNotFound(reason='No such data')
+            raise HTTPNotFound(reason="No such data")
         return rv
 
     async def set_bind(self, bind, **kwargs):
-        kwargs.setdefault('strategy', 'aiohttp')
+        kwargs.setdefault("strategy", "aiohttp")
         return await super().set_bind(bind, **kwargs)

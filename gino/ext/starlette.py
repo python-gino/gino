@@ -1,9 +1,12 @@
 # noinspection PyPackageRequirements
 from sqlalchemy.engine.url import URL
+
 # noinspection PyPackageRequirements
 from starlette import status
+
 # noinspection PyPackageRequirements
 from starlette.exceptions import HTTPException
+
 # noinspection PyPackageRequirements
 from starlette.types import Message, Receive, Scope, Send
 
@@ -18,8 +21,9 @@ class StarletteModelMixin:
         # noinspection PyUnresolvedReferences
         rv = await cls.get(*args, **kwargs)
         if rv is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND,
-                                '{} is not found'.format(cls.__name__))
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, "{} is not found".format(cls.__name__)
+            )
         return rv
 
 
@@ -28,7 +32,7 @@ class GinoExecutor(_Executor):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, 'No such data')
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No such data")
         return rv
 
 
@@ -37,7 +41,7 @@ class GinoConnection(_Connection):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, 'No such data')
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No such data")
         return rv
 
 
@@ -48,12 +52,12 @@ class GinoEngine(_Engine):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, 'No such data')
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No such data")
         return rv
 
 
 class StarletteStrategy(GinoStrategy):
-    name = 'starlette'
+    name = "starlette"
     engine_cls = GinoEngine
 
 
@@ -65,30 +69,29 @@ class _Middleware:
         self.app = app
         self.db = db
 
-    async def __call__(self, scope: Scope, receive: Receive,
-                       send: Send) -> None:
-        if (scope['type'] == 'http' and
-                self.db.config['use_connection_for_request']):
-            scope['connection'] = await self.db.acquire(lazy=True)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and self.db.config["use_connection_for_request"]:
+            scope["connection"] = await self.db.acquire(lazy=True)
             try:
                 await self.app(scope, receive, send)
             finally:
-                conn = scope.pop('connection', None)
+                conn = scope.pop("connection", None)
                 if conn is not None:
                     await conn.release()
             return
 
-        if scope['type'] == 'lifespan':
+        if scope["type"] == "lifespan":
+
             async def receiver() -> Message:
                 message = await receive()
                 if message["type"] == "lifespan.startup":
                     await self.db.set_bind(
-                        self.db.config['dsn'],
-                        echo=self.db.config['echo'],
-                        min_size=self.db.config['min_size'],
-                        max_size=self.db.config['max_size'],
-                        ssl=self.db.config['ssl'],
-                        **self.db.config['kwargs'],
+                        self.db.config["dsn"],
+                        echo=self.db.config["echo"],
+                        min_size=self.db.config["min_size"],
+                        max_size=self.db.config["max_size"],
+                        ssl=self.db.config["ssl"],
+                        **self.db.config["kwargs"],
                     )
                 elif message["type"] == "lifespan.shutdown":
                     await self.db.pop_bind().close()
@@ -143,29 +146,31 @@ class Gino(_Gino):
         await request['connection'].release(permanent=False)
 
     """
+
     model_base_classes = _Gino.model_base_classes + (StarletteModelMixin,)
     query_executor = GinoExecutor
 
     def __init__(self, app=None, *args, **kwargs):
         self.config = dict()
-        if 'dsn' in kwargs:
-            self.config['dsn'] = kwargs.pop('dsn')
+        if "dsn" in kwargs:
+            self.config["dsn"] = kwargs.pop("dsn")
         else:
-            self.config['dsn'] = URL(
-                drivername=kwargs.pop('driver', 'asyncpg'),
-                host=kwargs.pop('host', 'localhost'),
-                port=kwargs.pop('port', 5432),
-                username=kwargs.pop('user', 'postgres'),
-                password=kwargs.pop('password', ''),
-                database=kwargs.pop('database', 'postgres'),
+            self.config["dsn"] = URL(
+                drivername=kwargs.pop("driver", "asyncpg"),
+                host=kwargs.pop("host", "localhost"),
+                port=kwargs.pop("port", 5432),
+                username=kwargs.pop("user", "postgres"),
+                password=kwargs.pop("password", ""),
+                database=kwargs.pop("database", "postgres"),
             )
-        self.config['echo'] = kwargs.pop('echo', False)
-        self.config['min_size'] = kwargs.pop('pool_min_size', 5)
-        self.config['max_size'] = kwargs.pop('pool_max_size', 10)
-        self.config['ssl'] = kwargs.pop('ssl', None)
-        self.config['use_connection_for_request'] = \
-            kwargs.pop('use_connection_for_request', True)
-        self.config['kwargs'] = kwargs.pop('kwargs', dict())
+        self.config["echo"] = kwargs.pop("echo", False)
+        self.config["min_size"] = kwargs.pop("pool_min_size", 5)
+        self.config["max_size"] = kwargs.pop("pool_max_size", 10)
+        self.config["ssl"] = kwargs.pop("ssl", None)
+        self.config["use_connection_for_request"] = kwargs.pop(
+            "use_connection_for_request", True
+        )
+        self.config["kwargs"] = kwargs.pop("kwargs", dict())
 
         super().__init__(*args, **kwargs)
         if app is not None:
@@ -177,9 +182,9 @@ class Gino(_Gino):
     async def first_or_404(self, *args, **kwargs):
         rv = await self.first(*args, **kwargs)
         if rv is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, 'No such data')
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No such data")
         return rv
 
     async def set_bind(self, bind, loop=None, **kwargs):
-        kwargs.setdefault('strategy', 'starlette')
+        kwargs.setdefault("strategy", "starlette")
         return await super().set_bind(bind, loop=loop, **kwargs)
