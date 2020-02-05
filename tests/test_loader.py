@@ -26,6 +26,7 @@ async def user(bind):
     c = await Company.create()
     t1 = await Team.create(company_id=c.id)
     t2 = await Team.create(company_id=c.id, parent_id=t1.id)
+    t3 = await Team.create(company_id=c.id, parent_id=t1.id)
     u = await User.create(team_id=t2.id)
     u.team = t2
     t2.parent = t1
@@ -191,6 +192,30 @@ async def test_adjacency_list(user):
         assert u.team.parent.name == user.team.parent.name
 
 
+async def test_alias_distinct(user):
+    group = Team.alias()
+    group_company = Company.alias()
+    t1, t2, t3 = (
+        await Team.outerjoin(Company)
+        .outerjoin(group, Team.parent_id == group.id)
+        .outerjoin(group_company, group.company_id == group_company.id)
+        .select()
+        .order_by(Team.id)
+        .gino.load(
+            Team.distinct(Team.id).load(
+                company=Company.distinct(Company.id),
+                parent=group.distinct(group.id).load(
+                    company=group_company.distinct(group_company.id)
+                ),
+            )
+        )
+        .all()
+    )
+    assert t2.parent.name == t1.name
+    assert t1.company is t2.company
+    assert t2.parent.company is t3.parent.company
+
+
 async def test_alias_loader_columns(user):
     user_alias = User.alias()
     base_query = user_alias.outerjoin(Team).select()
@@ -222,9 +247,9 @@ async def test_loader_with_aggregation(user):
     result = await query.gino.load(
         (Team.id, Team.name, user_count.columns.team_id, count_col)
     ).all()
-    assert len(result) == 2
-    # team 1 doesn't have users, team 2 has 1 user
-    # third and forth columns are None for team 1
+    assert len(result) == 3
+    # team 1/3 doesn't have users, team 2 has 1 user
+    # third and forth columns are None for team 1/3
     for team_id, team_name, user_team_id, user_count in result:
         if team_id == user.team_id:
             assert team_name == user.team.name

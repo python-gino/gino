@@ -261,6 +261,9 @@ class Alias:
     def on(self, on_clause):
         return self.load().on(on_clause)
 
+    def distinct(self, *columns):
+        return self.load().distinct(*columns)
+
 
 # noinspection PyProtectedMember
 @sa.inspection._inspects(Alias)
