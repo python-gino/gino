@@ -7,7 +7,15 @@ from sqlalchemy import select
 from sqlalchemy.sql.functions import count
 
 from gino.loader import AliasLoader
-from .models import db, User, Team, Company
+from .models import (
+    db,
+    User,
+    Team,
+    TeamWithoutMembersSetter,
+    Company,
+    CompanyWithoutTeamsSetter,
+)
+
 
 pytestmark = pytest.mark.asyncio
 
@@ -258,16 +266,23 @@ async def test_literal(user):
     assert row[-1] <= row[-2]
 
 
-async def test_load_one_to_many(user):
+@pytest.mark.parametrize(
+    ["team_cls", "company_cls"],
+    [
+        (Team, Company),
+        (TeamWithoutMembersSetter, CompanyWithoutTeamsSetter)
+    ],
+)
+async def test_load_one_to_many(user, team_cls, company_cls):
     # noinspection PyListCreation
     uids = [user.id]
     uids.append((await User.create(nickname="1", team_id=user.team.id)).id)
     uids.append((await User.create(nickname="1", team_id=user.team.id)).id)
     uids.append((await User.create(nickname="2", team_id=user.team.parent.id)).id)
-    query = User.outerjoin(Team).outerjoin(Company).select()
+    query = User.outerjoin(team_cls).outerjoin(company_cls).select()
     companies = await query.gino.load(
-        Company.distinct(Company.id).load(
-            add_team=Team.load(add_member=User).distinct(Team.id)
+        company_cls.distinct(company_cls.id).load(
+            add_team=team_cls.load(add_member=User).distinct(team_cls.id)
         )
     ).all()
     assert len(companies) == 1
@@ -292,8 +307,8 @@ async def test_load_one_to_many(user):
     assert uids == []
 
     # test distinct many-to-one
-    query = User.outerjoin(Team).select().where(Team.id == user.team.id)
-    users = await query.gino.load(User.load(team=Team.distinct(Team.id))).all()
+    query = User.outerjoin(team_cls).select().where(team_cls.id == user.team.id)
+    users = await query.gino.load(User.load(team=team_cls.distinct(team_cls.id))).all()
     assert len(users) == 3
     assert users[0].team is users[1].team
     assert users[0].team is users[2].team

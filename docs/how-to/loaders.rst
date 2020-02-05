@@ -353,7 +353,6 @@ Similarly, you can build many-to-many relationships in the same way::
         def children(self):
             return self._children
 
-        @children.setter
         def add_child(self, child):
             self._children.add(child)
             child._parents.add(self)
