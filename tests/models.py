@@ -93,8 +93,11 @@ class Team(db.Model):
         self._members.add(user)
 
 
-class TeamWithoutMembersSetter(Team):
+class TeamWithDefaultCompany(Team):
+    company = Team(name="DEFAULT")
 
+
+class TeamWithoutMembersSetter(Team):
     def add_member(self, user):
         self._members.add(user)
 
@@ -120,7 +123,6 @@ class Company(db.Model):
 
 
 class CompanyWithoutTeamsSetter(Company):
-
     def add_team(self, team):
         self._teams.add(team)
 

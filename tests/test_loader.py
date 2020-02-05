@@ -1,21 +1,21 @@
 import random
 from datetime import datetime
 
-from async_generator import yield_, async_generator
 import pytest
-from sqlalchemy import select
-from sqlalchemy.sql.functions import count
+from async_generator import yield_, async_generator
 
 from gino.loader import AliasLoader
+from sqlalchemy import select
+from sqlalchemy.sql.functions import count
 from .models import (
     db,
     User,
     Team,
+    TeamWithDefaultCompany,
     TeamWithoutMembersSetter,
     Company,
     CompanyWithoutTeamsSetter,
 )
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -102,28 +102,31 @@ async def test_load_relationship(user):
     assert u.team.name == user.team.name
 
 
-async def test_load_nested(user):
+@pytest.mark.parametrize(
+    ["team_cls"], [(Team,), (TeamWithDefaultCompany,)],
+)
+async def test_load_nested(user, team_cls):
     for u in (
-        await User.outerjoin(Team)
+        await User.outerjoin(team_cls)
         .outerjoin(Company)
         .select()
-        .gino.load(User.load(team=Team.load(company=Company)))
+        .gino.load(User.load(team=team_cls.load(company=Company)))
         .first(),
-        await User.load(team=Team.load(company=Company)).gino.first(),
+        await User.load(team=team_cls.load(company=Company)).gino.first(),
         await User.load(
-            team=Team.load(company=Company.on(Team.company_id == Company.id))
+            team=team_cls.load(company=Company.on(team_cls.company_id == Company.id))
         ).gino.first(),
         await User.load(
-            team=Team.load(company=Company).on(User.team_id == Team.id)
+            team=team_cls.load(company=Company).on(User.team_id == team_cls.id)
         ).gino.first(),
         await User.load(
-            team=Team.on(User.team_id == Team.id).load(company=Company)
+            team=team_cls.on(User.team_id == team_cls.id).load(company=Company)
         ).gino.first(),
     ):
         assert isinstance(u, User)
         assert u.id == user.id
         assert u.nickname == user.nickname
-        assert isinstance(u.team, Team)
+        assert isinstance(u.team, team_cls)
         assert u.team.id == user.team.id
         assert u.team.name == user.team.name
         assert isinstance(u.team.company, Company)
@@ -268,10 +271,7 @@ async def test_literal(user):
 
 @pytest.mark.parametrize(
     ["team_cls", "company_cls"],
-    [
-        (Team, Company),
-        (TeamWithoutMembersSetter, CompanyWithoutTeamsSetter)
-    ],
+    [(Team, Company), (TeamWithoutMembersSetter, CompanyWithoutTeamsSetter)],
 )
 async def test_load_one_to_many(user, team_cls, company_cls):
     # noinspection PyListCreation
