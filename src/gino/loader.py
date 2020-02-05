@@ -121,11 +121,7 @@ class ModelLoader(Loader):
                 if distinct_ is None:
                     continue
 
-                if (
-                    hasattr(self.model, key)
-                    and not isinstance(getattr(self.model, key), property)
-                    and isinstance(getattr(self.model, key), types.FunctionType)
-                ):
+                if isinstance(getattr(self.model, key, None), types.FunctionType):
                     getattr(rv, key)(value)
                 else:
                     setattr(rv, key, value)
