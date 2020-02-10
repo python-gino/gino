@@ -103,9 +103,7 @@ async def test_load_relationship(user):
     assert u.team.name == user.team.name
 
 
-@pytest.mark.parametrize(
-    ["team_cls"], [(Team,), (TeamWithDefaultCompany,)],
-)
+@pytest.mark.parametrize("team_cls", [Team, TeamWithDefaultCompany])
 async def test_load_nested(user, team_cls):
     for u in (
         await User.outerjoin(team_cls)
@@ -285,7 +283,7 @@ async def test_literal(user):
     row = await db.first(
         db.text("SELECT now() AT TIME ZONE 'UTC'")
         .columns(now)
-        .gino.load(sample + (lambda r, c: datetime.utcnow(), now,))
+        .gino.load(sample + (lambda r, c: datetime.utcnow(), now))
         .query
     )
     assert row[:5] == sample
