@@ -45,6 +45,14 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.6 (2020-02-10)
+^^^^^^^^^^^^^^^^^^
+
+* Fixed ``JSONPathType`` bind processor for asyncpg (#609)
+* Allowed for primary keys with different names from the database columns (Contributed by Tiago Requeijo in #599 #600)
+* Allowed to use simple callable instead of property for one-2-many loading (Contributed by Olexiy in #629)
+* Added ``distinct()`` to ``Alias`` (#628)
+
 0.8.5 (2019-11-19)
 ^^^^^^^^^^^^^^^^^^
 
