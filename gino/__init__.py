@@ -11,4 +11,4 @@ def create_engine(*args, **kwargs):
     return create_engine(*args, **kwargs)
 
 
-__version__ = "0.8.5"
+__version__ = "__version__ = '0.8.6'"
