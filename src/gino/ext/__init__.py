@@ -2,7 +2,10 @@ import sys
 from importlib.abc import MetaPathFinder
 from importlib.util import find_spec
 
-from importlib_metadata import entry_points
+if sys.version_info < (3, 8):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 
 class PluginFinder(MetaPathFinder):
