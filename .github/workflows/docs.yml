@@ -68,7 +68,7 @@ jobs:
         target_branch: master
         target_path: docs/${{ matrix.language }}/${{ github.ref }}
         keep_history: true
-        allow_empty_commit: false
+        allow_empty_commit: true
         build_dir: docs/_build/html
         commit_message: Update docs/${{ matrix.language }}/${{ github.ref }} @ ${{ github.sha }}
       env:
