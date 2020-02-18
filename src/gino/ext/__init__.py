@@ -23,12 +23,10 @@ class _GinoExtensionCompatProxyLoader(Loader):
 
 
 class _GinoExtensionCompatNoopLoader(Loader):
-    def __init__(self, fullname, mod):
-        self._fullname = fullname
+    def __init__(self, mod):
         self._mod = mod
 
     def create_module(self, spec):
-        sys.modules[self._fullname] = self._mod
         return self._mod
 
     def exec_module(self, mod):
@@ -52,7 +50,7 @@ class _GinoExtensionCompatFinder(MetaPathFinder):
                 spec.loader = _GinoExtensionCompatProxyLoader(fullname, spec.loader)
                 return spec
             else:
-                return ModuleSpec(target, _GinoExtensionCompatNoopLoader(fullname, mod))
+                return ModuleSpec(fullname, _GinoExtensionCompatNoopLoader(mod))
 
     @classmethod
     def uninstall(cls):
