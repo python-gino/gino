@@ -81,13 +81,10 @@ class ModelLoader(Loader):
             self.columns = model
         self.extras = dict((key, self.get(value)) for key, value in extras.items())
         self.on_clause = None
-        self._none_as_none = True
 
-    def _do_load(self, row, *, none_as_none=None):
-        if none_as_none is None:
-            none_as_none = self._none_as_none
+    def _do_load(self, row):
         values = dict((c.name, row[c]) for c in self.columns if c in row)
-        if none_as_none and all((v is None) for v in values.values()):
+        if all((v is None) for v in values.values()):
             return None
         rv = self.model()
         for c in self.columns:
@@ -106,7 +103,7 @@ class ModelLoader(Loader):
             key = tuple(row[col] for col in self._distinct)
             rv = ctx.get(key, _none)
             if rv is _none:
-                rv = self._do_load(row, none_as_none=True)
+                rv = self._do_load(row)
                 ctx[key] = rv
             else:
                 distinct = False
@@ -158,10 +155,8 @@ class ModelLoader(Loader):
     def none_as_none(self, enabled=True):
         if not enabled:
             warnings.warn(
-                "The none_as_none feature will be always enabled in 1.0",
-                PendingDeprecationWarning,
+                "Disabling none_as_none is not supported.", PendingDeprecationWarning,
             )
-        self._none_as_none = enabled
         return self
 
 

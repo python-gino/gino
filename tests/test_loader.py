@@ -341,13 +341,6 @@ async def test_distinct_none(bind):
     u = await User.create()
 
     query = User.outerjoin(Team).select().where(User.id == u.id)
-    loader = User.load(team=Team.none_as_none(False))
-
-    # TODO: this should fail in 1.0, please remove by then
-    u = await query.gino.load(loader).first()
-    assert u.team.id is None
-
-    query = User.outerjoin(Team).select().where(User.id == u.id)
     loader = User.load(team=Team)
 
     u = await query.gino.load(loader).first()
