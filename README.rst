@@ -219,7 +219,7 @@ GINO is developed proudly with |PyCharm|.
 .. _DecentFoX Studio: https://decentfox.com/
 .. _`Data Mapper Pattern`: https://en.wikipedia.org/wiki/Data_mapper_pattern
 .. _aiohttp: https://github.com/aio-libs/aiohttp
-.. _Report: https://github.com/fantix/gino/issues
+.. _Report: https://github.com/python-gino/gino/issues
 .. _`Hire me`: https://www.linkedin.com/in/fantix/
 .. _`hire us`: https://decentfox.com/
 .. _`Become a patron`: https://www.patreon.com/fantixking
