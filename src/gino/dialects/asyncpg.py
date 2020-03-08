@@ -1,6 +1,7 @@
 import inspect
 import itertools
 import time
+import warnings
 
 import asyncpg
 from sqlalchemy import util, exc, sql
@@ -22,6 +23,10 @@ from sqlalchemy.sql import sqltypes
 
 from . import base
 
+try:
+    import click
+except ImportError:
+    click = None
 JSON_COLTYPE = 114
 JSONB_COLTYPE = 3802
 
@@ -229,6 +234,56 @@ class Pool(base.Pool):
     async def close(self):
         await self._pool.close()
 
+    def repr(self, color):
+        if color and not click:
+            warnings.warn("Install click to get colorful repr.", ImportWarning)
+
+        if color and click:
+            # noinspection PyProtectedMember
+            return "<{classname} max={max} min={min} cur={cur} use={use}>".format(
+                classname=click.style(
+                    self._pool.__class__.__module__
+                    + "."
+                    + self._pool.__class__.__name__,
+                    fg="green",
+                ),
+                max=click.style(repr(self._pool._maxsize), fg="cyan"),
+                min=click.style(repr(self._pool._minsize), fg="cyan"),
+                cur=click.style(
+                    repr(
+                        len(
+                            [
+                                0
+                                for con in self._pool._holders
+                                if con._con and not con._con.is_closed()
+                            ]
+                        )
+                    ),
+                    fg="cyan",
+                ),
+                use=click.style(
+                    repr(len([0 for con in self._pool._holders if con._in_use])),
+                    fg="cyan",
+                ),
+            )
+        else:
+            # noinspection PyProtectedMember
+            return "<{classname} max={max} min={min} cur={cur} use={use}>".format(
+                classname=self._pool.__class__.__module__
+                + "."
+                + self._pool.__class__.__name__,
+                max=self._pool._maxsize,
+                min=self._pool._minsize,
+                cur=len(
+                    [
+                        0
+                        for con in self._pool._holders
+                        if con._con and not con._con.is_closed()
+                    ]
+                ),
+                use=len([0 for con in self._pool._holders if con._in_use]),
+            )
+
 
 class NullPool(base.Pool):
     # TODO: generic NullPool, abstracting connection part
@@ -247,6 +302,7 @@ class NullPool(base.Pool):
                 password=url.password,
             )
         )
+        self._count = 0
 
     def __await__(self):
         async def return_self():
@@ -262,13 +318,32 @@ class NullPool(base.Pool):
         args = self._kwargs.copy()
         if timeout is not None:
             args.update(timeout=timeout)
-        return await asyncpg.connect(loop=self._loop, **args)
+        rv = await asyncpg.connect(loop=self._loop, **args)
+        self._count += 1
+        return rv
 
     async def release(self, conn):
+        self._count -= 1
         await conn.close()
 
     async def close(self):
         pass
+
+    def repr(self, color):
+        if color and not click:
+            warnings.warn("Install click to get colorful repr.", ImportWarning)
+
+        if color and click:
+            return "<{classname} max={max} min={min} cur={cur} use={cur}>".format(
+                classname=click.style("NullPool", fg="green"),
+                max=click.style("inf", fg="cyan"),
+                min=click.style("0", fg="cyan"),
+                cur=click.style(repr(self._count), fg="cyan"),
+            )
+        else:
+            return "<NullPool max=inf min=0 cur={cur} use={cur}>".format(
+                cur=self._count
+            )
 
 
 class Transaction(base.Transaction):

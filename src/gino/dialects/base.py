@@ -55,6 +55,9 @@ class Pool:
     async def close(self):
         raise NotImplementedError
 
+    def repr(self, color):
+        return repr(self)
+
 
 class Transaction:
     @property

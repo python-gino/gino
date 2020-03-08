@@ -155,7 +155,7 @@ class ModelLoader(Loader):
     def none_as_none(self, enabled=True):
         if not enabled:
             warnings.warn(
-                "Disabling none_as_none is not supported.", PendingDeprecationWarning,
+                "Disabling none_as_none is not supported.", DeprecationWarning,
             )
         return self
 

@@ -857,3 +857,9 @@ class GinoEngine:
     async def _run_visitor(self, *args, **kwargs):
         async with self.acquire(reuse=True) as conn:
             await getattr(conn, "_run_visitor")(*args, **kwargs)
+
+    def repr(self, color=False):
+        return self._pool.repr(color)
+
+    def __repr__(self):
+        return self.repr()
