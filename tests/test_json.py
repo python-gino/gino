@@ -197,6 +197,31 @@ async def test_unknown_properties(bind):
         await PropsTest1.gino.drop()
 
 
+async def test_property_in_profile_and_attribute_collide(bind):
+    from gino.dialects.asyncpg import JSONB
+
+    class PropsTest2(db.Model):
+        __tablename__ = "props_test2"
+        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        bool_profile = db.BooleanProperty()
+        bool_attr = db.Column(db.Boolean)
+
+    await PropsTest2.gino.create()
+    try:
+        await PropsTest2.create(
+            profile={"bool_attr": False, "bool_profile": True}, bool_attr=True
+        )
+        # bool_attr is defined in the model
+        # bool_profile is defined as json property
+        t2 = await PropsTest2.query.gino.first()
+
+        assert t2.bool_attr is True
+        with pytest.raises(UnknownJSONPropertyError, match=r"bool_attr"):
+            assert t2.bool_profile is True
+    finally:
+        await PropsTest2.gino.drop()
+
+
 async def test_no_profile():
     with pytest.raises(AttributeError, match=r"JSON\[B\] column"):
         # noinspection PyUnusedLocal

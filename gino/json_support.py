@@ -60,7 +60,18 @@ class JSONProperty:
                         "`{}` is found in `{}` of instance {}, "
                         "but it is not defined".format(key, self.prop_name, instance)
                     )
-                instance.__profile__[key] = props[key].decode(value)
+
+                prop = props[key]
+                if not isinstance(prop, JSONProperty):
+                    raise UnknownJSONPropertyError(
+                        "`{}` is found in `{}` of instance {}, "
+                        "but column `{}` is not an instance of the "
+                        "`JSONProperty` type.".format(
+                            key, self.prop_name, instance, key
+                        )
+                    )
+                instance.__profile__[key] = prop.decode(value)
+
         return instance.__profile__
 
     def save(self, instance, value=NONE):
