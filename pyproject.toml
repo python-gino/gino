@@ -51,7 +51,7 @@ async_generator = "^1.10"
 click = "^7.1"
 
 # tests
-pytest = "^5.3.2"
+pytest = "^5.4.1"
 pytest-asyncio = "^0.10.0"
 pytest-mock = "^1.13.0"
 pytest-cov = "^2.8.1"
