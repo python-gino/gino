@@ -58,7 +58,7 @@ pytest-cov = "^2.8.1"
 black = { version = "^19.10b0", python = ">=3.6" }
 
 # docs
-sphinx = "^3.0.0"
+sphinx = "^3.0.1"
 sphinx-rtd-theme = "^0.4.3"
 sphinxcontrib-apidoc = "^0.3.0"
 sphinx-autobuild = "^0.7.1"
