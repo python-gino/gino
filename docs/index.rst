@@ -30,9 +30,9 @@ dialect asyncpg_.
 .. cssclass:: boxed-nav
 
 * .. image:: images/tutorials.svg
-   :target: tutorials/tutorial.html
+   :target: tutorials.html
 
-  :doc:`tutorials/tutorial`
+  :doc:`tutorials`
 
   Lessons for the newcomer to get started
 
@@ -57,6 +57,12 @@ dialect asyncpg_.
 
   Describes the software as it is
 
+
+Useful Links
+------------
+
+.. cssclass:: boxed-nav
+
 * .. image:: images/github.svg
    :target: https://github.com/python-gino/gino
 
@@ -79,11 +85,11 @@ dialect asyncpg_.
   GINO is free software
 
 * .. image:: images/python.svg
-   :target: https://www.python.org/
+   :target: https://pypi.org/project/gino/
 
-  `Python 3.5 <https://www.python.org/>`_
+  `Download <https://pypi.org/project/gino/>`_
 
-  Requires Python 3.5 or above
+  Download GINO from PyPI
 
 
 .. cssclass:: divio

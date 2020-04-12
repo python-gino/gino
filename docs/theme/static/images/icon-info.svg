@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="22px" height="22px" viewBox="0 0 22 22" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>编组 3</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <circle id="path-1" cx="10" cy="10" r="9.25"></circle>
+    </defs>
+    <g id="V3-最新稿件" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="画板" transform="translate(-221.000000, -102.000000)">
+            <g id="编组-5" transform="translate(181.000000, 85.000000)">
+                <g id="编组-3" transform="translate(40.000000, 17.000000)">
+                    <path d="M10.75,0 C4.81293894,0 0,4.81293894 0,10.75 C0,16.6870611 4.81293894,21.5 10.75,21.5 C16.6870611,21.5 21.5,16.6870611 21.5,10.75 C21.5,4.81293894 16.6870611,0 10.75,0 Z M10.75,1.5 C15.8586339,1.5 20,5.64136606 20,10.75 C20,15.8586339 15.8586339,20 10.75,20 C5.64136606,20 1.5,15.8586339 1.5,10.75 C1.5,5.64136606 5.64136606,1.5 10.75,1.5 Z" id="椭圆形" fill="#3E6CDE" fill-rule="nonzero"></path>
+                    <g id="编组-2" transform="translate(0.750000, 0.750000)">
+                        <mask id="mask-2" fill="white">
+                            <use xlink:href="#path-1"></use>
+                        </mask>
+                        <use id="椭圆形" fill="#FFFFFF" xlink:href="#path-1"></use>
+                        <circle id="椭圆形" fill="#F9D84B" mask="url(#mask-2)" cx="7" cy="6" r="10"></circle>
+                    </g>
+                    <circle id="椭圆形" fill="#3E6CDE" cx="10.75" cy="5.25" r="1.5"></circle>
+                    <polygon id="直线" fill="#3E6CDE" fill-rule="nonzero" points="11.75 8.75 11.75 17.75 9.75 17.75 9.75 8.75"></polygon>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

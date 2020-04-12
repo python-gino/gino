@@ -1,11 +1,11 @@
-Tutorial
-========
+GINO Basics
+===========
 
 This tutorial helps beginners to get started with the basic part of GINO.
 Target audiences of this tutorial should have basic knowledge of:
 
 * RDBMS, especially PostgreSQL_
-* Asynchronous programming in Python
+* `Asynchronous programming in Python <https://realpython.com/async-io-python/>`_
 
 Knowledge of SQLAlchemy_ is not required.
 
@@ -28,9 +28,6 @@ information.
 Installation
 ------------
 
-Stable release
-^^^^^^^^^^^^^^
-
 To install GINO, run this command in your terminal:
 
 .. code-block:: console
@@ -43,36 +40,16 @@ most recent stable release.
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
 
+Alternatively, if you are using Poetry_ to manage your project dependencies,
+you may want to run:
+
+.. code-block:: console
+
+    $ poetry add gino
+
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
-^^^^^^^^^^^^
-
-The sources for GINO can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
-
-.. code-block:: console
-
-    $ git clone git://github.com/python-gino/gino
-
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl  -OL https://github.com/python-gino/gino/tarball/master
-
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
-
-
-.. _Github repo: https://github.com/python-gino/gino
-.. _tarball: https://github.com/python-gino/gino/tarball/master
+.. _Poetry: https://python-poetry.org
 
 
 Declare Models
@@ -204,7 +181,7 @@ Now that we are connected, let's create the table in database (in the same
 
     In practice :meth:`~gino.schema.GinoSchemaVisitor.create_all` is usually
     not an ideal solution. To manage database schema, tool like Alembic_ is
-    recommended.
+    recommended, please see how to :doc:`/how-to/alembic`.
 
 If you want to explicitly disconnect from the database, you can do this::
 

@@ -19,13 +19,21 @@ a {
     color: #3E6CDE;
 }
 
+code, kbd, samp {
+    font-family: monospace;
+    background-color: #f8f8f8;
+    border: 1px solid #f0f0f0;
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
 :root {
     --v-primary-base: #212B73;
     --v-secondary-base: #AD755C;
     --v-accent-base: #EEF5FF;
     --v-error: #FF5252;
-    --v-info: #2196F3;
-    --v-info-light: rgba(33, 150, 243, 0.2);
+    --v-info: #BDC8F1;
+    --v-info-light: #3E6CDE;
     --v-success: #4CAF50;
     --v-success-light: rgba(76, 175, 80, 0.2);
     --v-warning: #FFC107;
@@ -392,76 +400,58 @@ a.headerlink {
 }
 
 .admonition {
-    margin: 0.5rem 0 1rem 0;
-    -webkit-transition: -webkit-box-shadow .25s;
-    transition: -webkit-box-shadow .25s;
-    transition: box-shadow .25s;
-    transition: box-shadow .25s, -webkit-box-shadow .25s;
-    border-radius: 2px;
-    padding: 8px 24px;
+    margin: 1.5rem 2rem;
+    border-radius: 4px;
+    padding: 1px 3rem;
+    box-shadow: #D1CECE 0 0 4px;
 }
 
 .admonition-title {
-    font-size: 17px;
-    font-weight: 500;
-    color: white;
-    margin: -8px -24px 0;
-    padding: 4px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #3E6CDE;
 }
 
 .admonition-title:before {
-    font: normal normal normal 24px/1 "Material Design Icons";
-    font-size: 18px;
-    text-rendering: auto;
-    line-height: inherit;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    margin-right: 0.5rem;
+    content: " ";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin: 0 8px -4px 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
 }
-
 
 .admonition.note,
 .admonition.seealso {
-    background-color: var(--v-info-light);
+    background-color: #F5FAFD;
 }
 
-.admonition.note .admonition-title,
-.admonition.seealso .admonition-title {
-    background-color: var(--v-info);
-}
-
-.admonition.note .admonition-title:before {
-    content: '\F64F';
+.admonition.note .admonition-title:before,
+.admonition.seealso .admonition-title:before {
+    background-image: url(../images/icon-note.svg);
 }
 
 .admonition.tip,
 .admonition.hint {
-    background-color: var(--v-success-light);
-}
-
-.admonition.tip .admonition-title,
-.admonition.hint .admonition-title {
-    background-color: var(--v-success);
-}
-
-.admonition.tip .admonition-title:before {
-    content: '\F6E7';
+    background-color: #F5FDF6;
 }
 
 .admonition.hint .admonition-title:before {
-    content: '\F5E0';
+    background-image: url(../images/icon-hint.svg);
 }
 
 .admonition.warning {
-    background-color: var(--v-warning-light);
-}
-
-.admonition.warning .admonition-title {
-    background-color: var(--v-warning);
+    background-color: #FDF5F5;
 }
 
 .admonition.warning .admonition-title:before {
-    content: '\F026';
+    background-image: url(../images/icon-warning.svg);
+}
+
+.admonition.tip .admonition-title:before {
+    background-image: url(../images/icon-info.svg);
 }
 
 .body .section ul.boxed-nav {
@@ -504,6 +494,7 @@ a.headerlink {
 .body .section ul.boxed-nav li p:nth-of-type(2) {
     top: 46px;
     font-size: 12px;
+    color: #000000;
 }
 
 .body .section ul.boxed-nav p:first-of-type a,
@@ -511,11 +502,16 @@ a.headerlink {
     color: #202A73;
 }
 
+.body .section ul.boxed-nav p:nth-of-type(2) a,
+.body .section ul.boxed-nav p:nth-of-type(2) a:visited {
+    color: #000000;
+}
+
 p.divio {
     position: absolute;
     font-size: 0.8em;
     color: #aaa;
-    margin-top: 20px;
+    margin-top: 40px;
     margin-left: -47px;
 }
 
