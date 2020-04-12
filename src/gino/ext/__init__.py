@@ -51,6 +51,12 @@ class _GinoExtensionCompatFinder(MetaPathFinder):
                 return spec
             else:
                 return ModuleSpec(fullname, _GinoExtensionCompatNoopLoader(mod))
+        elif fullname.startswith(__name__):
+            raise ImportError(
+                "Cannot import {} - is gino-{} a valid extension and installed?".format(
+                    fullname, fullname[len(__name__) + 1 :]
+                )
+            )
 
     @classmethod
     def uninstall(cls):

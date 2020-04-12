@@ -1,6 +1,7 @@
 import collections
 import importlib
 import sys
+import pytest
 
 
 def installed():
@@ -58,3 +59,9 @@ def test_import(mocker):
     from gino.ext import demo2
 
     assert sys.modules["tests.stub2"] is sys.modules["gino.ext.demo2"] is demo2 is stub2
+
+
+def test_import_error():
+    with pytest.raises(ImportError, match="gino-nonexist"):
+        # noinspection PyUnresolvedReferences
+        from gino.ext import nonexist
