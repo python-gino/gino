@@ -21,7 +21,7 @@
         gtag('config', '{{ GAID }}');
     </script>
     <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
+          href="https://fonts.googleapis.com/css?family=Raleway:400,500,600,700&display=swap">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
     <link type="text/css" rel="stylesheet"
@@ -40,9 +40,7 @@
             <div class="nav-wrapper">
                 <a href="{{ pathto(master_doc) }}" class="brand-logo">
                     <div class="img"
-                         style="background-image: url({{ pathto('_static/logo.png', 1) }}); width: 40px; height: 40px; margin-right: 8px"></div>
-                    <div class="img"
-                         style="background-image: url({{ pathto('_static/logo-name.png', 1) }}); width: 100px; height: 32.5px; margin-top: 4px"></div>
+                         style="background-image: url({{ pathto('_static/logo.svg', 1) }}); width: 103px; height: 40px;"></div>
                 </a>
                 <div class="breadcrumbs">
                     <a class="breadcrumb" style="display: none"></a>
@@ -59,18 +57,23 @@
                     <input type="text" id="search" placeholder="Search">
                     <i class="mdi mdi-magnify"></i>
                 </div>
-                <a class="waves-effect waves-light btn-flat theme-dark" href="/">
-                    <i class="mdi mdi-home"></i>
-                    Home
+                <a class="btn-flat theme-dark" href="/">
+                    HOME
                 </a>
-                <a class="waves-effect waves-light btn-flat theme-dark"
-                   href="/authors.html">
-                    <i class="mdi mdi-account-group"></i>
-                    Authors
+                <a class="btn-flat theme-dark" href="/authors.html">
+                    CREDITS
                 </a>
                 <a href="https://github.com/python-gino/gino" target="_blank"
-                   class="github">
-                    <i class="mdi mdi-github-circle"></i>
+                   class="github-stars">
+                    <div class="left"><img
+                        src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNDNweCIgaGVpZ2h0PSI0MnB4IiB2aWV3Qm94PSIwIDAgNDMgNDIiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDYxLjIgKDg5NjUzKSAtIGh0dHBzOi8vc2tldGNoLmNvbSAtLT4KICAgIDx0aXRsZT5GaWxsIDQ5PC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGcgaWQ9IlYzLeacgOaWsOeov+S7tiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9IkhPTUUtdjMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xNTA3LjAwMDAwMCwgLTQ5LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkUiPgogICAgICAgICAgICA8ZyBpZD0iYmFubmVyLWJnIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMzc5LjAwMDAwMCwgLTE4Ny4wMDAwMDApIj4KICAgICAgICAgICAgICAgIDxnIGlkPSJoZWFkZXIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5Ny4wMDAwMDAsIDIxOC4wMDAwMDApIj4KICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMTMxMC40OTgwMiwxOCBDMTI5OC42MjcxMiwxOCAxMjg5LDI3LjYzOTg4MzEgMTI4OSwzOS41MzIxMTIzIEMxMjg5LDQ5LjA0NTEwMjYgMTI5NS4xNTk4Myw1Ny4xMTQ2ODggMTMwMy43MDMzNCw1OS45NjE4NDM5IEMxMzA0Ljc3OTAzLDYwLjE2MDExMzggMTMwNS4xNzEwMyw1OS40OTUyNDg3IDEzMDUuMTcxMDMsNTguOTI0MjMxMyBDMTMwNS4xNzEwMyw1OC40MTI2OTUgMTMwNS4xNTI1NSw1Ny4wNTkxNzI0IDEzMDUuMTQxOTksNTUuMjYyODQ3IEMxMjk5LjE2MTY3LDU2LjU2MzQ5NzYgMTI5Ny44OTk4Nyw1Mi4zNzYwMzcxIDEyOTcuODk5ODcsNTIuMzc2MDM3MSBDMTI5Ni45MjE4NSw0OS44ODg0MTA2IDEyOTUuNTEyMjMsNDkuMjI2MTg5MSAxMjk1LjUxMjIzLDQ5LjIyNjE4OTEgQzEyOTMuNTYwMTUsNDcuODkxMTcxNyAxMjk1LjY2MDA2LDQ3LjkxNzYwNzcgMTI5NS42NjAwNiw0Ny45MTc2MDc3IEMxMjk3LjgxODA0LDQ4LjA2OTYxNDYgMTI5OC45NTMxMyw1MC4xMzY5MDg5IDEyOTguOTUzMTMsNTAuMTM2OTA4OSBDMTMwMC44NzA5LDUzLjQyNjg2NzYgMTMwMy45ODU3OSw1Mi40NzY0OTM4IDEzMDUuMjEwNjMsNTEuOTI1MzAzNSBDMTMwNS40MDU5Nyw1MC41MzQ3NzA1IDEzMDUuOTYxNjMsNDkuNTg1NzE4NiAxMzA2LjU3NTM3LDQ5LjA0Nzc0NjIgQzEzMDEuODAxNDEsNDguNTA0NDg2NiAxMjk2Ljc4MTk1LDQ2LjY1NjYxMTEgMTI5Ni43ODE5NSwzOC40MDU5MzkyIEMxMjk2Ljc4MTk1LDM2LjA1NTc3OTkgMTI5Ny42MjAwNiwzNC4xMzI1NjE3IDEyOTguOTk1MzcsMzIuNjI4MzU0IEMxMjk4Ljc3MzYzLDMyLjA4Mzc3MjYgMTI5OC4wMzU4MiwyOS44OTM1NTEgMTI5OS4yMDY1NCwyNi45MzAwNzY4IEMxMjk5LjIwNjU0LDI2LjkzMDA3NjggMTMwMS4wMTA4LDI2LjM1MTEyODYgMTMwNS4xMTgyNCwyOS4xMzc0ODE4IEMxMzA2LjgzMjc1LDI4LjY1ODk5MDQgMTMwOC42NzI2NCwyOC40MjEwNjY1IDEzMTAuNTAwNjYsMjguNDExODEzOSBDMTMxMi4zMjczNiwyOC40MjEwNjY1IDEzMTQuMTY1OTQsMjguNjU4OTkwNCAxMzE1Ljg4MzA4LDI5LjEzNzQ4MTggQzEzMTkuOTg3ODgsMjYuMzUxMTI4NiAxMzIxLjc4OTUsMjYuOTMwMDc2OCAxMzIxLjc4OTUsMjYuOTMwMDc2OCBDMTMyMi45NjI4NiwyOS44OTM1NTEgMTMyMi4yMjUwNSwzMi4wODM3NzI2IDEzMjIuMDA0NjMsMzIuNjI4MzU0IEMxMzIzLjM4MjU4LDM0LjEzMjU2MTcgMTMyNC4yMTQwOSwzNi4wNTU3Nzk5IDEzMjQuMjE0MDksMzguNDA1OTM5MiBDMTMyNC4yMTQwOSw0Ni42Nzc3NTk5IDEzMTkuMTg2NzIsNDguNDk3ODc3NiAxMzE0LjM5ODIzLDQ5LjAzMDU2MjggQzEzMTUuMTY5MDQsNDkuNjk1NDI3OSAxMzE1Ljg1NjY5LDUxLjAwOTI5NjUgMTMxNS44NTY2OSw1My4wMTcxMDk4IEMxMzE1Ljg1NjY5LDU1Ljg5NTk4ODkgMTMxNS44MzAyOSw1OC4yMTgzOTA1IDEzMTUuODMwMjksNTguOTI0MjMxMyBDMTMxNS44MzAyOSw1OS41MDA1MzU5IDEzMTYuMjE4MzMsNjAuMTcwNjg4MiAxMzE3LjMwODU0LDU5Ljk2MDUyMjEgQzEzMjUuODQ1NDUsNTcuMTA2NzU3MiAxMzMyLDQ5LjA0MjQ1OSAxMzMyLDM5LjUzMjExMjMgQzEzMzIsMjcuNjM5ODgzMSAxMzIyLjM3Mjg4LDE4IDEzMTAuNDk4MDIsMTgiIGlkPSJGaWxsLTQ5Ij48L3BhdGg+CiAgICAgICAgICAgICAgICA8L2c+CiAgICAgICAgICAgIDwvZz4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPg=="
+                        class="github-logo">
+                        GitHub
+                    </div>
+                    <div class="right"><img
+                        src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjFweCIgaGVpZ2h0PSIxOXB4IiB2aWV3Qm94PSIwIDAgMjEgMTkiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDYxLjIgKDg5NjUzKSAtIGh0dHBzOi8vc2tldGNoLmNvbSAtLT4KICAgIDx0aXRsZT5QYXRoPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGcgaWQ9IlYzLeacgOaWsOeov+S7tiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9IkhPTUUtdjMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xNTYxLjAwMDAwMCwgLTYwLjAwMDAwMCkiIGZpbGw9IiNGOEQyMzAiPgogICAgICAgICAgICA8ZyBpZD0iYmFubmVyLWJnIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMzc5LjAwMDAwMCwgLTE4Ny4wMDAwMDApIj4KICAgICAgICAgICAgICAgIDxnIGlkPSJoZWFkZXIiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU5Ny4wMDAwMDAsIDIxOC4wMDAwMDApIj4KICAgICAgICAgICAgICAgICAgICA8ZyBpZD0ibGFiZWwtY29weS0xMiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTI4OS4wMDAwMDAsIDE4LjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICA8cG9seWdvbiBpZD0iUGF0aCIgcG9pbnRzPSI2MS4wNTQzNTQzIDE3Ljc1NzM4MzYgNTQuMjE1MjQ2NiAxOC4zMTMzOTI5IDU5Ljg4OTM1MTcgMjIuOTczNzM4NyA1Ny43ODQ1MjI4IDI5Ljg0MDExODQgNjQuNDQyNTI3MSAyNi41NDM0MTg4IDcwLjU3NzcyMzkgMjkuODQwMTE4NCA2OS4yMzA0MzI1IDIyLjk3MzczODcgNzQuNzMyNTY5NiAxOC4zMTMzOTI5IDY3Ljg5MzQ2MiAxNy43NTczODM2IDY0LjQ0MjUyNzEgMTEuMzc1Ij48L3BvbHlnb24+CiAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=">
+                        <span id="github-star-num"></span>
+                    </div>
                 </a>
             </div>
         </nav>
@@ -87,7 +90,9 @@
 <main>
     <div class="row">
         <div class="col s12 m9 body">
-            {% block body %} {% endblock %}
+            <div id="main-content">
+                {% block body %} {% endblock %}
+            </div>
         </div>
 
         <div class="col hide-on-small-only m3 right-nav">

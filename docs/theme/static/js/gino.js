@@ -67,4 +67,18 @@ document.addEventListener('DOMContentLoaded', function () {
     M.ScrollSpy.init(elems, {
         scrollOffset: (window.innerHeight - 64) / 5
     });
+
+    var num = localStorage.getItem("github-star-num");
+    var expire = localStorage.getItem("github-star-expire");
+    if (num === null || Date.now() > parseInt(expire)) {
+        fetch('https://api.github.com/repos/python-gino/gino').then(function (r) {
+            r.json().then(function (resp) {
+                document.getElementById('github-star-num').innerText = '' + resp.stargazers_count;
+                localStorage.setItem('github-star-num', resp.stargazers_count);
+                localStorage.setItem('github-star-expire', Date.now() + 3600 * 24 * 1000)
+            })
+        })
+    } else {
+        document.getElementById('github-star-num').innerText = num;
+    }
 });
