@@ -12,6 +12,11 @@ html {
 
 body {
     background-color: #F0F0F0;
+    font-weight: 500;
+}
+
+a {
+    color: #3E6CDE;
 }
 
 :root {
@@ -78,14 +83,14 @@ nav .brand-logo {
     text-shadow: #f8d230 0 0 5px;
 }
 
-.search {
+div.search {
     position: relative;
     display: flex;
     align-items: center;
     margin-right: 12px;
 }
 
-.search i {
+div.search i {
     position: absolute;
     left: 10px;
     transition: 0.3s;
@@ -111,6 +116,37 @@ nav .brand-logo {
     border: none;
     background-color: #FFFFFF;
     color: #000000;
+}
+
+#search-results {
+    position: absolute;
+    left: 0;
+    right: -250px;
+    max-height: 61.8vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    overflow: scroll;
+    top: 51px;
+    padding: 16px;
+}
+
+#search-results li {
+    float: none;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+#search-results li a {
+    color: #4E7CEE;
+    padding: 0;
+}
+
+#search-results li .context {
+    padding: 0 0 24px 24px;
+}
+#search-results .highlighted {
+    color: #f8d230;
 }
 
 .theme-dark {
@@ -154,10 +190,52 @@ main {
     display: none;
 }
 
+.sidenav ul ul li:first-of-type {
+    display: block;
+}
+
 .sidenav .caption {
     font-size: 1.2em;
     color: var(--v-primary-base);
-    padding: 32px 32px 0;
+    padding: 16px 32px 0 48px;
+    position: relative;
+    font-weight: 600;
+}
+
+.sidenav .caption::before {
+    position: absolute;
+    display: block;
+    content: " ";
+    width: 20px;
+    height: 20px;
+    left: 16px;
+    top: 20px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.sidenav li > a {
+    padding-left: 48px;
+    height: 36px;
+    line-height: 36px;
+}
+
+.sidenav li li > a {
+    padding-left: 70px;
+}
+
+.sidenav .caption:nth-of-type(1)::before {
+    background-image: url(../images/tutorials-icon.svg);
+}
+.sidenav .caption:nth-of-type(2)::before {
+    background-image: url(../images/how-to-icon.svg);
+}
+.sidenav .caption:nth-of-type(3)::before {
+    background-image: url(../images/explanation-logo.svg);
+}
+.sidenav .caption:nth-of-type(4)::before {
+    background-image: url(../images/reference-logo.svg);
 }
 
 .sidenav a.current {
@@ -234,33 +312,39 @@ main {
 }
 
 h1 {
-    font-size: 3.15rem;
-    margin: 2.1rem 0 1.26rem 0;
+    font-size: 32px;
+    margin: 32px 0 20px 0;
+    font-weight: 600;
 }
 
 h2 {
-    font-size: 2.67rem;
-    margin: 1.78rem 0 1.068rem 0;
+    font-size: 26px;
+    margin: 18px 0 12px 0;
+    font-weight: 600;
 }
 
 h3 {
-    font-size: 2.19rem;
-    margin: 1.46rem 0 0.876rem 0;
+    font-size: 22px;
+    margin: 17px 0 11px 0;
+    font-weight: 600;
 }
 
 h4 {
-    font-size: 1.71rem;
-    margin: 1.14rem 0 0.684rem 0;
+    font-size: 18px;
+    margin: 14px 0 9px 0;
+    font-weight: 600;
 }
 
 h5 {
-    font-size: 1.23rem;
-    margin: 0.82rem 0 0.492rem 0;
+    font-size: 16px;
+    margin: 13px 0 8px 0;
+    font-weight: 600;
 }
 
 h6 {
-    font-size: 0.8625rem;
-    margin: 0.575rem 0 0.345rem 0;
+    font-size: 15px;
+    margin: 12px 0 7px 0;
+    font-weight: 600;
 }
 
 a.headerlink {
@@ -336,11 +420,13 @@ a.headerlink {
 }
 
 
-.admonition.note {
+.admonition.note,
+.admonition.seealso {
     background-color: var(--v-info-light);
 }
 
-.admonition.note .admonition-title {
+.admonition.note .admonition-title,
+.admonition.seealso .admonition-title {
     background-color: var(--v-info);
 }
 
@@ -387,48 +473,53 @@ a.headerlink {
 }
 
 .body .section ul.boxed-nav li {
-    border-radius: 16px;
-    background-color: rgba(0, 0, 128, 0.05);
+    border-radius: 4px;
+    box-shadow: #D1CECE 0 0 4px;
     padding: 16px;
-    margin: 32px 0 0;
-    width: 330px;
+    margin: 25px 0 0;
+    width: 340px;
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #777;
+    color: #202A73;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    height: 100px;
 }
 
-.body .section ul.boxed-nav p:first-of-type {
-    margin-top: 5px;
-    font-size: 1.3em;
-    color: #000;
+.body .section ul.boxed-nav li a img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
 }
 
-.body .section ul.boxed-nav li a,
-.body .section ul.boxed-nav li a:visited {
-    color: #777;
+.body .section ul.boxed-nav li p {
+    position: absolute;
+    left: 150px;
+    right: 16px;
+    top: 16px;
+    font-size: 20px;
+}
+
+.body .section ul.boxed-nav li p:nth-of-type(2) {
+    top: 46px;
+    font-size: 12px;
 }
 
 .body .section ul.boxed-nav p:first-of-type a,
 .body .section ul.boxed-nav p:first-of-type a:visited {
-    color: #000;
+    color: #202A73;
 }
 
-.body .section ul.boxed-nav li:nth-of-type(5),
-.body .section ul.boxed-nav li:nth-of-type(6),
-.body .section ul.boxed-nav li:nth-of-type(7),
-.body .section ul.boxed-nav li:nth-of-type(8) {
-    background-color: rgba(128, 0, 0, 0.05);
-}
-
-p.icons8 {
+p.divio {
     position: absolute;
     font-size: 0.8em;
     color: #aaa;
+    margin-top: 20px;
+    margin-left: -47px;
 }
 
-p.icons8 a, p.icons8 a:visited {
+p.divio a, p.divio a:visited {
     color: #aaa;
 }
 
@@ -479,7 +570,23 @@ p.icons8 a, p.icons8 a:visited {
 }
 
 .github-stars:hover {
-     color: white;
-     text-shadow: none;
-     box-shadow: #ffffff 0 0 5px;
+    color: white;
+    text-shadow: none;
+    box-shadow: #ffffff 0 0 5px;
+}
+
+.btn-large.white img {
+    width: 32px;
+    height: 32px;
+    margin-top: 6px;
+}
+
+.btn-large.white div {
+    color: #3E6CDE;
+    position: absolute;
+    bottom: 0;
+    width: 56px;
+    line-height: 18px;
+    font-size: 14px;
+    font-weight: 600;
 }

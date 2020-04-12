@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="17px" viewBox="0 0 20 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>Group 2</title>
+    <desc>Created with Sketch.</desc>
+    <g id="V3-最新稿件" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="documentation" transform="translate(-19.000000, -109.000000)">
+            <g id="siderbars-copy" transform="translate(0.000000, 72.000000)">
+                <g id="tutorials" transform="translate(18.000000, 32.000000)">
+                    <g id="Group-2" transform="translate(1.000000, 5.000000)">
+                        <rect id="Rectangle" fill="#F9D84B" x="0" y="1" width="17" height="12" rx="1"></rect>
+                        <path d="M19,0.75 L0.75,1 L0.75,4.25 L19.25,4.25 L19,0.75 Z" id="Rectangle" stroke="#3E6CDE" stroke-width="1.5"></path>
+                        <path d="M19.25,4.75 L0.75,4.75 L1,16.25 L19.25,16 L19.25,4.75 Z" id="Rectangle-Copy-4" stroke="#3E6CDE" stroke-width="1.5"></path>
+                        <path d="M4,10 C4.89649674,8.66666667 5.84632128,8 6.84947362,8 C8.35420211,8 8.60712194,9.68586892 10.3723647,9.68586892 C12.1376075,9.68586892 12.2862221,8 14.0594942,8 C15.2416755,8 15.8885108,8.66666667 16,10" id="Path-3" stroke="#3E6CDE" stroke-width="1.5"></path>
+                        <path d="M4,12.5 C11.3333333,12.5 15.3333333,12.5 16,12.5" id="Path-4" stroke="#3E6CDE" stroke-width="1.5"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

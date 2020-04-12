@@ -391,7 +391,7 @@ Advanced Usage of Loaders
 
 You could use combined loaders flexibly in complex queries - loading
 relationships is just one special use case. For `example
-<https://github.com/fantix/gino/issues/308>`_, you could load the count of
+<https://github.com/python-gino/gino/issues/308>`_, you could load the count of
 visits at the same time of loading each user, by using a tuple loader with two
 items - model loader for the user, and column loader for the count::
 

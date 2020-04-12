@@ -1,29 +1,22 @@
 Welcome to GINO's documentation!
 ================================
 
-.. image:: https://img.shields.io/pypi/v/gino?logo=python&logoColor=white
+.. image:: https://img.shields.io/pypi/v/gino?logo=python&logoColor=white&color=3E6CDE&style=flat-square
         :alt: PyPI Release Version
         :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github&color=3E6CDE&style=flat-square
         :alt: GitHub Workflow Status for tests
         :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/docs?label=docs&logo=github
-        :alt: GitHub Workflow Status for docs
-        :target: https://python-gino.org/docs/
-
-.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
+.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy&color=3E6CDE&style=flat-square
         :alt: Codacy coverage
         :target: https://app.codacy.com/gh/python-gino/gino/dashboard
 
-.. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
+.. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot&color=3E6CDE&style=flat-square
         :target: https://app.dependabot.com/accounts/python-gino/projects/129260
         :alt: Dependabot
 
-.. image:: https://img.shields.io/gitter/room/python-gino/Lobby?logo=gitter
-        :target: https://gitter.im/python-gino/Lobby
-        :alt: Gitter chat
 
 GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
 SQLAlchemy_ core for Python asyncio_. Now (early 2020) GINO supports only one
@@ -36,56 +29,56 @@ dialect asyncpg_.
 
 .. cssclass:: boxed-nav
 
-* .. image:: images/tutorials.png
+* .. image:: images/tutorials.svg
    :target: tutorials/tutorial.html
 
   :doc:`tutorials/tutorial`
 
   Lessons for the newcomer to get started
 
-* .. image:: images/how-to.png
+* .. image:: images/how-to.svg
    :target: how-to.html
 
   :doc:`how-to`
 
   Solve specific problems by steps
 
-* .. image:: images/explanation.png
+* .. image:: images/explanation.svg
    :target: explanation.html
 
   :doc:`explanation`
 
   Explains the background and context
 
-* .. image:: images/reference.png
+* .. image:: images/reference.svg
    :target: reference.html
 
   :doc:`reference`
 
   Describes the software as it is
 
-* .. image:: images/github.png
+* .. image:: images/github.svg
    :target: https://github.com/python-gino/gino
 
   `Source Code <https://github.com/python-gino/gino>`_
 
   https://github.com/python-gino/gino
 
-* .. image:: images/community.png
+* .. image:: images/community.svg
    :target: https://gitter.im/python-gino/Lobby
 
   `Community <https://gitter.im/python-gino/Lobby>`_
 
   https://gitter.im/python-gino/Lobby
 
-* .. image:: images/open-source.png
+* .. image:: images/open-source.svg
    :target: https://github.com/python-gino/gino/blob/master/LICENSE
 
   `BSD license <https://github.com/python-gino/gino/blob/master/LICENSE>`_
 
   GINO is free software
 
-* .. image:: images/python.png
+* .. image:: images/python.svg
    :target: https://www.python.org/
 
   `Python 3.5 <https://www.python.org/>`_
@@ -93,9 +86,9 @@ dialect asyncpg_.
   Requires Python 3.5 or above
 
 
-.. cssclass:: icons8
+.. cssclass:: divio
 
-Icons by `icons8 <https://icons8.com/>`_. Sections by `Divio <https://www.divio.com/blog/documentation/>`_.
+Sections by `Divio <https://www.divio.com/blog/documentation/>`_.
 
 .. toctree::
    :caption: Tutorials

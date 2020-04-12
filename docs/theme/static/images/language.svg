@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="34px" height="34px" viewBox="0 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>Group 4</title>
+    <desc>Created with Sketch.</desc>
+    <g id="V3-最新稿件" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="documentation" transform="translate(-1822.000000, -997.000000)">
+            <g id="Group-4" transform="translate(1823.000000, 998.000000)">
+                <circle id="Oval" fill="#F0D55E" cx="14" cy="14" r="14"></circle>
+                <path d="M16,-1 C6.61115925,-1 -1,6.61115925 -1,16 C-1,25.3888407 6.61115925,33 16,33 C25.3888407,33 33,25.3888407 33,16 C33,6.61115925 25.3888407,-1 16,-1 Z M16,1 C24.2842712,1 31,7.71572875 31,16 C31,24.2842712 24.2842712,31 16,31 C7.71572875,31 1,24.2842712 1,16 C1,7.71572875 7.71572875,1 16,1 Z" id="Oval" fill="#3E6CDE" fill-rule="nonzero"></path>
+                <polygon id="Path-5" fill="#3E6CDE" fill-rule="nonzero" points="32 15 32 17 0 17 0 15"></polygon>
+                <path d="M16,-1 C10.84101,-1 7,6.68202003 7,16 C7,25.31798 10.84101,33 16,33 C21.15899,33 25,25.31798 25,16 C25,6.68202003 21.15899,-1 16,-1 Z M16,1 C19.677566,1 23,7.64486797 23,16 C23,24.355132 19.677566,31 16,31 C12.322434,31 9,24.355132 9,16 C9,7.64486797 12.322434,1 16,1 Z" id="Oval" fill="#3E6CDE" fill-rule="nonzero"></path>
+            </g>
+        </g>
+    </g>
+</svg>

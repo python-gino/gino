@@ -53,9 +53,10 @@
                     {% endif %}
                 </div>
                 <div class="spacer"></div>
-                <div class="search">
+                <div id="search-container" class="search">
                     <input type="text" id="search" placeholder="Search">
                     <i class="mdi mdi-magnify"></i>
+                    <div id="search-results" style="display: none"></div>
                 </div>
                 <a class="btn-flat theme-dark" href="/">
                     HOME
@@ -90,7 +91,7 @@
 <main>
     <div class="row">
         <div class="col s12 m9 body">
-            <div id="main-content">
+            <div id="main-content" role="main">
                 {% block body %} {% endblock %}
             </div>
         </div>
@@ -105,19 +106,25 @@
 
     </div>
     <div class="fixed-action-btn click-to-toggle">
-        <a class="btn-floating btn-large blue">
-            <i class="mdi mdi-translate"></i>
+        <a class="btn-floating btn-large white">
+            <img src="{{ pathto('_static/images/language.svg', 1) }}">
+            <div>
+              {{ (language or "EN")[:2].upper() }}
+            </div>
         </a>
         <ul>
-            <li><a href="/docs/en/{{ VERSION.split('/')[-1] }}" class="btn-floating blue">EN</a></li>
-            <li><a href="/docs/zh/{{ VERSION.split('/')[-1] }}" class="btn-floating red">ZH</a></li>
+            <li><a href="/docs/en/{{ VERSION.split('/')[-1] }}/{{ pagename }}.html" class="btn-floating blue">EN</a></li>
+            <li><a href="/docs/zh/{{ VERSION.split('/')[-1] }}/{{ pagename }}.html" class="btn-floating red">ZH</a></li>
         </ul>
     </div>
 </main>
 
-<script type="text/javascript"
-        src="{{ pathto('_static/js/materialize.min.js', 1) }}"></script>
-<script type="text/javascript"
-        src="{{ pathto('_static/js/gino.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('_static/js/materialize.min.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('_static/js/language_data.js', 1) }}"></script>
+<script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/js/documentation_options.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('_static/js/underscore.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('_static/js/jquery.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('_static/js/gino.js', 1) }}"></script>
+<script type="text/javascript" src="{{ pathto('searchindex.js', 1) }}"></script>
 </body>
 </html>

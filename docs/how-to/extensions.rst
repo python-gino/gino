@@ -1,0 +1,7 @@
+Extensions
+==========
+
+.. toctree::
+   :glob:
+
+   extensions/*

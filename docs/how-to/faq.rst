@@ -24,7 +24,7 @@ GINO invented none about making up queries, everything for that is inherited
 from SQLAlchemy. Therefore you just need to know `how to write join in
 SQLAlchemy <https://docs.sqlalchemy.org/en/latest/core/tutorial.html#using-joins>`_.
 Especially, `Ádám <https://github.com/brncsk>`_ made some amazing upgrades in
-GINO `#113 <https://github.com/fantix/gino/pull/113>`_ to make join easier, so
+GINO `#113 <https://github.com/python-gino/gino/pull/113>`_ to make join easier, so
 that you can use model classes directly as if they are tables in joining::
 
     results = await User.join(Book).select().gino.all()
