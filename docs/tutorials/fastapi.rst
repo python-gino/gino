@@ -49,7 +49,7 @@ extension for Starlette <https://github.com/python-gino/gino-starlette>`_. Simpl
 
         $ poetry add 'gino[starlette]@^1.0rc3' --allow-prereleases
 
-Then let's add FastAPI_, together with the lightning-fast ASGI_ server uvicorn_, and
+Then let's add FastAPI_, together with the lightning-fast ASGI_ server Uvicorn_, and
 Gunicorn_ as a production application server:
 
 .. code-block:: console
@@ -76,7 +76,7 @@ At last, let's add pytest_ in the development environment for testing:
     using this for the rest of the tutorial. But you're free to create your own
     virtualenv_, and Poetry_ will honor it when it's activated.
 
-That's all, this is my ``pyproject.toml`` created by Poetry_:
+That's all, this is my ``pyproject.toml`` created by Poetry_, yours should look similar:
 
 .. code-block:: toml
 
@@ -107,7 +107,7 @@ That's all, this is my ``pyproject.toml`` created by Poetry_:
 
 And there's also an auto-generated ``poetry.lock`` file with the frozen versions. The
 directory layout should look like the diagram on the right. Now let's add the two files
-to the Git repository (we will skip showing this in future steps):
+to the Git repository (we will skip showing these git operations in future steps):
 
 .. code-block:: console
 
@@ -121,7 +121,7 @@ Our application stack will look like this:
 
 .. _Starlette: https://www.starlette.io/
 .. _ASGI: https://asgi.readthedocs.io/
-.. _uvicorn: https://www.uvicorn.org/
+.. _Uvicorn: https://www.uvicorn.org/
 .. _Gunicorn: https://gunicorn.org/
 .. _Alembic: https://alembic.sqlalchemy.org/
 .. _DB-API: https://www.python.org/dev/peps/pep-0249/
@@ -163,7 +163,7 @@ And we'll simply instantiate our application in ``asgi.py``::
     app = get_app()
 
 Then run ``poetry install`` to link our Python package into the ``PYTHONPATH`` in
-development mode. We'll be able to start a uvicorn development server after that:
+development mode. We'll be able to start a Uvicorn development server after that:
 
 .. code-block:: console
 
@@ -175,7 +175,7 @@ development mode. We'll be able to start a uvicorn development server after that
     INFO:     Waiting for application startup.
     INFO:     Application startup complete.
 
-The ``--reload`` option enables uvicorn to automatically reload the server for us when
+The ``--reload`` option enables Uvicorn to automatically reload the server for us when
 the Python source code is updated. Now access http://127.0.0.1:8000/docs to see the
 Swagger UI of our new FastAPI server.
 
@@ -186,3 +186,7 @@ Swagger UI of our new FastAPI server.
 
     ``poetry run`` is a convenient shortcut to run the following command in the
     virtualenv managed by Poetry.
+
+
+TBD
+---
