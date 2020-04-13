@@ -27,6 +27,21 @@ code, kbd, samp {
     border-radius: 2px;
 }
 
+img.align-center {
+    display: block;
+    margin: 0 auto;
+}
+
+img.align-left {
+    float: left;
+    margin: 0 2rem 1.5rem 0;
+}
+
+img.align-right {
+    float: right;
+    margin: 0 0 1.5rem 2rem;
+}
+
 :root {
     --v-primary-base: #212B73;
     --v-secondary-base: #AD755C;
@@ -373,6 +388,7 @@ a.headerlink {
 
 .highlight {
     background-color: rgba(0, 0, 0, 0.8);
+    clear: both;
 }
 
 .highlight pre {

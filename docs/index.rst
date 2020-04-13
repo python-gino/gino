@@ -103,6 +103,7 @@ Sections by `Divio <https://www.divio.com/blog/documentation/>`_.
    :hidden:
 
    tutorials
+   tutorials/tutorial.rst
    tutorials/*
 
 .. toctree::
