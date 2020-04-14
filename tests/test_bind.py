@@ -1,7 +1,8 @@
 import random
 
-from gino.exceptions import UninitializedError
 import pytest
+from gino.exceptions import UninitializedError
+from sqlalchemy.engine.url import make_url
 
 from .models import db, PG_URL, User
 
@@ -52,3 +53,11 @@ async def test_db_api(bind, random_name):
     ] == "DELETE 1"
     stmt, params = db.compile(User.query.where(User.id == 3))
     assert params[0] == 3
+
+
+async def test_bind_url():
+    url = make_url(PG_URL)
+    assert url.drivername == "postgresql"
+    await db.set_bind(PG_URL)
+    assert url.drivername == "postgresql"
+    await db.pop_bind().close()

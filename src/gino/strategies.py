@@ -1,4 +1,5 @@
 import asyncio
+from copy import copy
 
 from sqlalchemy.engine import url
 from sqlalchemy import util
@@ -17,6 +18,7 @@ class GinoStrategy(EngineStrategy):
         if loop is None:
             loop = asyncio.get_event_loop()
         if u.drivername in {"postgresql", "postgres"}:
+            u = copy(u)
             u.drivername = "postgresql+asyncpg"
 
         dialect_cls = u.get_dialect()
