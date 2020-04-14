@@ -500,7 +500,7 @@ The generated revision file should roughly look like this::
 .. hint::
 
     Whenever there is a change to the database schema in the future, just modify the
-    GINO modules and run ``alembic revision --autogenerate`` again to generate new
+    GINO models and run ``alembic revision --autogenerate`` again to generate new
     revisions to track the change. Remember to review the revision file - you may want
     to adjust it.
 
@@ -655,7 +655,7 @@ go live:
 * Enable CI_, install ``pytest-cov`` and use ``--cov-fail-under`` to guarantee coverage.
 * Integrate static code analysis tools and security/CVE checking tools.
 * Automate Alembic_ upgrade properly - e.g. after new version is deployed.
-* Be aware of the usual security attacks like CSRF_, XSS_, etc.
+* Be aware of the common security attacks like CSRF_, XSS_, etc.
 * Write load tests.
 
 Again, the source code of the demo is available `here
