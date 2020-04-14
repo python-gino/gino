@@ -405,6 +405,11 @@ shall use the `Entry Points`_ feature to load the dependencies. Add this code be
                 if init_app:
                     init_app(app)
 
+.. hint::
+
+    If you're running Python < 3.8, you'll need this `importlib-metadata backport
+    <https://importlib-metadata.readthedocs.io/>`_.
+
 And call it in our application factory:
 
 .. code-block:: diff
