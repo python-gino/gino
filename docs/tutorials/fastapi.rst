@@ -49,11 +49,11 @@ extension for Starlette <https://github.com/python-gino/gino-starlette>`_. Simpl
 
 .. note::
 
-    Before the final GINO 1.0 is released, please use 1.0rc3 for now:
+    Before the final GINO 1.0 is released, please use 1.0rc4 for now:
 
     .. code-block:: console
 
-        $ poetry add 'gino[starlette]@^1.0rc3' --allow-prereleases
+        $ poetry add 'gino[starlette]@^1.0rc4' --allow-prereleases
 
 Then let's add FastAPI_, together with the lightning-fast ASGI_ server Uvicorn_, and
 Gunicorn_ as a production application server:
