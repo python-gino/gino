@@ -45,6 +45,12 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
+0.8.7 (TBD)
+^^^^^^^^^^^^^^^^^^
+
+* Improved error handling when attribute names collide (Contributed by Reskov in #637 #638)
+* Fixed ``with_bind`` usability in aiohttp extension (#518)
+
 0.8.6 (2020-02-10)
 ^^^^^^^^^^^^^^^^^^
 
