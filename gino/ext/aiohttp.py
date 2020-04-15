@@ -157,6 +157,6 @@ class Gino(_Gino):
             raise HTTPNotFound(reason="No such data")
         return rv
 
-    async def set_bind(self, bind, **kwargs):
+    async def set_bind(self, bind, loop=None, **kwargs):
         kwargs.setdefault("strategy", "aiohttp")
-        return await super().set_bind(bind, **kwargs)
+        return await super().set_bind(bind, loop=None, **kwargs)
