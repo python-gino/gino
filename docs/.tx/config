@@ -43,6 +43,12 @@ source_file = _build/gettext/explanation/why.pot
 source_lang = en
 type = PO
 
+[gino_1_0.how-to--alembic]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/alembic.po
+source_file = _build/gettext/how-to/alembic.pot
+source_lang = en
+type = PO
+
 [gino_1_0.how-to--contributing]
 file_filter = locale/<lang>/LC_MESSAGES/how-to/contributing.po
 source_file = _build/gettext/how-to/contributing.pot
@@ -73,21 +79,9 @@ source_file = _build/gettext/how-to/pool.pot
 source_lang = en
 type = PO
 
-[gino_1_0.how-to--sanic]
-file_filter = locale/<lang>/LC_MESSAGES/how-to/sanic.po
-source_file = _build/gettext/how-to/sanic.pot
-source_lang = en
-type = PO
-
 [gino_1_0.how-to--schema]
 file_filter = locale/<lang>/LC_MESSAGES/how-to/schema.po
 source_file = _build/gettext/how-to/schema.pot
-source_lang = en
-type = PO
-
-[gino_1_0.how-to--tornado]
-file_filter = locale/<lang>/LC_MESSAGES/how-to/tornado.po
-source_file = _build/gettext/how-to/tornado.pot
 source_lang = en
 type = PO
 
@@ -103,9 +97,9 @@ source_file = _build/gettext/reference/api.pot
 source_lang = en
 type = PO
 
-[gino_1_0.reference--authors]
-file_filter = locale/<lang>/LC_MESSAGES/reference/authors.po
-source_file = _build/gettext/reference/authors.pot
+[gino_1_0.reference--extensions]
+file_filter = locale/<lang>/LC_MESSAGES/reference/extensions.po
+source_file = _build/gettext/reference/extensions.pot
 source_lang = en
 type = PO
 
@@ -211,9 +205,27 @@ source_file = _build/gettext/reference/api/gino.transaction.pot
 source_lang = en
 type = PO
 
-[gino_1_0.reference--api--modules]
-file_filter = locale/<lang>/LC_MESSAGES/reference/api/modules.po
-source_file = _build/gettext/reference/api/modules.pot
+[gino_1_0.reference--extensions--sanic]
+file_filter = locale/<lang>/LC_MESSAGES/reference/extensions/sanic.po
+source_file = _build/gettext/reference/extensions/sanic.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--extensions--starlette]
+file_filter = locale/<lang>/LC_MESSAGES/reference/extensions/starlette.po
+source_file = _build/gettext/reference/extensions/starlette.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--extensions--tornado]
+file_filter = locale/<lang>/LC_MESSAGES/reference/extensions/tornado.po
+source_file = _build/gettext/reference/extensions/tornado.pot
+source_lang = en
+type = PO
+
+[gino_1_0.tutorials--fastapi]
+file_filter = locale/<lang>/LC_MESSAGES/tutorials/fastapi.po
+source_file = _build/gettext/tutorials/fastapi.pot
 source_lang = en
 type = PO
 

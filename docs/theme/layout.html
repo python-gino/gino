@@ -54,15 +54,15 @@
                 </div>
                 <div class="spacer"></div>
                 <div id="search-container" class="search">
-                    <input type="text" id="search" placeholder="Search">
+                    <input type="text" id="search" placeholder="{{ '搜索' if language.startswith('zh') else 'Search' }}">
                     <i class="mdi mdi-magnify"></i>
                     <div id="search-results" style="display: none"></div>
                 </div>
                 <a class="btn-flat theme-dark" href="/">
-                    HOME
+                    {{ '首页' if language.startswith('zh') else 'HOME' }}
                 </a>
                 <a class="btn-flat theme-dark" href="/authors.html">
-                    CREDITS
+                    {{ '鸣谢' if language.startswith('zh') else 'CREDITS' }}
                 </a>
                 <a href="https://github.com/python-gino/gino" target="_blank"
                    class="github-stars">

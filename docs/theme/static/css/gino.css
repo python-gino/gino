@@ -133,6 +133,7 @@ div.search i {
     border: none;
     transition: 0.3s;
     color: rgba(255, 255, 255, 0.32);
+    font-size: 14px;
 }
 
 #search:focus {

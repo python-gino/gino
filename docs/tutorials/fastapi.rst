@@ -3,7 +3,7 @@ Build a FastAPI Server
 
 In this tutorial, we'll build a production-ready FastAPI_ server together.
 The full functional example is available `here
-<https://github.com/python-gino/gino-starlette/tree/master/examples/prod_fastapi_demo>`_.
+<https://github.com/python-gino/gino-starlette/tree/master/examples/prod_fastapi_demo>`__.
 
 Our application stack will look like this:
 
@@ -172,6 +172,12 @@ development mode. We'll be able to start a Uvicorn development server after that
 .. code-block:: console
 
     $ poetry install
+    Installing dependencies from lock file
+
+    No dependencies to install or update
+
+      - Installing gino-fastapi-demo (0.1.0)
+
     $ poetry run uvicorn gino_fastapi_demo.asgi:app --reload
     INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
     INFO:     Started reloader process [53010]
@@ -541,7 +547,7 @@ separate database to run tests. Apply this change to ``gino_fastapi_demo.config`
     +        DB_DATABASE = "gino_fastapi_demo_test"
      DB_DSN = config(
 
-.. tip::
+.. hint::
 
     You need to run ``createdb`` to actually create the database. If you have set
     ``DB_DATABASE`` in ``.env`` - e.g. ``DB_DATABASE=mydb``, the name of the testing
@@ -659,9 +665,9 @@ go live:
 * Write load tests.
 
 Again, the source code of the demo is available `here
-<https://github.com/python-gino/gino-starlette/tree/master/examples/prod_fastapi_demo>`_,
+<https://github.com/python-gino/gino-starlette/tree/master/examples/prod_fastapi_demo>`__,
 and the source of this tutorial is `here
-<https://github.com/python-gino/gino/blob/master/docs/tutorials/fastapi.rst>`_.
+<https://github.com/python-gino/gino/blob/master/docs/tutorials/fastapi.rst>`__.
 Please feel free to submit PRs to fix issues or add your thoughts. Happy hacking!
 
 .. |UvicornWorker| replace:: ``UvicornWorker``
