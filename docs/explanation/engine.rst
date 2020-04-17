@@ -6,6 +6,7 @@ Engine and Connection
 connections but also does the work of assembling everyone together:
 
 .. image:: ../images/engine.png
+   :align: center
 
 Under the hood, engine is associated with a specific dialect instance on
 creation, e.g. asyncpg dialect. The dialect is actually a set of classes that
@@ -202,6 +203,7 @@ previously, :class:`~gino.engine.GinoConnection` is mapped to an underlying raw
 connection, as shown in following diagram:
 
 .. image:: ../images/connection.png
+   :align: center
 
 Each column has at most one actual raw connection, and the number is the
 sequence the connections are created in this example. It is designed this way
@@ -336,6 +338,7 @@ connection will be immediately borrowed on acquire, and shared between both (5)
 and (6). It's been quite a while, let me post the same diagram again:
 
 .. image:: ../images/connection.png
+   :align: center
 
 
 reusable

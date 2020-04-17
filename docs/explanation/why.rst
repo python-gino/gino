@@ -24,16 +24,19 @@ build our index. To make things simpler, our tasks are to fetch web pages
 like this:
 
 .. image:: ../images/why_single_task.png
+   :align: center
 
 We have lots of web pages to index, so we simply handle them one by one:
 
 .. image:: ../images/why_throughput.png
+   :align: center
 
 Let's assume the time of each task is constant: each second, 2 tasks are done.
 Thus we can say what the throughput of the current system is 2 tasks/sec. How
 can we improve the throughput? An obvious answer is to add more CPU cores:
 
 .. image:: ../images/why_multicore.png
+   :align: center
 
 This simply doubles our throughput to 4 tasks/sec, and linearly scales as we
 add more CPU cores, if the network is not a bottleneck. But can we improve
@@ -41,6 +44,7 @@ the throughput for each CPU core? The answer is yes, we can use
 multi-threading:
 
 .. image:: ../images/why_multithreading.png
+   :align: center
 
 Wait a second! The 2 threads barely finished 6 tasks in 2 seconds, a
 throughput of only 2.7 tasks/sec, much lower than 4 tasks/sec with 2 cores.
@@ -82,6 +86,7 @@ problem <https://en.wikipedia.org/wiki/C10k_problem>`_, usually solved by
 asynchronous I/O:
 
 .. image:: ../images/why_coroutine.png
+   :align: center
 
 .. note::
 

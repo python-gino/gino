@@ -27,21 +27,6 @@ code, kbd, samp {
     border-radius: 2px;
 }
 
-img.align-center {
-    display: block;
-    margin: 0 auto;
-}
-
-img.align-left {
-    float: left;
-    margin: 0 2rem 1.5rem 0;
-}
-
-img.align-right {
-    float: right;
-    margin: 0 0 1.5rem 2rem;
-}
-
 :root {
     --v-primary-base: #212B73;
     --v-secondary-base: #AD755C;
@@ -73,6 +58,12 @@ nav .brand-logo {
     position: relative;
     display: flex;
     align-items: center;
+    left: 0;
+    -webkit-transform: none;
+    -moz-transform: none;
+    -ms-transform: none;
+    -o-transform: none;
+    transform: none;
 }
 
 .breadcrumbs {
@@ -187,10 +178,6 @@ div.search i {
     background-repeat: no-repeat;
 }
 
-main {
-    padding-left: 300px;
-}
-
 .sidenav {
     top: 64px;
     z-index: 900;
@@ -204,9 +191,7 @@ main {
 }
 
 #main-content {
-    padding: 0 48px;
-    margin: 16px;
-    border-radius: 4px;
+    padding: 0 24px;
     background-color: white;
 }
 
@@ -287,7 +272,6 @@ main {
     padding: 16px;
     top: 64px;
     bottom: 0;
-    width: calc(25vw - 75px);
     overflow-y: auto;
 }
 
@@ -417,9 +401,8 @@ a.headerlink {
 }
 
 .admonition {
-    margin: 1.5rem 2rem;
     border-radius: 4px;
-    padding: 1px 3rem;
+    padding: 1px 1rem;
     box-shadow: #D1CECE 0 0 4px;
 }
 
@@ -529,7 +512,6 @@ p.divio {
     font-size: 0.8em;
     color: #aaa;
     margin-top: 40px;
-    margin-left: -47px;
 }
 
 p.divio a, p.divio a:visited {
@@ -602,4 +584,132 @@ p.divio a, p.divio a:visited {
     line-height: 18px;
     font-size: 14px;
     font-weight: 600;
+}
+
+.sidenav-overlay {
+    z-index: 897;
+}
+
+nav a.sidenav-trigger {
+    height: 24px;
+    margin: 16px 16px 16px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+nav a.sidenav-trigger hr {
+    width: 24px;
+    margin: 0;
+    border: 0;
+    background-color: #fff;
+    height: 2px;
+}
+
+@media (min-width: 993px) {
+    main {
+        padding-left: 300px;
+    }
+
+    #main-content {
+        padding: 0 48px;
+        margin: 16px;
+        border-radius: 4px;
+    }
+
+    .admonition {
+        margin: 1.5rem 2rem;
+        padding: 1px 3rem;
+    }
+
+    img.align-center {
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+    }
+
+    img.align-left {
+        max-width: 100%;
+        float: left;
+        margin: 0 2rem 1.5rem 0;
+    }
+
+    img.align-right {
+        max-width: 100%;
+        float: right;
+        margin: 0 0 1.5rem 2rem;
+    }
+
+    .table-of-contents {
+        width: calc(25vw - 75px);
+    }
+
+    p.divio {
+        margin-left: -47px;
+    }
+
+    .btn-flat {
+        margin-left: 22px;
+        padding: 14px;
+    }
+
+    .sidenav {
+        top: 64px;
+    }
+
+    nav a.sidenav-trigger {
+        display: none;
+    }
+}
+
+@media (max-width: 992px) {
+    img.align-left,
+    img.align-center,
+    img.align-right {
+        display: block;
+        margin: 1.5rem auto;
+        max-width: 100%;
+    }
+
+    .admonition {
+        overflow: scroll;
+    }
+
+    #main-content {
+        padding-bottom: 56px;
+    }
+
+    #main-content p {
+        overflow-x: scroll;
+    }
+
+    main > .row {
+        margin-bottom: 0;
+    }
+
+    .breadcrumbs {
+        display: none;
+    }
+
+    .btn-flat {
+        margin-left: 10px;
+        padding: 5px;
+    }
+}
+
+@media (max-width: 740px) {
+    #search-container {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .sidenav {
+        top: 56px;
+    }
+}
+
+@media (max-width: 510px) {
+    .github-stars {
+        display: none;
+    }
 }
