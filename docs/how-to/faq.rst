@@ -14,7 +14,8 @@ Using GINO is more like making up SQL clauses with Models and Objects,
 executing them to make changes in database, or loading data from database and
 wrapping the results with Objects again. Objects are just row data containers,
 you are still dealing with SQL which is represented by Models and SQLAlchemy
-core grammars. Besides GINO can be used in a completely non-ORM way.
+core grammars. Besides GINO can be used in a completely `non-ORM way
+<schema.html#gino-core>`__.
 
 
 How to join?
