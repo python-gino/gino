@@ -53,7 +53,7 @@ click = "^7.1"
 # tests
 pytest = "^5.4.1"
 pytest-asyncio = "^0.10.0"
-pytest-mock = "^3.0.0"
+pytest-mock = "^3.1.0"
 pytest-cov = "^2.8.1"
 black = { version = "^19.10b0", python = ">=3.6" }
 
