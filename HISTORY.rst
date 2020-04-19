@@ -45,7 +45,7 @@ won't be called with any ``setattr(child, 'parent', ...)`` at all. (If you need
 Please note, it is deprecated to disable ``none_as_none``, and disabling will
 be removed in GINO 1.0.
 
-0.8.7 (TBD)
+0.8.7 (2020-04-19)
 ^^^^^^^^^^^^^^^^^^
 
 * Improved error handling when attribute names collide (Contributed by Reskov in #637 #638)
