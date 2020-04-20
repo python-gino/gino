@@ -92,9 +92,10 @@ class PreparedStatement:
             raise ValueError(
                 "PreparedStatement does not support multiple " "parameters."
             )
-        assert (
-            ctx.statement == self.context.statement
-        ), "Prepared statement generated different SQL with parameters"
+        if ctx.statement != self.context.statement:
+            raise AssertionError(
+                "Prepared statement generated different SQL with parameters"
+            )
         params = []
         for val in ctx.parameters[0]:
             params.append(val)
