@@ -20,6 +20,9 @@ class GinoStrategy(EngineStrategy):
         if u.drivername in {"postgresql", "postgres"}:
             u = copy(u)
             u.drivername = "postgresql+asyncpg"
+        elif u.drivername in {"mysql"}:
+            u = copy(u)
+            u.drivername = "mysql+aiomysql"
 
         dialect_cls = u.get_dialect()
 
