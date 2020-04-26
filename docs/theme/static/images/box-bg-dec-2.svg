@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="514px" height="37px" viewBox="0 0 514 37" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>Path 135</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="159.319676%" id="linearGradient-2">
+            <stop stop-color="#DBE3F0" offset="0%"></stop>
+            <stop stop-color="#FFFFFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="V-Web-Final" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="documentation" transform="translate(-867.000000, -460.000000)" fill="url(#linearGradient-2)">
+            <g id="reference" transform="translate(869.000000, 463.000000)">
+                <g id="Group-3" transform="translate(0.933333, 0.226980)">
+                    <path d="M2.44055776,15.2225536 C9.2288905,19.5447892 18.9293082,22.5007622 31.541811,24.0904726 C50.4605651,26.4750382 64.3877759,19.6839168 87.2097854,19.6839168 C110.031795,19.6839168 126.488324,29.4851072 149.38246,29.4851072 C172.276595,29.4851072 190.305228,19.6839168 209.623534,17.2043802 C228.941841,14.7248436 263.819701,25.514842 296.241382,21.8059554 C321.53717,18.9122371 334.732035,13.7253293 366.678305,13.7253293 C398.624574,13.7253293 405.664328,20.0247261 437.169328,24.0904726 C458.172661,26.8009702 481.449552,23.3459225 507,13.7253293 L474.327667,0.96 L7.77642022,8.22484971 L0.6,8.22484971 L2.44055776,15.2225536 Z" id="Path-135" transform="translate(253.800000, 15.222554) scale(-1, 1) translate(-253.800000, -15.222554) "></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

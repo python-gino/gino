@@ -494,11 +494,22 @@ a.headerlink {
     overflow: hidden;
 }
 
-.body .section ul.boxed-nav li > div {
+.body .section ul.boxed-nav li div {
     background-color: #F4F7FC;
     border-radius: 4px;
     height: 110px;
     padding: 30px 30px 0;
+    background-image: url(../images/box-bg-dec.svg);
+    background-repeat: no-repeat;
+    background-position: -15px -10px;
+}
+
+.body .section ul.boxed-nav li:nth-of-type(3n) div {
+    background-image: url(../images/box-bg-dec-2.svg);
+}
+
+.body .section ul.boxed-nav li:nth-of-type(3n+1) div {
+    background-image: url(../images/box-bg-dec-3.svg);
 }
 
 .body .section ul.boxed-nav li a img {

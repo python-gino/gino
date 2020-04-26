@@ -614,5 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.documentElement.scrollTop -= 64
     }, 100);
-    jQuery('.boxed-nav li').wrapInner('<div></div>')
+    jQuery('.boxed-nav li').each(function (i, li) {
+        jQuery(li).wrapInner('<a href="' + jQuery('a:first', li).attr('href') + '"><div></div></a>');
+    });
 });
