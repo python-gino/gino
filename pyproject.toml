@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gino"
-version = "1.0.0-rc.4"
+version = "1.0.0"
 description = "GINO Is Not ORM - a Python asyncio ORM on SQLAlchemy core."
 license = "BSD-3-Clause"
 authors = ["Fantix King <fantix.king@gmail.com>"]
@@ -8,7 +8,7 @@ maintainers = ["Tony Wang <wwwjfy@gmail.com>", "Fantix King <fantix.king@gmail.c
 readme = "README.rst"
 homepage = "https://python-gino.org"
 repository = "https://github.com/python-gino/gino"
-documentation = "https://python-gino.readthedocs.io/"
+documentation = "https://python-gino.org/docs/"
 keywords = ["orm", "asyncio", "sqlalchemy", "asyncpg", "python3"]
 classifiers = [
     "Development Status :: 4 - Beta",
