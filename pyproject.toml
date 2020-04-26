@@ -11,7 +11,7 @@ repository = "https://github.com/python-gino/gino"
 documentation = "https://python-gino.org/docs/"
 keywords = ["orm", "asyncio", "sqlalchemy", "asyncpg", "python3"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
