@@ -2,6 +2,60 @@
 History
 =======
 
+GINO 1.0
+--------
+
+Migrating to GINO 1.0
+^^^^^^^^^^^^^^^^^^^^^
+
+GINO 1.0 moved the built-in Web framework extensions into separate PyPI
+packages. If you're using one of them, you should install GINO 1.0 with extras:
+
++------------------------+---------------------------------+
+| Extension Module       | Installation in GINO 1.0        |
++========================+=================================+
+| ``gino.ext.starlette`` | ``pip install gino[starlette]`` |
++------------------------+---------------------------------+
+| ``gino.ext.aiohttp``   | ``pip install gino[aiohttp]``   |
++------------------------+---------------------------------+
+| ``gino.ext.sanic``     | ``pip install gino[sanic]``     |
++------------------------+---------------------------------+
+| ``gino.ext.tornado``   | ``pip install gino[tornado]``   |
++------------------------+---------------------------------+
+| ``gino.ext.quart``     | ``pip install gino[quart]``     |
++------------------------+---------------------------------+
+
+The new extension packages are backward-compatible, so there's no need to
+update the import statements. For example, this will still work in GINO 1.0 if
+you installed ``gino[starlette]``::
+
+    from gino.ext.starlette import Gino
+
+GINO 1.0 switched to `Poetry <https://python-poetry.org/>`__ for package and
+dependency management and started to use the
+`src layout <https://hynek.me/articles/testing-packaging/>`__. This shouldn't
+cause any problem using GINO as a dependency, but it does introduce some
+changes to the GINO development process:
+
+* Source files are now located under ``src`` directory.
+* The src dist on PyPI does not include tests, docs and some other files due to
+  a limitation of Poetry.
+
+
+1.0.0 (2020-04-26)
+^^^^^^^^^^^^^^^^^^
+
+* Switched to Poetry for package and dependency management.
+* [Breaking] Moved built-in extension modules to separate PyPI packages.
+* Switched to src layout.
+* Switched to black code style.
+* Better documentation.
+* [Breaking] ``none_as_none()`` is now always enabled.
+* Added representation method for engine.
+* Protected the URL instance fed to ``set_bind()`` from manipulation.
+* Replaced some ``assert`` with ``AssertionError`` (#258 #655)
+
+
 GINO 0.8
 --------
 
