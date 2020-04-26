@@ -16,6 +16,7 @@ class ColumnAttribute:
 
     This utility is customizable by defining ``__attr_factory__`` in the model class.
     """
+
     def __init__(self, prop_name, column):
         self.prop_name = prop_name
         self.column = column
@@ -38,6 +39,7 @@ class InvertDict(dict):
 
     Used internally by :class:`~Model`.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._inverted_dict = dict()
@@ -239,6 +241,7 @@ class Model:
       instances. Accessing column attributes is equivalent to accessing ``__values__``.
 
     """
+
     __metadata__ = None
     __table__ = None
     __attr_factory__ = ColumnAttribute
