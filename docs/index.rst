@@ -30,28 +30,28 @@ dialect asyncpg_.
 .. cssclass:: boxed-nav
 
 * .. image:: images/tutorials.svg
-   :target: tutorials.html
+     :target: tutorials.html
 
   :doc:`tutorials`
 
   Lessons for the newcomer to get started
 
 * .. image:: images/how-to.svg
-   :target: how-to.html
+     :target: how-to.html
 
   :doc:`how-to`
 
   Solve specific problems by steps
 
 * .. image:: images/explanation.svg
-   :target: explanation.html
+     :target: explanation.html
 
   :doc:`explanation`
 
   Explains the background and context
 
 * .. image:: images/reference.svg
-   :target: reference.html
+     :target: reference.html
 
   :doc:`reference`
 

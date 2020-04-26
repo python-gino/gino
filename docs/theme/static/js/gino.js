@@ -614,4 +614,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.documentElement.scrollTop -= 64
     }, 100);
+    jQuery('.boxed-nav li').wrapInner('<div></div>')
 });

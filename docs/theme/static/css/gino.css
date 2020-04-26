@@ -485,46 +485,43 @@ a.headerlink {
 .body .section ul.boxed-nav li {
     border-radius: 4px;
     box-shadow: #D1CECE 0 0 4px;
-    padding: 16px;
+    padding: 10px;
     margin: 25px 0 0;
     width: 340px;
     list-style: none;
     color: #202A73;
     font-weight: 500;
-    position: relative;
     overflow: hidden;
-    height: 100px;
+}
+
+.body .section ul.boxed-nav li > div {
+    background-color: #F4F7FC;
+    border-radius: 4px;
+    height: 110px;
+    padding: 30px 30px 0;
 }
 
 .body .section ul.boxed-nav li a img {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
+    width: 42px;
+    margin: 0 30px 30px 0;
+    float: left;
 }
 
 .body .section ul.boxed-nav li p {
-    position: absolute;
-    left: 150px;
-    right: 16px;
-    top: 16px;
-    font-size: 20px;
+    font-size: 18px;
+    color: #212B73;
+    line-height: 18px;
+    margin-bottom: 8px;
 }
 
 .body .section ul.boxed-nav li p:nth-of-type(2) {
-    top: 46px;
-    font-size: 12px;
-    color: #000000;
+    font-size: 14px;
+    word-break: break-word;
 }
 
-.body .section ul.boxed-nav p:first-of-type a,
-.body .section ul.boxed-nav p:first-of-type a:visited {
-    color: #202A73;
-}
-
-.body .section ul.boxed-nav p:nth-of-type(2) a,
-.body .section ul.boxed-nav p:nth-of-type(2) a:visited {
-    color: #000000;
+.body .section ul.boxed-nav p a,
+.body .section ul.boxed-nav p a:visited {
+    color: #212B73;
 }
 
 p.divio {
