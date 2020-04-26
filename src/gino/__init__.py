@@ -5,6 +5,8 @@ from .strategies import GinoStrategy  # NOQA
 
 
 def create_engine(*args, **kwargs):
+    """Shortcut for :func:`sqlalchemy.create_engine` with ``strategy="gino"``."""
+
     from sqlalchemy import create_engine
 
     kwargs.setdefault("strategy", "gino")
@@ -12,6 +14,8 @@ def create_engine(*args, **kwargs):
 
 
 def get_version():
+    """Get current GINO version."""
+
     try:
         from importlib.metadata import version
     except ImportError:

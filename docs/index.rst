@@ -103,6 +103,7 @@ Sections by `Divio <https://www.divio.com/blog/documentation/>`_.
    :hidden:
 
    tutorials
+   tutorials/announcement.rst
    tutorials/tutorial.rst
    tutorials/*
 

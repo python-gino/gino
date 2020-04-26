@@ -97,6 +97,26 @@ nav .brand-logo {
     text-shadow: #f8d230 0 0 5px;
 }
 
+a.brackets:before,
+span.brackets:empty,
+span.brackets > a:before{
+    content: "[";
+}
+
+a.brackets:after,
+span.brackets > a:after {
+    content: "]";
+}
+
+a.footnote-reference {
+    vertical-align: super;
+    font-size: 0.8em;
+}
+
+.footnote dt {
+    float: left;
+}
+
 div.search {
     position: relative;
     display: flex;

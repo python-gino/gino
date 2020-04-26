@@ -5,6 +5,12 @@ import types
 
 
 def patch_asyncio():
+    """Patches asyncio to support :mod:`contextvars`.
+
+    This is automatically called when :mod:`gino` is imported. If Python version is 3.7
+    or greater, this function is a no-op.
+    """
+
     if not sys.version_info < (3, 7):
         return
 

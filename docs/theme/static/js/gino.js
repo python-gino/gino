@@ -574,9 +574,44 @@ document.addEventListener('DOMContentLoaded', function () {
         if (sr.innerHTML)
             sr.style.display = 'block';
     }
+    var scrollOffset = 64 + (window.innerHeight - 64) / 5;
+    var anchors = document.querySelectorAll('dt, a.footnote-reference');
     window.addEventListener('click', function (e) {
         if (!sc.contains(e.target)) {
             sr.style.display = 'none';
         }
+
+        var $trigger = $(e.target);
+        while ($trigger.length > 0 && !$trigger.is('a')) {
+            $trigger = $trigger.parent()
+        }
+        for (var i = anchors.length - 1; i >= 0; i--) {
+            var target = anchors[i];
+            if ($trigger.is('a[href="#' + target.getAttribute('id') + '"]')) {
+                e.preventDefault();
+                var offset = target.offsetTop + 1;
+
+                M.anime({
+                    targets: [document.documentElement, document.body],
+                    scrollTop: offset - scrollOffset,
+                    duration: 400,
+                    easing: 'easeOutCubic'
+                });
+                history.pushState(null, null, '#' + target.getAttribute('id'));
+                break;
+            }
+        }
     });
+    setTimeout(function () {
+        var hash = location.hash.substring(1);
+        if (!hash) return;
+        var target = $('[id="' + hash + '"]');
+        if (target.length === 0) return;
+        console.log(parseInt(target.offset().top))
+        console.log(document.documentElement.scrollTop)
+        if (parseInt(target.offset().top) !== parseInt(document.documentElement.scrollTop))
+            return;
+
+        document.documentElement.scrollTop -= 64
+    }, 100);
 });

@@ -1,3 +1,20 @@
+"""
+Namespace package for GINO extensions.
+
+This namespace package didn't use any of the `3 official solutions
+<https://packaging.python.org/guides/packaging-namespace-packages/>`__. Instead,
+``gino.ext`` adds a hook into :data:`sys.meta_path`, and utilize the :ref:`entry-points`
+to find the extensions.
+
+Any GINO extension package should provide an entry point like this::
+
+    [gino.extensions]
+    starlette = gino_starlette
+
+So that the Python package ``gino_starlette`` will also be importable through
+``gino.ext.starlette``.
+"""
+
 import sys
 from importlib.abc import MetaPathFinder, Loader
 from importlib.machinery import ModuleSpec

@@ -9,6 +9,15 @@ from .engine import GinoEngine
 
 
 class GinoStrategy(EngineStrategy):
+    """A SQLAlchemy engine strategy for GINO.
+
+    This strategy is initialized automatically as :mod:`gino` is imported.
+
+    If :func:`sqlalchemy.create_engine` uses ``strategy="gino"``, it will return a
+    :class:`~collections.abc.Coroutine`, and treat URL prefix ``postgresql://`` or
+    ``postgres://`` as ``postgresql+asyncpg://``.
+    """
+
     name = "gino"
     engine_cls = GinoEngine
 

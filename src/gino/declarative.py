@@ -7,6 +7,15 @@ from .exceptions import GinoException
 
 
 class ColumnAttribute:
+    """The type of the column wrapper attributes on GINO models.
+
+    This is the core utility to enable GINO models so that:
+
+    * Accessing a column attribute on a model class returns the column itself
+    * Accessing a column attribute on a model instance returns the value for that column
+
+    This utility is customizable by defining ``__attr_factory__`` in the model class.
+    """
     def __init__(self, prop_name, column):
         self.prop_name = prop_name
         self.column = column
@@ -25,6 +34,10 @@ class ColumnAttribute:
 
 
 class InvertDict(dict):
+    """A custom :class:`dict` that allows getting keys by values.
+
+    Used internally by :class:`~Model`.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._inverted_dict = dict()
@@ -47,8 +60,14 @@ class InvertDict(dict):
         super().__setitem__(key, value)
         self._inverted_dict[value] = key
 
-    def invert_get(self, key, default=None):
-        return self._inverted_dict.get(key, default)
+    def invert_get(self, value, default=None):
+        """Get key by value.
+
+        :param value: A value in this dict.
+        :param default: If specified value doesn't exist, return default.
+        :return: The corresponding key if the value is found, or default otherwise.
+        """
+        return self._inverted_dict.get(value, default)
 
 
 class Dict(collections.OrderedDict):
@@ -141,6 +160,85 @@ def declared_attr(m):
 
 
 class Model:
+    """The base class of GINO models.
+
+    This is not supposed to be sub-classed directly, :func:`~declarative_base` should
+    be used instead to generate a base model class with a given
+    :class:`~sqlalchemy.schema.MetaData`. By defining subclasses of a model, instances
+    of :class:`sqlalchemy.schema.Table` will be created and added to the bound
+    :class:`~sqlalchemy.schema.MetaData`. The columns of the
+    :class:`~sqlalchemy.schema.Table` instance are defined as
+    :class:`~sqlalchemy.schema.Column` attributes::
+
+        from sqlalchemy import MetaData, Column, Integer, String
+        from gino.declarative import declarative_base
+
+        Model = declarative_base()
+
+        class User(db.Model):
+            __tablename__ = "users"
+            id = Column(Integer(), primary_key=True)
+            name = Column(String())
+
+    The name of the columns are automatically set using the attribute name.
+
+    An instance of a model will maintain a memory storage for values of all the defined
+    column attributes. You can access these values by the same attribute name, or update
+    with new values, just like normal Python objects::
+
+        u = User()
+        assert u.name is None
+
+        u.name = "daisy"
+        assert u.name == "daisy"
+
+    .. note::
+
+        Accessing column attributes on a model instance will NOT trigger any database
+        operation.
+
+    :class:`~sqlalchemy.schema.Constraint` and :class:`~sqlalchemy.schema.Index` are
+    also allowed as model class attributes. Their attribute names are not used.
+
+    A concrete model class can be used as a replacement of the
+    :class:`~sqlalchemy.schema.Table` it reflects in SQLAlchemy queries. The model class
+    is also iterable, yielding all the :class:`~sqlalchemy.schema.Column` instances
+    defined in the model.
+
+    Other built-in class attributes:
+
+    * ``__metadata__``
+
+      This is supposed to be set by :func:`~declarative_base` and used only during
+      subclass construction. Still, this can be treated as a read-only attribute to
+      find out which :class:`~sqlalchemy.schema.MetaData` this model is bound to.
+
+    * ``__tablename__``
+
+      This is a required attribute to define a concrete model, meaning a
+      :class:`sqlalchemy.schema.Table` instance will be created, added to the bound
+      :class:`~sqlalchemy.schema.MetaData` and set to the class attribute ``__table__``.
+      Not defining ``__tablename__`` will result in an abstract model - no table
+      instance will be created, and instances of an abstract model are meaningless.
+
+    * ``__table__``
+
+      This should usually be treated as an auto-generated read-only attribute storing
+      the :class:`sqlalchemy.schema.Table` instance.
+
+    * ``__attr_factory__``
+
+      An attribute factory that is used to wrap the actual
+      :class:`~sqlalchemy.schema.Column` instance on the model class, so that the access
+      to the column attributes on model instances is redirected to the in-memory value
+      store. The default factory is :class:`~ColumnAttribute`, can be override.
+
+    * ``__values__``
+
+      The internal in-memory value store as a :class:`dict`, only available on model
+      instances. Accessing column attributes is equivalent to accessing ``__values__``.
+
+    """
     __metadata__ = None
     __table__ = None
     __attr_factory__ = ColumnAttribute
@@ -214,6 +312,16 @@ class Model:
 
 
 def declarative_base(metadata, model_classes=(Model,), name="Model"):
+    """Create a base GINO model class for declarative table definition.
+
+    :param metadata: A :class:`~sqlalchemy.schema.MetaData` instance to contain the
+                     tables.
+    :param model_classes: Base class(es) of the base model class to be created. Default:
+                          :class:`~Model`.
+    :param name: The class name of the base model class to be created. Default:
+                 ``Model``.
+    :return: A new base model class.
+    """
     return ModelType(name, model_classes, {"__metadata__": metadata})
 
 
