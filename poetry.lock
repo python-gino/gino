@@ -307,7 +307,7 @@ hyperframe = ">=5.2.0,<6"
 [[package]]
 category = "main"
 description = "Pure-Python HPACK header compression"
-marker = "python_version >= \"3.7\" and python_version < \"4.0\" and (python_version >= \"3.6\" and python_version < \"4.0\" or python_version >= \"3.7\" and python_version < \"4.0\") or python_version >= \"3.6\" and python_version < \"4.0\" and (python_version >= \"3.6\" and python_version < \"4.0\" or python_version >= \"3.7\" and python_version < \"4.0\")"
+marker = "python_version >= \"3.7\" and python_version < \"4.0\" and (python_version >= \"3.7\" and python_version < \"4.0\" or python_version >= \"3.6\" and python_version < \"4.0\") or python_version >= \"3.6\" and python_version < \"4.0\" and (python_version >= \"3.7\" and python_version < \"4.0\" or python_version >= \"3.6\" and python_version < \"4.0\")"
 name = "hpack"
 optional = true
 python-versions = "*"
@@ -379,7 +379,7 @@ uvloop = ["uvloop"]
 [[package]]
 category = "main"
 description = "HTTP/2 framing layer for Python"
-marker = "python_version >= \"3.7\" and python_version < \"4.0\" and (python_version >= \"3.6\" and python_version < \"4.0\" or python_version >= \"3.7\" and python_version < \"4.0\") or python_version >= \"3.6\" and python_version < \"4.0\" and (python_version >= \"3.6\" and python_version < \"4.0\" or python_version >= \"3.7\" and python_version < \"4.0\")"
+marker = "python_version >= \"3.7\" and python_version < \"4.0\" and (python_version >= \"3.7\" and python_version < \"4.0\" or python_version >= \"3.6\" and python_version < \"4.0\") or python_version >= \"3.6\" and python_version < \"4.0\" and (python_version >= \"3.7\" and python_version < \"4.0\" or python_version >= \"3.6\" and python_version < \"4.0\")"
 name = "hyperframe"
 optional = true
 python-versions = "*"
@@ -648,17 +648,17 @@ description = "Pytest support for asyncio."
 name = "pytest-asyncio"
 optional = false
 python-versions = ">= 3.5"
-version = "0.10.0"
+version = "0.11.0"
 
 [package.dependencies]
-pytest = ">=3.0.6"
+pytest = ">=5.4.0"
 
 [package.dependencies.async-generator]
 python = ">=3.5,<3.6"
 version = ">=1.3"
 
 [package.extras]
-testing = ["async-generator (>=1.3)", "coverage", "hypothesis (>=3.64)"]
+testing = ["async-generator (>=1.3)", "coverage", "hypothesis (>=5.7.1)"]
 
 [[package]]
 category = "dev"
@@ -1185,7 +1185,7 @@ starlette = ["gino-starlette"]
 tornado = ["gino-tornado"]
 
 [metadata]
-content-hash = "f2dc79277b81853873c5e9401595d857299694584c5d9d6a163a5ee999998cb6"
+content-hash = "e6b680764bb2c1de6b81e8d6d156d5291e6a6c55423253fc0c59329d029fe56d"
 python-versions = "^3.5"
 
 [metadata.files]
@@ -1565,8 +1565,8 @@ pytest = [
     {file = "pytest-5.4.1.tar.gz", hash = "sha256:84dde37075b8805f3d1f392cc47e38a0e59518fb46a431cfdaf7cf1ce805f970"},
 ]
 pytest-asyncio = [
-    {file = "pytest-asyncio-0.10.0.tar.gz", hash = "sha256:9fac5100fd716cbecf6ef89233e8590a4ad61d729d1732e0a96b84182df1daaf"},
-    {file = "pytest_asyncio-0.10.0-py3-none-any.whl", hash = "sha256:d734718e25cfc32d2bf78d346e99d33724deeba774cc4afdf491530c6184b63b"},
+    {file = "pytest-asyncio-0.11.0.tar.gz", hash = "sha256:c54866f3cf5dd2063992ba2c34784edae11d3ed19e006d220a3cf0bfc4191fcb"},
+    {file = "pytest_asyncio-0.11.0-py3-none-any.whl", hash = "sha256:6096d101a1ae350d971df05e25f4a8b4d3cd13ffb1b32e42d902ac49670d2bfa"},
 ]
 pytest-cov = [
     {file = "pytest-cov-2.8.1.tar.gz", hash = "sha256:cc6742d8bac45070217169f5f72ceee1e0e55b0221f54bcf24845972d3a47f2b"},
