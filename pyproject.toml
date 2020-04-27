@@ -62,7 +62,7 @@ sphinx = "^3.0.3"
 sphinx-rtd-theme = "^0.4.3"
 sphinxcontrib-apidoc = "^0.3.0"
 sphinx-autobuild = "^0.7.1"
-sphinx-intl = {extras = ["transifex"], version = "^2.0.0"}
+sphinx-intl = {extras = ["transifex"], version = "^2.0.1"}
 
 [tool.poetry.plugins."sqlalchemy.dialects"]
 "postgresql.asyncpg" = "gino.dialects.asyncpg:AsyncpgDialect"
