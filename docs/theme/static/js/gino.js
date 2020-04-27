@@ -575,7 +575,8 @@ document.addEventListener('DOMContentLoaded', function () {
             sr.style.display = 'block';
     }
     var scrollOffset = 64 + (window.innerHeight - 64) / 5;
-    var anchors = document.querySelectorAll('dt, a.footnote-reference');
+    var anchors = document.querySelectorAll(
+        'dt[id]:not([id=""]), a.footnote-reference, span[id]:not([id=""])');
     window.addEventListener('click', function (e) {
         if (!sc.contains(e.target)) {
             sr.style.display = 'none';

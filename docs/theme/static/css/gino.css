@@ -295,6 +295,10 @@ div.search i {
     overflow-y: auto;
 }
 
+.table-of-contents > ul {
+    padding-bottom: 80px;
+}
+
 .table-of-contents li {
     padding: 0;
 }
