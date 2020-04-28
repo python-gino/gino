@@ -608,8 +608,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!hash) return;
         var target = $('[id="' + hash + '"]');
         if (target.length === 0) return;
-        console.log(parseInt(target.offset().top))
-        console.log(document.documentElement.scrollTop)
         if (parseInt(target.offset().top) !== parseInt(document.documentElement.scrollTop))
             return;
 
