@@ -51,6 +51,11 @@ class GinoStrategy(EngineStrategy):
         dialect_args["dbapi"] = dbapi
 
         dialect = dialect_cls(**dialect_args)
+
+        bakery = kwargs.pop("bakery", None)
+        if bakery:
+            dialect.set_bakery(bakery)
+
         pool_class = kwargs.pop("pool_class", None)
         pool = await dialect.init_pool(u, loop, pool_class=pool_class)
 

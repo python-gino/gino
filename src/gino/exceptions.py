@@ -10,6 +10,10 @@ class UninitializedError(GinoException):
     pass
 
 
+class InitializedError(GinoException):
+    pass
+
+
 class UnknownJSONPropertyError(GinoException):
     pass
 

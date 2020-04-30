@@ -1,4 +1,5 @@
 from .api import Gino  # NOQA
+from .bakery import Bakery
 from .engine import GinoEngine, GinoConnection  # NOQA
 from .exceptions import *  # NOQA
 from .strategies import GinoStrategy  # NOQA
