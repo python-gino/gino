@@ -476,11 +476,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     sidenav.scrollTop = current.offsetTop - sidenav.clientHeight / 2;
 
-    // language and version selector
-    M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'), {
-        hoverEnabled: false
-    });
-
     // customize ScrollSpy
     var ScrollSpy = M.ScrollSpy, $ = window.cash;
     ScrollSpy._last = null;
@@ -615,5 +610,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 100);
     jQuery('.boxed-nav li').each(function (i, li) {
         jQuery(li).wrapInner('<a href="' + jQuery('a:first', li).attr('href') + '"><div></div></a>');
+    });
+    fetch('/docs/versions.json').then(function (r) {
+        r.json().then(function (resp) {
+            var langSel = jQuery('#lang-selector');
+            var verSel = jQuery('#version-selector');
+            var langColors = {zh: '#ff0000', en: '#0000ff'};
+            var langNames = {
+                zh: language.startsWith('zh') ? '中文' : 'Chinese',
+                en: language.startsWith('zh') ? '英文' : 'English'
+            }
+            Object.keys(resp).forEach(function (loc) {
+                langSel.append('<li><a href="/docs/' + loc + '/' + sver + '/' + pagename + '.html" class="btn-floating" style="background-color: ' + langColors[loc] + '!important">' + loc.toUpperCase() + '</a></li>');
+                var curLoc = verSel.append('<div>' + langNames[loc] + '</div>')
+                curLoc.append('<a href="https://python-gino.readthedocs.io/' + loc +  '/v0.8.5/" target="_blank">0.8</a>')
+                resp[loc].forEach(function (ver) {
+                    if (sver === ver && language.startsWith(loc)) {
+                        curLoc.append('<span>' + ver + '</span>')
+                    } else {
+                        curLoc.append('<a href="/docs/' + loc + '/' + ver + '/' + pagename + '.html">' + ver + '</a>')
+                    }
+                });
+            })
+
+            // language and version selector
+            M.FloatingActionButton.init(document.querySelectorAll('.fixed-action-btn'), {
+                hoverEnabled: false
+            });
+        })
     });
 });
