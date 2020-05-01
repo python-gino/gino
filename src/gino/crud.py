@@ -749,8 +749,8 @@ class CRUDModel(Model):
         as the columns are in subqueries, so technically they're columns in the
         new "table".
 
-        With this method, the columns are loaded into the origintal models when
-        being used in subquries. For example::
+        With this method, the columns are loaded into the original models when
+        being used in subqueries. For example::
 
             query = query.alias('users')
             MyUser = User.in_query(query)
