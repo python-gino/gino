@@ -62,7 +62,7 @@ jobs:
         with open('docs/versions.json', 'w') as f:
             json.dump(versions, f)
     - name: Publish to GitHub Pages
-      uses: fantix/ghaction-github-pages@master
+      uses: python-gino/ghaction-github-pages@master
       with:
         repo: python-gino/python-gino.org
         target_branch: master
