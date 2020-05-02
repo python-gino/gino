@@ -230,6 +230,21 @@ async def test_no_profile():
 
             age = db.IntegerProperty(default=18)
 
+    with pytest.raises(AttributeError, match=r"JSON\[B\] column"):
+        # noinspection PyUnusedLocal,PyRedeclaration
+        class Test(db.Model):
+            __tablename__ = "tests_no_profile"
+
+            profile = db.StringProperty()
+
+    with pytest.raises(AttributeError, match=r"JSON\[B\] column"):
+        # noinspection PyUnusedLocal,PyRedeclaration
+        class Test(db.Model):
+            __tablename__ = "tests_no_profile"
+
+            profile1 = db.StringProperty(prop_name="profile2")
+            profile2 = db.IntegerProperty(prop_name="profile1")
+
 
 async def test_t291_t402(bind):
     from gino.dialects.asyncpg import JSON, JSONB
@@ -281,3 +296,19 @@ async def test_json_path(bind):
         assert t1.data == t2.data
     finally:
         await PathTest.gino.drop()
+
+
+async def test_index(bind):
+    from gino.dialects.asyncpg import JSONB
+
+    class IndexTest(db.Model):
+        __tablename__ = "index_test"
+        profile = db.Column(JSONB())
+        age = db.IntegerProperty()
+
+        @db.declared_attr
+        def age_idx(cls):
+            return db.Index("age_idx", cls.age)
+
+    await IndexTest.gino.create()
+    await IndexTest.gino.drop()
