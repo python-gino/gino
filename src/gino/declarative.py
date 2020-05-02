@@ -3,6 +3,7 @@ import collections
 import sqlalchemy as sa
 from sqlalchemy.exc import InvalidRequestError
 
+from . import json_support
 from .exceptions import GinoException
 
 
@@ -75,6 +76,8 @@ class InvertDict(dict):
 class Dict(collections.OrderedDict):
     def __setitem__(self, key, value):
         if isinstance(value, sa.Column) and not value.name:
+            value.name = value.key = key
+        if isinstance(value, json_support.JSONProperty) and not value.name:
             value.name = key
         return super().__setitem__(key, value)
 
@@ -272,7 +275,7 @@ class Model:
                 if isinstance(v, sa.Column):
                     v = v.copy()
                     if not v.name:
-                        v.name = k
+                        v.name = v.key = k
                     column_name_map[k] = v.name
                     columns.append(v)
                     updates[k] = sub_cls.__attr_factory__(k, v)
@@ -311,6 +314,21 @@ class Model:
         rv = sa.Table(table_name, sub_cls.__metadata__, *args, **table_kw)
         for k, v in updates.items():
             setattr(sub_cls, k, v)
+        for each_cls in sub_cls.__mro__[::-1]:
+            for k, v in each_cls.__dict__.items():
+                if isinstance(v, json_support.JSONProperty):
+                    json_col = getattr(
+                        sub_cls.__dict__.get(v.prop_name), "column", None
+                    )
+                    if not isinstance(json_col, sa.Column) or not isinstance(
+                        json_col.type, sa.JSON
+                    ):
+                        raise AttributeError(
+                            '{} "{}" requires a JSON[B] column "{}" '
+                            "which is not found or has a wrong type.".format(
+                                type(v).__name__, v.name, v.prop_name,
+                            )
+                        )
         return rv
 
 
