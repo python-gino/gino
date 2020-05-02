@@ -435,14 +435,6 @@ class CRUDModel(Model):
     @classmethod
     def _init_table(cls, sub_cls):
         rv = Model._init_table(sub_cls)
-        for each_cls in sub_cls.__mro__[::-1]:
-            for k, v in each_cls.__dict__.items():
-                if isinstance(v, json_support.JSONProperty):
-                    if not hasattr(sub_cls, v.prop_name):
-                        raise AttributeError(
-                            'Requires "{}" JSON[B] column.'.format(v.prop_name)
-                        )
-                    v.name = k
         if rv is not None:
             rv.__model__ = weakref.ref(sub_cls)
         return rv
