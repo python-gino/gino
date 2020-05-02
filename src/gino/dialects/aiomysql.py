@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import itertools
+import re
 import time
 import warnings
 
@@ -24,8 +25,14 @@ from sqlalchemy.sql import sqltypes
 
 from . import base
 
+try:
+    import click
+except ImportError:
+    click = None
+
+
 class AiomysqlDBAPI(base.BaseDBAPI):
-    pass
+    paramstyle = "format"
     # Error = asyncpg.PostgresError, asyncpg.InterfaceError
 
 
@@ -195,11 +202,12 @@ class DBAPICursor(base.DBAPICursor):
 
 
 class Pool(base.Pool):
-    def __init__(self, url, loop, **kwargs):
+    def __init__(self, url, loop, init=None, **kwargs):
         self._url = url
         self._loop = loop
         self._kwargs = kwargs
         self._pool = None
+        self._conn_init = init
 
     async def _init(self):
         args = self._kwargs.copy()
@@ -222,8 +230,17 @@ class Pool(base.Pool):
         return self._pool
 
     async def acquire(self, *, timeout=None):
-        # TODO: add timeout
-        return await self._pool.acquire()
+        if timeout is None:
+            conn = await self._pool.acquire()
+        else:
+            conn = await asyncio.wait_for(self._pool.acquire(), timeout=timeout)
+        if self._conn_init is not None:
+            try:
+                await self._conn_init(conn)
+            except:
+                await self.release(conn)
+                raise
+        return conn
 
     async def release(self, conn):
         await self._pool.release(conn)
@@ -232,25 +249,56 @@ class Pool(base.Pool):
         self._pool.close()
         await self._pool.wait_closed()
 
-    # TODO: add repr()
+    def repr(self, color):
+        if color and not click:
+            warnings.warn("Install click to get colorful repr.", ImportWarning)
+
+        if color and click:
+            # noinspection PyProtectedMember
+            return "<{classname} max={max} min={min} cur={cur} use={use}>".format(
+                classname=click.style(
+                    self._pool.__class__.__module__
+                    + "."
+                    + self._pool.__class__.__name__,
+                    fg="green",
+                    ),
+                max=click.style(repr(self._pool.maxsize), fg="cyan"),
+                min=click.style(repr(self._pool._minsize), fg="cyan"),
+                cur=click.style(repr(self._pool.size), fg="cyan"),
+                use=click.style(repr(len(self._pool._used)), fg="cyan"),
+            )
+        else:
+            # noinspection PyProtectedMember
+            return "<{classname} max={max} min={min} cur={cur} use={use}>".format(
+                classname=self._pool.__class__.__module__
+                          + "."
+                          + self._pool.__class__.__name__,
+                max=self._pool.maxsize,
+                min=self._pool._minsize,
+                cur=self._pool.size,
+                use=len(self._pool._used),
+            )
 
 
 class Transaction(base.Transaction):
-    def __init__(self, tx):
-        self._tx = tx
+    def __init__(self, conn, set_isolation=None):
+        self._conn = conn
+        self._set_isolation = set_isolation
 
     @property
     def raw_transaction(self):
-        return self._tx
+        raise NotImplementedError
 
     async def begin(self):
-        await self._tx.start()
+        await self._conn.begin()
+        if self._set_isolation is not None:
+            await self._set_isolation(self._conn)
 
     async def commit(self):
-        await self._tx.commit()
+        await self._conn.commit()
 
     async def rollback(self):
-        await self._tx.rollback()
+        await self._conn.rollback()
 
 
 class AiomysqlJSONPathType(json.JSONPathType):
@@ -304,46 +352,92 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(url, loop, **self._pool_kwargs)
+        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
-        return Transaction(raw_conn.transaction(*args, **kwargs))
+        _set_isolation = None
+        if 'isolation' in kwargs:
+            async def _set_isolation(conn):
+                await self.set_isolation_level(conn, kwargs['isolation'])
+        return Transaction(raw_conn, _set_isolation)
 
-    # def on_connect(self):
-    #     if self.isolation_level is not None:
-    #
-    #         async def connect(conn):
-    #             await self.set_isolation_level(conn, self.isolation_level)
-    #
-    #         return connect
-    #     else:
-    #         return None
+    def on_connect(self):
+        if self.isolation_level is not None:
+
+            async def connect(conn):
+                await self.set_isolation_level(conn, self.isolation_level)
+
+            return connect
+        else:
+            return None
 
     async def set_isolation_level(self, connection, level):
-        """
-        Given an asyncpg connection, set its isolation level.
-
-        """
         level = level.replace("_", " ")
+        await self._set_isolation_level(connection, level)
+
+    async def _set_isolation_level(self, connection, level):
         if level not in self._isolation_lookup:
             raise exc.ArgumentError(
                 "Invalid value '%s' for isolation_level. "
                 "Valid isolation levels for %s are %s"
                 % (level, self.name, ", ".join(self._isolation_lookup))
             )
-        await connection.execute(
-            "SET SESSION CHARACTERISTICS AS TRANSACTION " "ISOLATION LEVEL %s" % level
-        )
-        await connection.execute("COMMIT")
+        cursor = await connection.cursor()
+        await cursor.execute(
+            "SET SESSION TRANSACTION ISOLATION LEVEL %s" % level)
+        await cursor.execute("COMMIT")
+        await cursor.close()
 
     async def get_isolation_level(self, connection):
-        """
-        Given an asyncpg connection, return its isolation level.
+        if self.server_version_info is None:
+            self.server_version_info = await self._get_server_version_info(
+                connection)
+        cursor = await connection.cursor()
+        if self._is_mysql and self.server_version_info >= (5, 7, 20):
+            await cursor.execute("SELECT @@transaction_isolation")
+        else:
+            await cursor.execute("SELECT @@tx_isolation")
+        row = await cursor.fetchone()
+        if row is None:
+            util.warn(
+                "Could not retrieve transaction isolation level for MySQL "
+                "connection."
+            )
+            raise NotImplementedError()
+        val = row[0]
+        await cursor.close()
+        if isinstance(val, bytes):
+            val = val.decode()
+        return val.upper().replace("-", " ")
 
-        """
-        val = await connection.fetchval("show transaction isolation level")
-        return val.upper()
+    async def _get_server_version_info(self, connection):
+        # get database server version info explicitly over the wire
+        # to avoid proxy servers like MaxScale getting in the
+        # way with their own values, see #4205
+        cursor = await connection.cursor()
+        await cursor.execute("SELECT VERSION()")
+        val = (await cursor.fetchone())[0]
+        await cursor.close()
+        if isinstance(val, bytes):
+            val = val.decode()
+
+        return self._parse_server_version(val)
+
+    def _parse_server_version(self, val):
+        version = []
+        r = re.compile(r"[.\-]")
+        for n in r.split(val):
+            try:
+                version.append(int(n))
+            except ValueError:
+                mariadb = re.match(r"(.*)(MariaDB)(.*)", n)
+                if mariadb:
+                    version.extend(g for g in mariadb.groups() if g)
+                else:
+                    version.append(n)
+        return tuple(version)
+
 
     # async def has_schema(self, connection, schema):
     #     row = await connection.first(

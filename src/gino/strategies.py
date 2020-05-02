@@ -55,6 +55,7 @@ class GinoStrategy(EngineStrategy):
 
         # all kwargs should be consumed
         if kwargs:
+            await pool.close()
             raise TypeError(
                 "Invalid argument(s) %s sent to create_engine(), "
                 "using configuration %s/%s.  Please check that the "

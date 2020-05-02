@@ -288,6 +288,7 @@ async def test_lazy(mocker):
 
     await blocker
     assert qsize(engine) == init_size
+    await engine.close()
 
 
 async def test_release(engine):
