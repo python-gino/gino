@@ -352,6 +352,19 @@ div.search i {
     color: #757575;
 }
 
+.table-of-contents .add-your-lang,
+.table-of-contents .add-your-lang a,
+.table-of-contents .add-your-lang a:active,
+.table-of-contents .add-your-lang a:hover {
+    border-left: none;
+    font-size: 14px;
+    text-decoration: underline;
+    text-align: right;
+    margin-top: 8px;
+    color: #aaa;
+    font-weight: normal;
+}
+
 .table-of-contents #version-selector span,
 .table-of-contents #version-selector a,
 .table-of-contents #version-selector a:active,
