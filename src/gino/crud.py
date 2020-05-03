@@ -473,16 +473,35 @@ class CRUDModel(Model):
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
             opts["timeout"] = timeout
-        # noinspection PyArgumentList
         q = (
             cls.__table__.insert()
             .values(**self._get_sa_values(self.__values__))
-            .returning(*cls)
             .execution_options(**opts)
         )
         if bind is None:
             bind = cls.__metadata__.bind
-        row = await bind.first(q)
+        if bind._dialect.support_returning:
+            # noinspection PyArgumentList
+            q = q.returning(*cls)
+            row = await bind.first(q)
+        else:
+            # CAVEAT: MySQL doesn't support RETURNING. The workaround here is
+            # to get lastrowid and load it after insertion.
+            # Note that this only works for tables with AUTO_INCREMENT column
+            q = q.execution_options(return_lastrowid=True)
+            # make insertion and select in one connection
+            async with bind.acquire():
+                lastrowid = await bind.all(q)
+                if not lastrowid:
+                    return None
+                pkey = cls.__table__.primary_key
+                if len(pkey.columns) > 1:
+                    return None
+                q = (
+                    cls.__table__.select()
+                    .where(pkey.columns.values()[0] == lastrowid)
+                    .execution_options(**opts))
+                row = await bind.first(q)
         for k, v in row.items():
             self.__values__[self._column_name_map.invert_get(k)] = v
         self.__profile__ = None

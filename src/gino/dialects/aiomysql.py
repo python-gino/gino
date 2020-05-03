@@ -79,6 +79,9 @@ class AiomysqlExecutionContext(base.ExecutionContextOverride,
                 return proc(r)
         return r
 
+    def get_lastrowid(self):
+        return self.cursor.last_row_id
+
 
 class AiomysqlIterator:
     def __init__(self, context, iterator):
@@ -146,6 +149,7 @@ class DBAPICursor(base.DBAPICursor):
         self._conn = dbapi_conn
         self._cursor_description = None
         self._status = None
+        self.last_row_id = None
 
     async def prepare(self, context, clause=None):
         timeout = context.timeout
@@ -176,11 +180,12 @@ class DBAPICursor(base.DBAPICursor):
 
         if args is not None:
             query = query % self._escape_args(args, conn)
-        await conn.query(query)
+        await asyncio.wait_for(conn.query(query), timeout=timeout)
         # noinspection PyProtectedMember
         result = conn._result
         self._cursor_description = result.description
         self._status = result.affected_rows
+        self.last_row_id = result.insert_id
         return result.rows
 
     def _escape_args(self, args, conn):
@@ -340,6 +345,8 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     #         sqltypes.JSON.JSONPathType: AsyncpgJSONPathType,
     #     },
     # )
+    postfetch_lastrowid = False
+    support_returning = False
 
     def __init__(self, *args, **kwargs):
         self._pool_kwargs = {}
@@ -452,37 +459,25 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     #
     #     return bool(row)
 
-    # async def has_table(self, connection, table_name, schema=None):
-    #     # seems like case gets folded in pg_class...
-    #     if schema is None:
-    #         row = await connection.first(
-    #             sql.text(
-    #                 "select relname from pg_class c join pg_namespace n on "
-    #                 "n.oid=c.relnamespace where "
-    #                 "pg_catalog.pg_table_is_visible(c.oid) "
-    #                 "and relname=:name"
-    #             ).bindparams(
-    #                 sql.bindparam(
-    #                     "name", util.text_type(table_name), type_=sqltypes.Unicode
-    #                 ),
-    #             )
-    #         )
-    #     else:
-    #         row = await connection.first(
-    #             sql.text(
-    #                 "select relname from pg_class c join pg_namespace n on "
-    #                 "n.oid=c.relnamespace where n.nspname=:schema and "
-    #                 "relname=:name"
-    #             ).bindparams(
-    #                 sql.bindparam(
-    #                     "name", util.text_type(table_name), type_=sqltypes.Unicode,
-    #                 ),
-    #                 sql.bindparam(
-    #                     "schema", util.text_type(schema), type_=sqltypes.Unicode,
-    #                 ),
-    #             )
-    #         )
-    #     return bool(row)
+    async def has_table(self, connection, table_name, schema=None):
+        full_name = ".".join(
+            self.identifier_preparer._quote_free_identifiers(
+                schema, table_name
+            )
+        )
+
+        st = "DESCRIBE %s" % full_name
+        try:
+            return await connection.first(st) is not None
+        except aiomysql.ProgrammingError as e:
+            if self._extract_error_code(e) == 1146:
+                return False
+            raise
+
+    def _extract_error_code(self, exception):
+        if isinstance(exception.args[0], Exception):
+            exception = exception.args[0]
+        return exception.args[0]
     #
     # async def has_sequence(self, connection, sequence_name, schema=None):
     #     if schema is None:

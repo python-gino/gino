@@ -1,6 +1,6 @@
 import ssl
 
-import asyncpg
+import aiomysql
 import pytest
 import sqlalchemy
 from async_generator import yield_, async_generator
@@ -23,7 +23,7 @@ def sa_engine():
 @pytest.fixture
 @async_generator
 async def engine(sa_engine):
-    e = await gino.create_engine(MYSQL_URL, echo=ECHO, minsize=10)
+    e = await gino.create_engine(MYSQL_URL, echo=ECHO, minsize=10, autocommit=True)
     await yield_(e)
     await e.close()
     sa_engine.execute("DELETE FROM gino_user_settings")
@@ -34,7 +34,7 @@ async def engine(sa_engine):
 @pytest.fixture
 @async_generator
 async def bind(sa_engine):
-    async with db.with_bind(MYSQL_URL, echo=ECHO) as e:
+    async with db.with_bind(MYSQL_URL, echo=ECHO, autocommit=True) as e:
         await yield_(e)
     sa_engine.execute("DELETE FROM gino_user_settings")
     sa_engine.execute("DELETE FROM gino_users")
@@ -43,11 +43,12 @@ async def bind(sa_engine):
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
 @async_generator
-async def asyncpg_pool(sa_engine):
-    async with asyncpg.create_pool(**DB_ARGS) as rv:
+async def aiomysql_pool(sa_engine):
+    async with aiomysql.create_pool(**DB_ARGS) as rv:
         await yield_(rv)
-        await rv.execute("DELETE FROM gino_user_settings")
-        await rv.execute("DELETE FROM gino_users")
+        async with rv.acquire() as conn:
+            await conn.query("DELETE FROM gino_user_settings")
+            await conn.query("DELETE FROM gino_users")
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from .models import db, User, UserType, Friendship, Relation, PG_URL
+from .models import db, User, UserType, Friendship, Relation, MYSQL_URL
 
 pytestmark = pytest.mark.asyncio
 
@@ -121,7 +121,7 @@ async def test_get_multiple_primary_key(engine):
 async def test_multiple_primary_key_order():
     import gino
 
-    db1 = await gino.Gino(PG_URL)
+    db1 = await gino.Gino(MYSQL_URL)
 
     class NameCard(db1.Model):
         __tablename__ = "name_cards"
@@ -150,7 +150,7 @@ async def test_multiple_primary_key_order():
         await db1.gino.drop_all()
         await db1.pop_bind().close()
 
-    db2 = await gino.Gino(PG_URL)
+    db2 = await gino.Gino(MYSQL_URL)
 
     class NameCard(db2.Model):
         __tablename__ = "name_cards"

@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.engine.result import RowProxy
 
-from .models import PG_URL
+from .models import MYSQL_URL
 
 pytestmark = pytest.mark.asyncio
 
@@ -17,8 +17,8 @@ async def test_engine_only():
         "users",
         metadata,
         Column("id", Integer, primary_key=True),
-        Column("name", String),
-        Column("fullname", String),
+        Column("name", String(255)),
+        Column("fullname", String(255)),
     )
 
     Table(
@@ -26,10 +26,10 @@ async def test_engine_only():
         metadata,
         Column("id", Integer, primary_key=True),
         Column("user_id", None, ForeignKey("users.id")),
-        Column("email_address", String, nullable=False),
+        Column("email_address", String(255), nullable=False),
     )
 
-    engine = await gino.create_engine(PG_URL)
+    engine = await gino.create_engine(MYSQL_URL, autocommit=True)
     await GinoSchemaVisitor(metadata).create_all(engine)
     try:
         ins = users.insert().values(name="jack", fullname="Jack Jones")
@@ -38,6 +38,7 @@ async def test_engine_only():
         assert isinstance(res[0], RowProxy)
     finally:
         await GinoSchemaVisitor(metadata).drop_all(engine)
+        await engine.close()
 
 
 async def test_core():
@@ -49,8 +50,8 @@ async def test_core():
         "users",
         db,
         db.Column("id", db.Integer, primary_key=True),
-        db.Column("name", db.String),
-        db.Column("fullname", db.String),
+        db.Column("name", db.String(255)),
+        db.Column("fullname", db.String(255)),
     )
 
     db.Table(
@@ -58,10 +59,10 @@ async def test_core():
         db,
         db.Column("id", db.Integer, primary_key=True),
         db.Column("user_id", None, db.ForeignKey("users.id")),
-        db.Column("email_address", db.String, nullable=False),
+        db.Column("email_address", db.String(255), nullable=False),
     )
 
-    async with db.with_bind(PG_URL):
+    async with db.with_bind(MYSQL_URL, autocommit=True):
         await db.gino.create_all()
         try:
             await users.insert().values(
@@ -82,17 +83,17 @@ async def test_orm():
         __tablename__ = "users"
 
         id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String)
-        fullname = db.Column(db.String)
+        name = db.Column(db.String(255))
+        fullname = db.Column(db.String(255))
 
     class Address(db.Model):
         __tablename__ = "addresses"
 
         id = db.Column(db.Integer, primary_key=True)
         user_id = db.Column(None, db.ForeignKey("users.id"))
-        email_address = db.Column(db.String, nullable=False)
+        email_address = db.Column(db.String(255), nullable=False)
 
-    async with db.with_bind(PG_URL):
+    async with db.with_bind(MYSQL_URL, autocommit=True):
         await db.gino.create_all()
         try:
             await User.create(name="jack", fullname="Jack Jones")

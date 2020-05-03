@@ -213,6 +213,8 @@ class _ResultProxy:
             rows = await cursor.async_execute(
                 context.statement, context.timeout, args, 1 if one else 0
             )
+            if context.return_lastrowid:
+                return context.get_lastrowid()
             item = context.process_rows(rows, return_model=return_model)
             if one:
                 if item:
@@ -278,7 +280,13 @@ class ExecutionContextOverride:
     def loader(self):
         return self._compiled_first_opt("loader", None)
 
+    @util.memoized_property
+    def return_lastrowid(self):
+        return self._compiled_first_opt("return_lastrowid", False)
+
     def process_rows(self, rows, return_model=True):
+        if not rows:
+            return
         # noinspection PyUnresolvedReferences
         rv = rows = super().get_result_proxy().process_rows(rows)
         loader = self.loader
@@ -389,6 +397,7 @@ class ExecutionContextOverride:
 class AsyncDialectMixin:
     cursor_cls = DBAPICursor
     dbapi_class = BaseDBAPI
+    support_returning = True
 
     def _init_mixin(self):
         self._sa_conn = _SAConnection(

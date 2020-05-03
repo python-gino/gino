@@ -4,7 +4,7 @@ import pytest
 from gino.exceptions import UninitializedError
 from sqlalchemy.engine.url import make_url
 
-from .models import db, PG_URL, User
+from .models import db, MYSQL_URL, User
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,8 +27,8 @@ async def test_get(bind):
 
 
 # noinspection PyUnusedLocal
-async def test_unbind(asyncpg_pool):
-    await db.set_bind(PG_URL)
+async def test_unbind(aiomysql_pool):
+    await db.set_bind(MYSQL_URL)
     await test_create(None)
     await db.pop_bind().close()
     db.bind = None
@@ -40,24 +40,26 @@ async def test_unbind(asyncpg_pool):
 
 
 async def test_db_api(bind, random_name):
-    assert (
-        await db.scalar(User.insert().values(name=random_name).returning(User.nickname))
-        == random_name
+    lastrowid = await db.all(
+        User.insert().values(name=random_name).execution_options(
+            return_lastrowid=True)
     )
+    r = await db.scalar(User.select('nickname').where(User.id == lastrowid))
+    assert r == random_name
     assert (
         await db.first(User.query.where(User.nickname == random_name))
     ).nickname == random_name
     assert len(await db.all(User.query.where(User.nickname == random_name))) == 1
     assert (await db.status(User.delete.where(User.nickname == random_name)))[
         0
-    ] == "DELETE 1"
+    ] == 1
     stmt, params = db.compile(User.query.where(User.id == 3))
     assert params[0] == 3
 
 
 async def test_bind_url():
-    url = make_url(PG_URL)
-    assert url.drivername == "postgresql"
-    await db.set_bind(PG_URL)
-    assert url.drivername == "postgresql"
+    url = make_url(MYSQL_URL)
+    assert url.drivername == "mysql"
+    await db.set_bind(MYSQL_URL)
+    assert url.drivername == "mysql"
     await db.pop_bind().close()
