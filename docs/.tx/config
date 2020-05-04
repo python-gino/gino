@@ -235,3 +235,9 @@ source_file = _build/gettext/tutorials/tutorial.pot
 source_lang = en
 type = PO
 
+[gino_1_0.how-to--json-props]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/json-props.po
+source_file = _build/gettext/how-to/json-props.pot
+source_lang = en
+type = PO
+
