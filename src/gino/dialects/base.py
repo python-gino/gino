@@ -257,7 +257,7 @@ class Cursor:
 
 
 class ExecutionContextOverride:
-    baked_query = False
+    baked_query = None
 
     def _compiled_first_opt(self, key, default=DEFAULT):
         rv = DEFAULT
