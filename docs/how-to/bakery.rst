@@ -6,7 +6,7 @@ Similar to the :doc:`orm/extensions/baked` in SQLAlchemy, GINO could also cache 
 object’s construction and string-compilation steps. Furthermore, GINO automatically
 manages a prepared statement for each baked query in every active connection in the
 pool. Executing baked queries is at least 40% faster than running normal queries, but
-you need to bake them before creating the engine.
+you need to **bake them before creating the engine**.
 
 GINO provides two approaches for baked queries:
 
@@ -88,7 +88,7 @@ ado::
         __tablename__ = "users"
 
         id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(sa.String)
+        name = db.Column(db.String)
 
     db_time = db.bake("SELECT now()")
     user_getter = db.bake(User.query.where(User.id == db.bindparam("uid")))
@@ -101,6 +101,27 @@ And the execution is also simplified with the same ``bind`` magic::
 
             user: User = await user_getter.first(uid=1)
             print(user.name)
+
+To make things more easier, you could even define the baked queries directly on the
+model::
+
+    class User(db.Model):
+        __tablename__ = "users"
+
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+
+        @db.bake
+        def getter(cls):
+            return cls.query.where(cls.id == db.bindparam("uid"))
+
+        @classmethod
+        async def get(cls, uid):
+            return await cls.getter.one_or_none(uid=uid)
+
+Here GINO treats the ``getter()`` as a :meth:`~gino.declarative.declared_attr` with
+``with_table=True``, therefore it takes one positional argument ``cls`` for the ``User``
+class.
 
 
 How to customize loaders?

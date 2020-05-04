@@ -120,6 +120,8 @@ class GinoExecutor:
         information.
 
         :param options: Multiple execution options.
+
+        .. versionadded:: 1.1
         """
         self._query = self._query.execution_options(**options)
         return self
@@ -543,10 +545,20 @@ class Gino(sa.MetaData):
         return self.bind.transaction(*args, **kwargs)
 
     def bake(self, func_or_elem=None, **execution_options):
+        """
+        A delegate of :meth:`Bakery.bake() <.bakery.Bakery.bake>`.
+
+        .. versionadded:: 1.1
+        """
         return self._bakery.bake(func_or_elem, metadata=self, **execution_options)
 
     @property
     def bakery(self):
+        """
+        The bundled :class:`~.bakery.Bakery` instance.
+
+        .. versionadded:: 1.1
+        """
         return self._bakery
 
 

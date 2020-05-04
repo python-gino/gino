@@ -27,6 +27,10 @@ code, kbd, samp {
     border-radius: 2px;
 }
 
+strong {
+    font-weight: 700;
+}
+
 :root {
     --v-primary-base: #212B73;
     --v-secondary-base: #AD755C;

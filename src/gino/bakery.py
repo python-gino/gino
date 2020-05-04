@@ -1,4 +1,5 @@
 import copy
+import inspect
 
 from sqlalchemy import text
 
@@ -13,6 +14,8 @@ class BakedQuery(GinoExecutor):
     :class:`~gino.engine.GinoEngine` or :class:`~gino.engine.GinoConnection`. If there
     is a proper bind in the baked query, contextual execution APIs inherited from
     :class:`~.api.GinoExecutor` can also be used.
+
+    .. versionadded:: 1.1
     """
 
     def __init__(self, elem, metadata, hash_=None):
@@ -113,6 +116,8 @@ class Bakery:
     A :class:`~gino.api.Gino` instance has a built-in :attr:`~gino.api.Gino.bakery`,
     it's automatically given to the engine during :meth:`~gino.api.Gino.set_bind` or
     :meth:`~gino.api.Gino.with_bind`.
+
+    .. versionadded:: 1.1
     """
 
     query_cls = BakedQuery
@@ -153,8 +158,22 @@ class Bakery:
 
             return _wrapper
 
+        if callable(func_or_elem):
+            if inspect.signature(func_or_elem).parameters:
+                # bake decorator on model level, make it a declared_attr
+
+                def _wrapper(cls):
+                    return self.bake(func_or_elem(cls), **execution_options)
+
+                _wrapper.__declared_attr_with_table__ = True
+
+                return _wrapper
+            else:
+                elem = func_or_elem()
+        else:
+            elem = func_or_elem
+
         metadata = execution_options.pop("metadata", None)
-        elem = func_or_elem() if callable(func_or_elem) else func_or_elem
         if isinstance(elem, str):
             elem = text(elem)
         if execution_options:

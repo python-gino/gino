@@ -306,3 +306,25 @@ async def test_multiple_inheritance_overwrite_declared_table_name():
 
     assert MyTableWithoutName.__table__.name == "static_table_name"
     assert MyOtherTableWithoutName.__table__.name == "myothertablewithoutname"
+
+
+async def test_declared_attr_with_table():
+    n_call = 0
+
+    class Model(db.Model):
+        @db.declared_attr()
+        def __tablename__(cls):
+            return "model6"
+
+        @db.declared_attr(with_table=True)
+        def table_name(cls):
+            nonlocal n_call
+            n_call += 1
+            return cls.__table__.name
+
+    assert Model.__table__.name == "model6"
+    assert n_call == 1
+    assert Model.table_name == "model6"
+    assert n_call == 1
+    assert Model.table_name == "model6"
+    assert n_call == 1

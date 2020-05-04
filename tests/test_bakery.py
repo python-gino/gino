@@ -161,3 +161,24 @@ async def test_init_hooks():
         )
         assert await conn.scalar(q) == 123
         assert hooked_conn is conn.raw_connection._con
+
+
+async def test_class_level_bake():
+    class BakeOnClass(db.Model):
+        __tablename__ = "bake_on_class_test"
+
+        name = db.Column(db.String, primary_key=True)
+
+        @db.bake
+        def getter(cls):
+            return cls.query.where(cls.name == db.bindparam("name"))
+
+    e = sqlalchemy.create_engine(PG_URL)
+    db.create_all(e)
+    try:
+        async with db.with_bind(PG_URL):
+            await BakeOnClass.create(name="exist")
+            assert (await BakeOnClass.getter.one(name="exist")).name == "exist"
+            assert (await BakeOnClass.getter.one_or_none(name="nonexist")) is None
+    finally:
+        db.drop_all(e)
