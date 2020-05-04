@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS        ?=
+SPHINXOPTS        ?= -D language='en' -A GAID='xxx' -A VERSION='refs/heads/master'
 TX                ?= tx
 SPHINXBUILD       ?= sphinx-build
 SPHINXINTL        ?= sphinx-intl
@@ -38,7 +38,11 @@ else
 	@$(TX) pull -l "$(LOC)"
 endif
 
-.PHONY: help serve update push pull Makefile
+clean:
+	rm -r _build
+	rm -r reference/api
+
+.PHONY: help serve update push pull clean Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
