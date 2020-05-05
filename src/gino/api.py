@@ -5,11 +5,11 @@ from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import SchemaItem
 
+from . import json_support
 from .crud import CRUDModel
 from .declarative import declarative_base, declared_attr
 from .exceptions import UninitializedError
 from .schema import GinoSchemaVisitor, patch_schema
-from . import json_support
 
 
 class GinoExecutor:
@@ -75,8 +75,7 @@ class GinoExecutor:
         """
         if model is not None:
             model = weakref.ref(model)
-        self._query = self._query.execution_options(model=model)
-        return self
+        return self.execution_options(model=model)
 
     def return_model(self, switch):
         """
@@ -86,8 +85,7 @@ class GinoExecutor:
         information.
 
         """
-        self._query = self._query.execution_options(return_model=switch)
-        return self
+        return self.execution_options(return_model=switch)
 
     def timeout(self, timeout):
         """
@@ -97,8 +95,7 @@ class GinoExecutor:
         information.
 
         """
-        self._query = self._query.execution_options(timeout=timeout)
-        return self
+        return self.execution_options(timeout=timeout)
 
     def load(self, value):
         """
@@ -113,7 +110,20 @@ class GinoExecutor:
         information.
 
         """
-        self._query = self._query.execution_options(loader=value)
+        return self.execution_options(loader=value)
+
+    def execution_options(self, **options):
+        """
+        Set execution options to this query in a chaining call.
+
+        Read :meth:`~gino.engine.GinoConnection.execution_options` for more
+        information.
+
+        :param options: Multiple execution options.
+
+        .. versionadded:: 1.1
+        """
+        self._query = self._query.execution_options(**options)
         return self
 
     async def all(self, *multiparams, **params):
@@ -185,10 +195,7 @@ class GinoExecutor:
         (:class:`Gino`) is bound, while metadata is found in this query.
 
         """
-        connection = self._query.bind.current_connection
-        if connection is None:
-            raise ValueError("No Connection in context, please provide one")
-        return connection.iterate(self._query, *multiparams, **params)
+        return self._query.bind.iterate(self._query, *multiparams, **params)
 
 
 class _BindContext:
@@ -354,6 +361,9 @@ class Gino(sa.MetaData):
         self._model = declarative_base(self, model_classes)
         self.declared_attr = declared_attr
         self.quoted_name = sa.sql.quoted_name
+        from .bakery import Bakery
+
+        self._bakery = Bakery()
         for mod in json_support, sa:
             for key in mod.__all__:
                 if not hasattr(self, key) and key not in self.no_delegate:
@@ -414,7 +424,7 @@ class Gino(sa.MetaData):
         if isinstance(bind, URL):
             from . import create_engine
 
-            bind = await create_engine(bind, loop=loop, **kwargs)
+            bind = await create_engine(bind, loop=loop, bakery=self._bakery, **kwargs)
         self.bind = bind
         return bind
 
@@ -429,6 +439,9 @@ class Gino(sa.MetaData):
         :return: :class:`~.engine.GinoEngine` or ``None`` if self is not bound.
 
         """
+        from .bakery import Bakery
+
+        self._bakery = Bakery()
         bind, self.bind = self.bind, None
         return bind
 
@@ -531,6 +544,23 @@ class Gino(sa.MetaData):
         """
         return self.bind.transaction(*args, **kwargs)
 
+    def bake(self, func_or_elem=None, **execution_options):
+        """
+        A delegate of :meth:`Bakery.bake() <.bakery.Bakery.bake>`.
+
+        .. versionadded:: 1.1
+        """
+        return self._bakery.bake(func_or_elem, metadata=self, **execution_options)
+
+    @property
+    def bakery(self):
+        """
+        The bundled :class:`~.bakery.Bakery` instance.
+
+        .. versionadded:: 1.1
+        """
+        return self._bakery
+
 
 class _PlaceHolder:
     __slots__ = "_exception"
@@ -547,3 +577,6 @@ class _PlaceHolder:
         if key == "_exception":
             return super().__setattr__(key, value)
         raise self._exception
+
+    def __bool__(self):
+        return False

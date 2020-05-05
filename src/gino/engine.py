@@ -5,6 +5,7 @@ import sys
 import time
 from contextvars import ContextVar
 
+from sqlalchemy.cutils import _distill_params
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.sql import schema
 
@@ -121,6 +122,26 @@ class _SAConnection(Connection):
         return super()._execute_context(
             dialect, constructor, statement, parameters, *args
         )
+
+    def _execute_baked_query(self, bq, multiparams, params):
+        elem = bq.query
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_execute:
+                _, multiparams, params = fn(self, elem, multiparams, params)
+
+        distilled_params = _distill_params(multiparams, params)
+
+        ret = self._execute_context(
+            self.dialect,
+            self.dialect.execution_ctx_cls._init_baked_query,
+            bq.compiled_sql,
+            distilled_params,
+            bq,
+            distilled_params,
+        )
+        if self._has_events or self.engine._has_events:
+            self.dispatch.after_execute(self, elem, multiparams, params, ret)
+        return ret
 
 
 # noinspection PyAbstractClass

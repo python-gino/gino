@@ -115,10 +115,15 @@ class ModelType(type):
         rv.__namespace__ = namespace
         if rv.__table__ is None:
             rv.__table__ = getattr(rv, "_init_table")(rv)
+
+        for each_cls in rv.__mro__[::-1]:
+            for k, v in getattr(each_cls, "__namespace__", each_cls.__dict__).items():
+                if callable(v) and getattr(v, "__declared_attr_with_table__", False):
+                    setattr(rv, k, v(rv))
         return rv
 
 
-def declared_attr(m):
+def declared_attr(m=None, *, with_table=False):
     """
     Mark a class-level method as a factory of attribute.
 
@@ -159,8 +164,33 @@ def declared_attr(m):
 
         This doesn't work if the model already had a ``__table__``.
 
+    .. versionchanged:: 1.1
+
+        Added ``with_table`` parameter which works after the ``__table__`` is created::
+
+        class User(db.Model):
+            __tablename__ = "users"
+
+            ...
+
+            @db.declared_attr(with_table=True)
+            def table_name(cls):
+                # this is called only once when defining the class
+                return cls.__table__.name
+
+        assert User.table_name == "users"
+
     """
-    m.__declared_attr__ = True
+    if m is None:
+
+        def _wrapper(m_):
+            return declared_attr(m_, with_table=with_table)
+
+        return _wrapper
+    if with_table:
+        m.__declared_attr_with_table__ = True
+    else:
+        m.__declared_attr__ = True
     return m
 
 
