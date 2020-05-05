@@ -104,8 +104,8 @@ you'll have to declare columns for the query::
         now,
     ).gino.load(
         ('now:', now)
-    ).first()
-    print(result)  # now: 2018-04-08 08:23:02.431847
+    ).query)
+    print(*result)  # now: 2018-04-08 08:23:02.431847
 
 Let's get back to previous example. The second item in the tuple is a GINO
 model class. As we've presented previously, it is interpreted into a
