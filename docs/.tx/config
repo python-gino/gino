@@ -241,3 +241,21 @@ source_file = _build/gettext/how-to/json-props.pot
 source_lang = en
 type = PO
 
+[gino_1_0.how-to--bakery]
+file_filter = locale/<lang>/LC_MESSAGES/how-to/bakery.po
+source_file = _build/gettext/how-to/bakery.pot
+source_lang = en
+type = PO
+
+[gino_1_0.reference--api--gino_bakery]
+file_filter = locale/<lang>/LC_MESSAGES/reference/api/gino.bakery.po
+source_file = _build/gettext/reference/api/gino.bakery.pot
+source_lang = en
+type = PO
+
+[gino_1_0.tutorials--announcement]
+file_filter = locale/<lang>/LC_MESSAGES/tutorials/announcement.po
+source_file = _build/gettext/tutorials/announcement.pot
+source_lang = zh
+type = PO
+

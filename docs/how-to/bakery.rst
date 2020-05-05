@@ -1,6 +1,8 @@
 Bake Queries
 ============
 
+.. versionadded:: 1.1
+
 Baked queries are used to boost execution performance for constantly-used queries.
 Similar to the :doc:`orm/extensions/baked` in SQLAlchemy, GINO could also cache the
 object’s construction and string-compilation steps. Furthermore, GINO automatically
