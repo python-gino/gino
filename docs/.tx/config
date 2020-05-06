@@ -259,3 +259,9 @@ source_file = _build/gettext/tutorials/announcement.pot
 source_lang = zh
 type = PO
 
+[gino_1_0.explanation--async]
+file_filter = locale/<lang>/LC_MESSAGES/explanation/async.po
+source_file = _build/gettext/explanation/async.pot
+source_lang = en
+type = PO
+
