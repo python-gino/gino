@@ -411,10 +411,20 @@ class AsyncDialectMixin:
     dbapi_class = BaseDBAPI
     _bakery = None
 
-    def _init_mixin(self):
+    def _init_mixin(self, bakery):
         self._sa_conn = _SAConnection(
             _SAEngine(self), _DBAPIConnection(self.cursor_cls)
         )
+        if bakery:
+            if bakery._closed:
+                raise InitializedError("Cannot reuse a closed bakery!")
+            self._bakery = bakery
+            for bq in bakery:
+                conn = self._sa_conn.execution_options(compiled_cache=bq)
+                context = conn.execute(bq.query, _bypass_no_param).context
+                # noinspection PyProtectedMember
+                bq._set_sql(context.statement)
+            bakery._closed = True
 
     @classmethod
     def dbapi(cls):
@@ -432,14 +442,3 @@ class AsyncDialectMixin:
 
     def transaction(self, raw_conn, args, kwargs):
         raise NotImplementedError
-
-    def set_bakery(self, bakery):
-        if bakery._closed:
-            raise InitializedError("Cannot reuse a closed bakery!")
-        self._bakery = bakery
-        for bq in bakery:
-            conn = self._sa_conn.execution_options(compiled_cache=bq)
-            context = conn.execute(bq.query, _bypass_no_param).context
-            # noinspection PyProtectedMember
-            bq._set_sql(context.statement)
-        bakery._closed = True

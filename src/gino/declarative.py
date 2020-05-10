@@ -168,17 +168,17 @@ def declared_attr(m=None, *, with_table=False):
 
         Added ``with_table`` parameter which works after the ``__table__`` is created::
 
-        class User(db.Model):
-            __tablename__ = "users"
+            class User(db.Model):
+                __tablename__ = "users"
 
-            ...
+                ...
 
-            @db.declared_attr(with_table=True)
-            def table_name(cls):
-                # this is called only once when defining the class
-                return cls.__table__.name
+                @db.declared_attr(with_table=True)
+                def table_name(cls):
+                    # this is called only once when defining the class
+                    return cls.__table__.name
 
-        assert User.table_name == "users"
+            assert User.table_name == "users"
 
     """
     if m is None:

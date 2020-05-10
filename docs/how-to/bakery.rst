@@ -191,3 +191,24 @@ suffix, plus it is directly executable.
 .. seealso::
 
     Please see API document of :mod:`gino.bakery` for more information.
+
+
+I don't want the prepared statements.
+-------------------------------------
+
+If you don't need all the baked queries (``m``) to create prepared statements for all
+the active database connections (``n``) in the beginning, you could set
+``prebake=False`` in the engine initialization to prevent the default initial
+``m x n`` prepare calls::
+
+    e = await gino.create_engine("postgresql://...", bakery=bakery, prebake=False)
+
+Or if you're using bind::
+
+    await db.set_bind("postgresql://...", prebake=False)
+
+This is useful when you're depending on ``db.gino.create_all()`` to create the tables,
+because the prepared statements can only be created after the table creation.
+
+The prepared statements will then be created and cached lazily on demand.
+
