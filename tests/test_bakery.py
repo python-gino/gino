@@ -173,12 +173,11 @@ async def test_class_level_bake():
         def getter(cls):
             return cls.query.where(cls.name == db.bindparam("name"))
 
-    e = sqlalchemy.create_engine(PG_URL)
-    db.create_all(e)
-    try:
-        async with db.with_bind(PG_URL):
+    async with db.with_bind(PG_URL, prebake=False):
+        await db.gino.create_all()
+        try:
             await BakeOnClass.create(name="exist")
             assert (await BakeOnClass.getter.one(name="exist")).name == "exist"
             assert (await BakeOnClass.getter.one_or_none(name="nonexist")) is None
-    finally:
-        db.drop_all(e)
+        finally:
+            await db.gino.drop_all()

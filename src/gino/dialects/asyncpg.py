@@ -190,12 +190,19 @@ class DBAPICursor(base.DBAPICursor):
     async def execute_baked(self, baked_query, timeout, args, one):
         conn, timeout = await self._acquire(timeout)
         stmt = conn.baked_queries.get(baked_query)
-        if not stmt:
-            raise RuntimeError("query is not baked yet")
-
-        # work around prepared statement limit per connection acquisition
-        # https://github.com/MagicStack/asyncpg/issues/190
-        stmt._con_release_ctr = conn._pool_release_ctr
+        if stmt:
+            # work around prepared statement limit per connection acquisition
+            # https://github.com/MagicStack/asyncpg/issues/190
+            stmt._con_release_ctr = conn._pool_release_ctr
+        else:
+            if timeout:
+                before = time.monotonic()
+                stmt = await conn.prepare(baked_query.sql, timeout=timeout)
+                after = time.monotonic()
+                timeout -= after - before
+            else:
+                stmt = await conn.prepare(baked_query.sql)
+            conn.baked_queries[baked_query] = stmt
 
         if one:
             rv = await stmt.fetchrow(*args, timeout=timeout)
@@ -218,17 +225,17 @@ class DBAPICursor(base.DBAPICursor):
 
 
 class Pool(base.Pool):
-    def __init__(self, url, loop, bakery=None, **kwargs):
+    def __init__(self, url, loop, bakery=None, prebake=True, **kwargs):
         self._url = url
         self._loop = loop
         self._kwargs = kwargs
         self._pool = None
         self._bakery = bakery
         self._init_hook = None
+        self._prebake = prebake
 
     async def _init(self):
         args = self._kwargs.copy()
-        self._init_hook = args.pop("init", None)
 
         class Connection(args.pop("connection_class", asyncpg.Connection)):
             __slots__ = ("baked_queries",)
@@ -244,9 +251,11 @@ class Pool(base.Pool):
             user=self._url.username,
             database=self._url.database,
             password=self._url.password,
-            init=self._bake,
             connection_class=Connection,
         )
+        if self._prebake and self._bakery:
+            self._init_hook = args.pop("init", None)
+            args["init"] = self._bake
         self._pool = await asyncpg.create_pool(**args)
         return self
 
@@ -474,10 +483,11 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     cursor_cls = DBAPICursor
     init_kwargs = set(
         itertools.chain(
+            ("bakery", "prebake"),
             *[
                 inspect.getfullargspec(f).kwonlydefaults.keys()
                 for f in [asyncpg.create_pool, asyncpg.connect]
-            ]
+            ],
         )
     )
     colspecs = util.update_copy(
@@ -490,7 +500,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         },
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, bakery=None, **kwargs):
         self._pool_kwargs = {}
         self._init_hook = None
         for k in self.init_kwargs:
@@ -500,7 +510,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 else:
                     self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._init_mixin()
+        self._init_mixin(bakery)
 
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:

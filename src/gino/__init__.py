@@ -11,6 +11,14 @@ def create_engine(*args, **kwargs):
 
     .. versionchanged:: 1.1
        Added the ``bakery`` keyword argument, please see :class:`~.bakery.Bakery`.
+
+    .. versionchanged:: 1.1
+       Added the ``prebake`` keyword argument to choose when to create the prepared
+       statements for the queries in the bakery:
+
+       * **Pre-bake** immediately when connected to the database (default).
+       * No **pre-bake** but create prepared statements lazily when needed for the first
+         time.
     """
 
     from sqlalchemy import create_engine
