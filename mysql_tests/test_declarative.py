@@ -1,11 +1,8 @@
 import pytest
+
 import gino
 from gino.declarative import InvertDict
-from asyncpg.exceptions import (
-    UniqueViolationError,
-    ForeignKeyViolationError,
-    CheckViolationError,
-)
+from aiomysql import IntegrityError
 
 from .models import User, UserSetting
 
@@ -69,28 +66,28 @@ async def test_inline_constraints_and_indexes(bind, engine):
     us1 = await UserSetting.create(user_id=u.id, setting="skin", value="blue")
 
     # PrimaryKeyConstraint
-    with pytest.raises(UniqueViolationError):
+    with pytest.raises(IntegrityError):
         await UserSetting.create(id=us1.id, user_id=u.id, setting="key1", value="val1")
 
     # ForeignKeyConstraint
-    with pytest.raises(ForeignKeyViolationError):
+    with pytest.raises(IntegrityError):
         await UserSetting.create(user_id=42, setting="key2", value="val2")
 
     # UniqueConstraint
-    with pytest.raises(UniqueViolationError):
+    with pytest.raises(IntegrityError):
         await UserSetting.create(
             user_id=u.id, setting="skin", value="duplicate-setting"
         )
 
-    # CheckConstraint
-    with pytest.raises(CheckViolationError):
-        await UserSetting.create(user_id=u.id, setting="key3", value="val3", col1=42)
+    # MySQL doesn't support CheckConstraint
+    # with pytest.raises(CheckViolationError):
+    #     await UserSetting.create(user_id=u.id, setting="key3", value="val3", col1=42)
 
     # Index
     status, result = await engine.status(
-        "SELECT * FROM pg_indexes WHERE indexname = 'col2_idx'"
+        "SHOW INDEXES FROM `gino_user_settings` WHERE Key_name = 'col2_idx'"
     )
-    assert status == "SELECT 1"
+    assert status == 1
 
 
 async def test_join_t112(engine):
@@ -107,7 +104,7 @@ async def test_join_t112(engine):
 
     sql = (
         "SELECT wheels.id, wheels.car_id, cars.id \nFROM wheels "
-        "JOIN cars ON cars.id = wheels.car_id"
+        "INNER JOIN cars ON cars.id = wheels.car_id"
     )
 
     assert engine.compile(Wheel.join(Car).select())[0] == sql
