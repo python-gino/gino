@@ -121,13 +121,14 @@ async def test_get_multiple_primary_key(engine):
 async def test_multiple_primary_key_order():
     import gino
 
-    db1 = await gino.Gino(MYSQL_URL)
+    db1 = gino.Gino()
+    await db1.set_bind(MYSQL_URL, autocommit=True)
 
     class NameCard(db1.Model):
         __tablename__ = "name_cards"
 
-        first_name = db1.Column(db1.Unicode(), primary_key=True)
-        last_name = db1.Column(db1.Unicode(), primary_key=True)
+        first_name = db1.Column(db1.Unicode(255), primary_key=True)
+        last_name = db1.Column(db1.Unicode(255), primary_key=True)
 
     await db1.gino.create_all()
 
@@ -150,13 +151,14 @@ async def test_multiple_primary_key_order():
         await db1.gino.drop_all()
         await db1.pop_bind().close()
 
-    db2 = await gino.Gino(MYSQL_URL)
+    db2 = gino.Gino(MYSQL_URL)
+    await db2.set_bind(MYSQL_URL, autocommit=True)
 
     class NameCard(db2.Model):
         __tablename__ = "name_cards"
 
-        last_name = db2.Column(db2.Unicode(), primary_key=True)
-        first_name = db2.Column(db2.Unicode(), primary_key=True)
+        last_name = db2.Column(db2.Unicode(255), primary_key=True)
+        first_name = db2.Column(db2.Unicode(255), primary_key=True)
 
     await db2.gino.create_all()
 
@@ -318,12 +320,12 @@ async def test_lookup_custom_name(bind):
             await ModelWithCustomColumnNames.delete.where(
                 ModelWithCustomColumnNames.id == 3
             ).gino.status()
-        )[0][-1] == "0"
+        )[0] == 0
         assert (
             await ModelWithCustomColumnNames.delete.where(
                 ModelWithCustomColumnNames.id == 2
             ).gino.status()
-        )[0][-1] == "1"
+        )[0] == 1
         assert set(
             tuple(x) for x in await ModelWithCustomColumnNames.select("id").gino.all()
         ) == {(1,)}

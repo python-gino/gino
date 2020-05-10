@@ -7,6 +7,7 @@ from sqlalchemy.sql import ClauseElement
 
 from . import json_support
 from .declarative import Model, InvertDict
+from .engine import GinoConnection
 from .exceptions import NoSuchRowError
 from .loader import AliasLoader, ModelLoader
 
@@ -162,16 +163,11 @@ class UpdateRequest:
             type(self._instance)
             .update.where(self._locator,)
             .values(**self._instance._get_sa_values(values),)
-            .returning(*[getattr(cls, key) for key in values],)
             .execution_options(**opts)
         )
-        if bind is None:
-            bind = cls.__metadata__.bind
-        row = await bind.first(clause)
-        if not row:
-            raise NoSuchRowError()
-        for k, v in row.items():
-            self._instance.__values__[self._instance._column_name_map.invert_get(k)] = v
+        await _query_and_update(
+            bind, self._instance, clause,
+            [getattr(cls, key) for key in values], opts)
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -478,32 +474,7 @@ class CRUDModel(Model):
             .values(**self._get_sa_values(self.__values__))
             .execution_options(**opts)
         )
-        if bind is None:
-            bind = cls.__metadata__.bind
-        if bind._dialect.support_returning:
-            # noinspection PyArgumentList
-            q = q.returning(*cls)
-            row = await bind.first(q)
-        else:
-            # CAVEAT: MySQL doesn't support RETURNING. The workaround here is
-            # to get lastrowid and load it after insertion.
-            # Note that this only works for tables with AUTO_INCREMENT column
-            q = q.execution_options(return_lastrowid=True)
-            # make insertion and select in one connection
-            async with bind.acquire():
-                lastrowid = await bind.all(q)
-                if not lastrowid:
-                    return None
-                pkey = cls.__table__.primary_key
-                if len(pkey.columns) > 1:
-                    return None
-                q = (
-                    cls.__table__.select()
-                    .where(pkey.columns.values()[0] == lastrowid)
-                    .execution_options(**opts))
-                row = await bind.first(q)
-        for k, v in row.items():
-            self.__values__[self._column_name_map.invert_get(k)] = v
+        await _query_and_update(bind, self, q, list(iter(cls)), opts)
         self.__profile__ = None
         return self
 
@@ -811,3 +782,55 @@ class QueryModel(type):
 
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
+
+
+async def _query_and_update(bind, item, query, cols, execution_opts):
+    cls = type(item)
+    if bind is None:
+        bind = cls.__metadata__.bind
+    # noinspection PyProtectedMember
+    if bind._dialect.support_returning:
+        # noinspection PyArgumentList
+        query = query.returning(*cols)
+        row = await bind.first(query)
+    else:
+        # CAVEAT: MySQL doesn't support RETURNING. The workaround here is
+        # to get lastrowid and load it after insertion.
+        # Note that this only works for tables with AUTO_INCREMENT column
+        # For update queries, update using its primary key
+
+        # make insertion and select in one transaction to get the might-be
+        # "dirty" row
+        release_conn = False
+        if not isinstance(bind, GinoConnection):
+            conn = await bind.acquire()
+            release_conn = True
+        else:
+            conn = bind
+        try:
+            lastrowid, affected_rows = await conn.all(query)
+            if not lastrowid and not affected_rows:
+                raise NoSuchRowError()
+            # It's insertion and primary key is AUTO_INCREMENT
+            if lastrowid:
+                pkey = cls.__table__.primary_key
+                query = (
+                    sa.select(cols)
+                    .where(pkey.columns.values()[0] == lastrowid)
+                    .execution_options(**execution_opts))
+            else:
+                try:
+                    query = (
+                        sa.select(cols)
+                        .where(item.lookup())
+                        .execution_options(**execution_opts))
+                except LookupError:  # no primary key
+                    return None
+            row = await conn.first(query)
+        finally:
+            if release_conn:
+                await conn.release()
+    if not row:
+        raise NoSuchRowError()
+    for k, v in row.items():
+        item.__values__[item._column_name_map.invert_get(k)] = v

@@ -23,7 +23,8 @@ def sa_engine():
 @pytest.fixture
 @async_generator
 async def engine(sa_engine):
-    e = await gino.create_engine(MYSQL_URL, echo=ECHO, minsize=10, autocommit=True)
+    e = await gino.create_engine(MYSQL_URL, echo=ECHO, minsize=10,
+                                 autocommit=True)
     await yield_(e)
     await e.close()
     sa_engine.execute("DELETE FROM gino_user_settings")

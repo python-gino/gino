@@ -82,6 +82,9 @@ class AiomysqlExecutionContext(base.ExecutionContextOverride,
     def get_lastrowid(self):
         return self.cursor.last_row_id
 
+    def get_affected_rows(self):
+        return self.cursor.affected_rows
+
 
 class AiomysqlIterator:
     def __init__(self, context, iterator):
@@ -150,6 +153,7 @@ class DBAPICursor(base.DBAPICursor):
         self._cursor_description = None
         self._status = None
         self.last_row_id = None
+        self.affected_rows = 0
 
     async def prepare(self, context, clause=None):
         timeout = context.timeout
@@ -186,6 +190,7 @@ class DBAPICursor(base.DBAPICursor):
         self._cursor_description = result.description
         self._status = result.affected_rows
         self.last_row_id = result.insert_id
+        self.affected_rows = result.affected_rows
         return result.rows
 
     def _escape_args(self, args, conn):
