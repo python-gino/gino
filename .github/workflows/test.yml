@@ -1,0 +1,123 @@
+name: test
+
+on:
+  push:
+    branches:
+      - master
+      - v*.*.x
+    tags:
+    - 'v*.*.*'
+  pull_request:
+    branches:
+      - master
+      - v*.*.x
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8' ]
+        deps-version: [ 'highest' ]
+        postgres-version: [ '12.1' ]
+        mysql-version: [ '8.0' ]
+        include:
+          - python-version: '3.7'
+            deps-version: 'highest'
+            postgres-version: '9.6'
+            mysql-version: '5.7'
+    services:
+      postgres:
+        image: fantix/postgres-ssl:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_USER: gino
+        ports:
+        - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mysql:
+        image: mysql:${{ matrix.mysql-version }}
+        env:
+          MYSQL_USER: gino
+          MYSQL_PASSWORD: gino
+          MYSQL_DATABASE: gino
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        path: gino
+    - name: Checkout SQLAlchemy
+      uses: actions/checkout@v2
+      with:
+        repository: sqlalchemy/sqlalchemy
+        path: sqlalchemy
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: virtualenv cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv2-${{ hashFiles(format('{0}{1}', github.workspace, '/gino/poetry.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv2-
+    - name: Poetry cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.poetry
+        key: ${{ runner.os }}-${{ matrix.python-version }}-dotpoetry
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-dotpoetry-
+    - name: Install Python dependencies
+      working-directory: ./gino
+      run: |
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+        $HOME/.poetry/bin/poetry install -E postgresql -E mysql
+        $HOME/.poetry/bin/poetry run pip list
+    - name: Test with pytest
+      env:
+        POSTGRESQL_USERNAME: gino
+        MYSQL_USERNAME: gino
+        MYSQL_PASSWORD: gino
+      working-directory: ./gino
+      run: |
+        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=5 --cov-report xml
+    - name: Check code format with black
+      working-directory: ./gino
+      run: |
+        $HOME/.poetry/bin/poetry run black --check src
+#    - name: Submit coverage report
+#      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1' && matrix.deps-version == 'highest' && github.ref == 'refs/heads/master'
+#      env:
+#        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
+#      run: |
+#        pip install codacy-coverage
+#        python-codacy-coverage -r coverage.xml
+#  release:
+#    runs-on: ubuntu-latest
+#    needs: test
+#    strategy:
+#      matrix:
+#        python-version: [ '3.8' ]
+#    steps:
+#    - name: Checkout source code
+#      if: startsWith(github.ref, 'refs/tags/')
+#      uses: actions/checkout@v1
+#    - name: Set up Python
+#      if: startsWith(github.ref, 'refs/tags/')
+#      uses: actions/setup-python@v1
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - name: Release to PyPI
+#      if: startsWith(github.ref, 'refs/tags/')
+#      env:
+#        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+#      run: |
+#        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+#        $HOME/.poetry/bin/poetry install
+#        $HOME/.poetry/bin/poetry build
+#        $HOME/.poetry/bin/poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
