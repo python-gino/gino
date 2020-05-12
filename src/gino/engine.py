@@ -3,32 +3,61 @@ from sqlalchemy.engine.util import _distill_params_20
 from sqlalchemy.exc import ObjectNotExecutableError
 from sqlalchemy.future.engine import NO_OPTIONS
 from sqlalchemy.sql import WARN_LINTING
-from sqlalchemy.util import safe_reraise
+from sqlalchemy.util import safe_reraise, immutabledict
+
+from .errors import InterfaceError
 
 
 class AsyncTransaction:
     def __init__(self, conn):
         self._conn = conn
         self._tx = None
+        self._managed = None
 
     async def _begin(self):
         self._tx = await self._conn._begin_impl()
         return self
 
+    async def _commit(self):
+        await self._conn._commit_impl(self._tx)
+
+    async def _rollback(self):
+        await self._conn._rollback_impl(self._tx)
+
+    async def __async_init__(self):
+        if self._managed is not None:
+            raise InterfaceError("Transaction already started")
+        self._managed = False
+        return await self._begin()
+
+    async def commit(self):
+        if self._managed is None:
+            raise InterfaceError("Transaction not started")
+        if self._managed:
+            raise InterfaceError("Transaction is managed")
+        await self._commit()
+
+    async def rollback(self):
+        if self._managed is None:
+            raise InterfaceError("Transaction not started")
+        if self._managed:
+            raise InterfaceError("Transaction is managed")
+        await self._rollback()
+
     def __await__(self):
-        return self._begin().__await__()
+        return self.__async_init__().__await__()
 
     async def __aenter__(self):
+        if self._managed is not None:
+            raise InterfaceError("Transaction already started")
+        self._managed = True
         return await self._begin()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    async def commit(self):
-        await self._conn._commit_impl(self._tx)
-
-    async def rollback(self):
-        await self._conn._rollback_impl(self._tx)
+        if exc_type is None:
+            await self._commit()
+        else:
+            await self._rollback()
 
 
 class AsyncConnection:
@@ -63,10 +92,10 @@ class AsyncConnection:
             self._conn = conn
             self._statement = statement
             self._parameters = parameters
-            self._execution_options = execution_options or NO_OPTIONS
+            self._execution_options = immutabledict(execution_options or {})
             self._result = None
 
-        async def __async_init__(self):
+        async def __async_init__(self, *, stream_results=None):
             multiparams, params, distilled_parameters = _distill_params_20(
                 self._parameters
             )
@@ -75,16 +104,17 @@ class AsyncConnection:
             except AttributeError:
                 raise ObjectNotExecutableError(self._statement)
             else:
-                self._result = await meth(
-                    self._conn, multiparams, params, self._execution_options
-                )
+                opts = self._execution_options
+                if stream_results is not None:
+                    opts = opts.union({"stream_results": stream_results})
+                self._result = await meth(self._conn, multiparams, params, opts)
                 return self._result
 
         def __await__(self):
             return self.__async_init__().__await__()
 
         async def __aenter__(self):
-            return await self.__async_init__()
+            return await self.__async_init__(stream_results=True)
 
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             await self._result.close()
@@ -136,9 +166,6 @@ class AsyncConnection:
     async def _execute_context(
         self, dialect, constructor, statement, parameters, execution_options, *args
     ):
-        if execution_options:
-            dialect.set_exec_execution_options(self, execution_options)
-
         context = constructor(dialect, self, self._raw_conn, execution_options, *args)
         if context.compiled:
             coro = context.pre_exec()
@@ -182,30 +209,51 @@ class AsyncEngine:
     def dialect(self):
         return self._dialect
 
-    async def connect(self):
-        return await self._connection_cls(self)
+    class _ConnectCtx:
+        def __init__(self, engine):
+            self.engine = engine
+            self.conn = None
 
-    class _TransCtx(object):
+        def connect(self):
+            self.conn = self.engine._connection_cls(self.engine)
+            return self.conn
+
+        def __await__(self):
+            return self.connect().__await__()
+
+        async def __aenter__(self):
+            return await self.connect()
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            await self.conn.close()
+
+    def connect(self):
+        return self._ConnectCtx(self)
+
+    class _TransCtx:
         def __init__(self, engine):
             self.engine = engine
             self.conn = None
             self.transaction = None
 
         async def __aenter__(self):
-            conn = self.conn = await self.engine.connect()
+            conn = await self.engine.connect()
+            # noinspection PyBroadException
             try:
-                self.transaction = await conn.begin()
+                self.transaction, self.conn = await conn.begin(), conn
             except:  # noqa
                 with safe_reraise():
                     await conn.close()
             return conn
 
         async def __aexit__(self, type_, value, traceback):
-            if type_ is not None:
-                await self.transaction.rollback()
-            else:
-                await self.transaction.commit()
-            await self.conn.close()
+            try:
+                if type_ is None:
+                    await self.transaction.commit()
+                else:
+                    await self.transaction.rollback()
+            finally:
+                await self.conn.close()
 
     def begin(self):
         return self._TransCtx(self)

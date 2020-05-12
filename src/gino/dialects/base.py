@@ -14,7 +14,6 @@ class AsyncResult(Result):
         self.cursor = context.cursor
         self.connection = context.root_connection
         self._echo = self.connection._echo and context.engine._should_log_debug()
-        self._init_metadata()
         super().__init__(self._init_metadata())
 
     def _init_metadata(self):
@@ -84,5 +83,45 @@ class AsyncResult(Result):
         pass
 
 
+class AsyncCursor:
+    def __init__(self, raw_conn):
+        self.raw_conn = raw_conn
+
+    @property
+    def description(self):
+        raise NotImplementedError
+
+    async def execute(self, statement, parameters):
+        raise NotImplementedError()
+
+    async def fetchall(self):
+        raise NotImplementedError()
+
+
+class AsyncExecutionContextOverride:
+    cursor_cls = None
+    server_side_cursor_cls = None
+
+    def create_cursor(self):
+        if self._use_server_side_cursor() and self.server_side_cursor_cls:
+            self._is_server_side = True
+            cls = self.server_side_cursor_cls
+        else:
+            self._is_server_side = False
+            cls = self.cursor_cls
+        return cls(self._dbapi_connection)
+
+    def _setup_result_proxy(self):
+        result = AsyncResult(self)
+        if self.compiled and not self.isddl and self.compiled.has_out_parameters:
+            self._setup_out_parameters(result)
+        return result
+
+
 class DBAPI:
     paramstyle = "numeric"
+
+
+class AsyncDialectOverride:
+    async def do_execute(self, cursor, statement, parameters, context=None):
+        await cursor.execute(statement, parameters)

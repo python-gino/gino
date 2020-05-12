@@ -85,7 +85,7 @@ jobs:
         MYSQL_PASSWORD: gino
       working-directory: ./gino
       run: |
-        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=85 --cov-report xml
+        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=90 --cov-report xml
     - name: Check code format with black
       working-directory: ./gino
       run: |

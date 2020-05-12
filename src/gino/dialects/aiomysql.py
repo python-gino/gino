@@ -1,38 +1,46 @@
-from sqlalchemy.dialects.mysql.base import MySQLDialect, MySQLExecutionContext
+from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
+from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
-from .base import AsyncResult, DBAPI
+from .base import (
+    AsyncCursor,
+    AsyncDialectOverride,
+    AsyncExecutionContextOverride,
+    DBAPI,
+)
 from ..pool import AsyncPool
 
 
 class AiomysqlDBAPI(DBAPI):
+    paramstyle = "pyformat"
+
     def __init__(self):
         import aiomysql
 
         self.connect = aiomysql.connect
 
 
-class AiomysqlCursor:
-    def __init__(self, raw_conn):
-        self.raw_conn = raw_conn
-        self.stmt = None
-        self.cursor = None
+class AiomysqlCursor(AsyncCursor):
+    cursor = None
 
-    def __getattr__(self, item):
-        return getattr(self.cursor, item)
+    @property
+    def description(self):
+        return self.cursor.description
 
+    async def execute(self, statement, parameters):
+        cursor = self.cursor = await self.raw_conn.cursor()
+        await cursor.execute(statement, parameters)
 
-class MySQLExecutionContext_aiomysql(MySQLExecutionContext):
-    def create_cursor(self):
-        return AiomysqlCursor(self._dbapi_connection)
-
-    def _setup_result_proxy(self):
-        result = AsyncResult(self)
-        if self.compiled and not self.isddl and self.compiled.has_out_parameters:
-            self._setup_out_parameters(result)
-        return result
+    async def fetchall(self):
+        return await self.cursor.fetchall()
 
 
-class AiomysqlDialect(MySQLDialect):
+class MySQLExecutionContext_aiomysql(
+    AsyncExecutionContextOverride, MySQLExecutionContext
+):
+    cursor_cls = AiomysqlCursor
+
+
+class AiomysqlDialect(AsyncDialectOverride, MySQLDialect_pymysql):
     poolclass = AsyncPool
     execution_ctx_cls = MySQLExecutionContext_aiomysql
 
@@ -61,7 +69,3 @@ class AiomysqlDialect(MySQLDialect):
 
     async def disconnect(self, conn):
         conn.close()
-
-    async def do_execute(self, cursor, statement, parameters, context=None):
-        cursor.cursor = await cursor.raw_conn.cursor()
-        await cursor.cursor.execute(statement, *parameters)

@@ -1,6 +1,15 @@
-from sqlalchemy.dialects.postgresql.base import PGDialect, PGExecutionContext
+from sqlalchemy.dialects.postgresql.base import (
+    PGCompiler,
+    PGDialect,
+    PGExecutionContext,
+)
 
-from .base import DBAPI, AsyncResult
+from .base import (
+    AsyncCursor,
+    AsyncDialectOverride,
+    AsyncExecutionContextOverride,
+    DBAPI,
+)
 from ..pool import AsyncPool
 
 
@@ -11,36 +20,49 @@ class AsyncpgDBAPI(DBAPI):
         self.connect = asyncpg.connect
 
 
-class AsyncpgCursor:
-    def __init__(self, raw_conn):
-        self.raw_conn = raw_conn
-        self.description = None
-        self.stmt = None
+class AsyncpgBufferedCursor(AsyncCursor):
+    description = None
+    result = None
+    status_msg = None
 
-    def set_stmt(self, stmt):
-        self.stmt = stmt
+    async def execute(self, statement, parameters):
+        with self.raw_conn._stmt_exclusive_section:
+            result, stmt = await self.raw_conn._Connection__execute(
+                statement, parameters, 0, None, True
+            )
         self.description = [
-            ((a[0], a[1][0]) + (None,) * 5) for a in stmt.get_attributes()
+            ((a[0], a[1][0]) + (None,) * 5) for a in stmt._get_attributes()
         ]
+        self.result, self.status_msg = result[:2]
 
     async def fetchall(self):
-        return await self.stmt.fetch()
+        return self.result
 
 
-class PGExecutionContext_asyncpg(PGExecutionContext):
-    def create_cursor(self):
-        return AsyncpgCursor(self._dbapi_connection)
+class AsyncpgCompiler(PGCompiler):
+    _bindtemplate = None
 
-    def _setup_result_proxy(self):
-        result = AsyncResult(self)
-        if self.compiled and not self.isddl and self.compiled.has_out_parameters:
-            self._setup_out_parameters(result)
-        return result
+    @property
+    def bindtemplate(self):
+        return self._bindtemplate
+
+    @bindtemplate.setter
+    def bindtemplate(self, val):
+        self._bindtemplate = val.replace(":", "$")
+
+    def _apply_numbered_params(self):
+        if hasattr(self, "string"):
+            return super()._apply_numbered_params()
 
 
-class AsyncpgDialect(PGDialect):
+class PGExecutionContext_asyncpg(AsyncExecutionContextOverride, PGExecutionContext):
+    cursor_cls = AsyncpgBufferedCursor
+
+
+class AsyncpgDialect(AsyncDialectOverride, PGDialect):
     poolclass = AsyncPool
     execution_ctx_cls = PGExecutionContext_asyncpg
+    statement_compiler = AsyncpgCompiler
 
     @classmethod
     def dbapi(cls):
@@ -68,6 +90,3 @@ class AsyncpgDialect(PGDialect):
 
     async def disconnect(self, conn):
         await conn.close()
-
-    async def do_execute(self, cursor, statement, parameters, context=None):
-        cursor.set_stmt(await cursor.raw_conn.prepare(statement, *parameters))

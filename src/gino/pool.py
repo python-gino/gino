@@ -17,5 +17,8 @@ class AsyncPoolEvents(Events):
     _target_class_doc = "AsyncPool"
     _dispatch_target = AsyncPool
 
+    def connect(self, dbapi_connection, connection_record):
+        pass
+
     def first_connect(self, dbapi_connection, connection_record):
         pass
