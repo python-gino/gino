@@ -26,6 +26,11 @@ jobs:
             deps-version: 'highest'
             postgres-version: '9.6'
             mysql-version: '5.7'
+          - python-version: '3.8'
+            deps-version: 'highest'
+            postgres-version: '12.1'
+            mysql-version: '8.0'
+            report-coverage: 'true'
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
@@ -90,13 +95,14 @@ jobs:
       working-directory: ./gino
       run: |
         $HOME/.poetry/bin/poetry run black --check src
-#    - name: Submit coverage report
-#      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1' && matrix.deps-version == 'highest' && github.ref == 'refs/heads/master'
-#      env:
-#        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
-#      run: |
-#        pip install codacy-coverage
-#        python-codacy-coverage -r coverage.xml
+    - name: Submit coverage report
+      if: matrix.report-coverage == 'true' && github.ref == 'refs/heads/v2.0.x'
+      env:
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
+      working-directory: ./gino
+      run: |
+        pip install codacy-coverage
+        python-codacy-coverage -r coverage.xml
 #  release:
 #    runs-on: ubuntu-latest
 #    needs: test
