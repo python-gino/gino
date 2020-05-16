@@ -75,7 +75,6 @@ That’s it. We finished setting up Alembic for a project.
 
     All ``alembic`` commands must be run always from the folder that contains the ``alembic.ini`` file.
 
-
 Create first migration revision
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -101,7 +100,6 @@ Add you package to PYTHONPATH, like this:
 
 
 After the successful run of ``alembic revision`` in folder ``alembic/versions`` you will see a file with new migration.
-
 
 Apply migration on DB
 ^^^^^^^^^^^^^^^^^^^^^
