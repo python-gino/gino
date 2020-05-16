@@ -40,6 +40,7 @@ Contributors
 * Roald Storm <roaldstorm@gmail.com>
 * Tiago Requeijo <tiago.requeijo.dev@gmail.com>
 * Olexiy <alosha969@gmail.com>
+* Iuliia Volkova <xnuinside@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,
