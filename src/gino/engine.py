@@ -1,140 +1,82 @@
-from sqlalchemy.cutils import _distill_params
-from sqlalchemy.engine.util import _distill_params_20
+from __future__ import annotations
+
+import typing
+from copy import copy
+from typing import Union, Dict, Sequence, Optional, Any
+
+from sqlalchemy import cutils
+from sqlalchemy.engine import create_engine as sa_create_engine
+from sqlalchemy.engine import util
+from sqlalchemy.engine.interfaces import Dialect
+from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.exc import ObjectNotExecutableError
 from sqlalchemy.future.engine import NO_OPTIONS
-from sqlalchemy.sql import WARN_LINTING
-from sqlalchemy.util import safe_reraise, immutabledict
+from sqlalchemy.sql import WARN_LINTING, ClauseElement
+from sqlalchemy.sql.compiler import Compiled
+from sqlalchemy.sql.ddl import DDLElement
+from sqlalchemy.sql.functions import FunctionElement
+from sqlalchemy.sql.schema import DefaultGenerator
+from sqlalchemy.util import immutabledict
 
-from .errors import InterfaceError
+from .transaction import AsyncTransaction, TransactionContext
+
+if typing.TYPE_CHECKING:
+    from .dialects.base import AsyncDialect
+    from .pool import AsyncPool
+    from .result import AsyncResult
+
+    try:
+
+        class Executable(typing.Protocol):
+            def _execute_on_connection(
+                self, conn, multiparams, params, execution_options
+            ):
+                ...
+
+    except AttributeError:
+        Executable = Union[
+            ClauseElement, FunctionElement, DDLElement, DefaultGenerator, Compiled
+        ]
 
 
-class AsyncTransaction:
-    def __init__(self, conn):
-        self._conn = conn
-        self._tx = None
-        self._managed = None
+class AsyncConnection:
+    __slots__ = ("_execution_options", "_pool", "_dialect", "_raw_conn")
+    _execution_options: immutabledict
+    _is_future = True
+    _echo = False
 
-    async def _begin(self):
-        self._tx = await self._conn._begin_impl()
+    def __init__(self, engine: AsyncEngine, execution_options):
+        self._execution_options = execution_options
+        self._pool = engine.pool
+        self._dialect = engine.dialect
+        self._raw_conn = None
+
+    @property
+    def dialect(self):
+        return self._dialect
+
+    @property
+    def raw_connection(self):
+        return self._raw_conn
+
+    async def __async_init__(self) -> AsyncConnection:
+        self._raw_conn = await self._pool.acquire()
         return self
-
-    async def _commit(self):
-        await self._conn._commit_impl(self._tx)
-
-    async def _rollback(self):
-        await self._conn._rollback_impl(self._tx)
-
-    async def __async_init__(self):
-        if self._managed is not None:
-            raise InterfaceError("Transaction already started")
-        self._managed = False
-        return await self._begin()
-
-    async def commit(self):
-        if self._managed is None:
-            raise InterfaceError("Transaction not started")
-        if self._managed:
-            raise InterfaceError("Transaction is managed")
-        await self._commit()
-
-    async def rollback(self):
-        if self._managed is None:
-            raise InterfaceError("Transaction not started")
-        if self._managed:
-            raise InterfaceError("Transaction is managed")
-        await self._rollback()
 
     def __await__(self):
         return self.__async_init__().__await__()
 
     async def __aenter__(self):
-        if self._managed is not None:
-            raise InterfaceError("Transaction already started")
-        self._managed = True
-        return await self._begin()
+        return await self.__async_init__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            await self._commit()
-        else:
-            await self._rollback()
+        await self.close()
 
-
-class AsyncConnection:
-    _is_future = True
-    _execution_options = None
-    _echo = False
-
-    def __init__(self, engine):
-        self._engine = engine
-        self._raw_conn = None
-
-    async def __async_init__(self):
-        self._raw_conn = await self._engine.raw_connection()
-        return self
-
-    def __await__(self):
-        return self.__async_init__().__await__()
-
-    @property
-    def dialect(self):
-        return self._engine.dialect
-
-    def begin(self):
-        return AsyncTransaction(self)
-
-    async def close(self):
-        conn, self._raw_conn = self._raw_conn, None
-        await self._engine.release_raw_connection(conn)
-
-    class _ExecuteContext:
-        def __init__(self, conn, statement, parameters, execution_options):
-            self._conn = conn
-            self._statement = statement
-            self._parameters = parameters
-            self._execution_options = immutabledict(execution_options or {})
-            self._result = None
-
-        async def __async_init__(self, *, stream_results=None):
-            multiparams, params, distilled_parameters = _distill_params_20(
-                self._parameters
-            )
-            try:
-                meth = self._statement._execute_on_connection
-            except AttributeError:
-                raise ObjectNotExecutableError(self._statement)
-            else:
-                opts = self._execution_options
-                if stream_results is not None:
-                    opts = opts.union({"stream_results": stream_results})
-                self._result = await meth(self._conn, multiparams, params, opts)
-                return self._result
-
-        def __await__(self):
-            return self.__async_init__().__await__()
-
-        async def __aenter__(self):
-            return await self.__async_init__(stream_results=True)
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            await self._result.close()
-
-    def execute(self, statement, parameters=None, execution_options=None):
-        return self._ExecuteContext(self, statement, parameters, execution_options)
-
-    async def _begin_impl(self):
-        return await self._engine.dialect.do_begin(self._raw_conn)
-
-    async def _commit_impl(self, tx):
-        await self._engine.dialect.do_commit(tx)
-
-    async def _rollback_impl(self, tx):
-        await self._engine.dialect.do_rollback(tx)
-
-    async def _execute_clauseelement(
+    def _execute_clauseelement(
         self, elem, multiparams=None, params=None, execution_options=NO_OPTIONS
     ):
-        distilled_params = _distill_params(multiparams, params)
+        # noinspection PyProtectedMember
+        distilled_params = cutils._distill_params(multiparams, params)
         if distilled_params:
             # ensure we don't retain a link to the view object for keys()
             # which links to the values, which we don't want to cache
@@ -142,8 +84,7 @@ class AsyncConnection:
         else:
             keys = []
 
-        dialect = self._engine.dialect
-        extracted_params = None
+        dialect = self._dialect
         compiled_sql = elem.compile(
             dialect=dialect,
             column_keys=keys,
@@ -151,53 +92,57 @@ class AsyncConnection:
             schema_translate_map=None,
             linting=dialect.compiler_linting | WARN_LINTING,
         )
-        return await self._execute_context(
+        # noinspection PyProtectedMember
+        return dialect.execution_ctx_cls._init_compiled(
             dialect,
-            dialect.execution_ctx_cls._init_compiled,
-            compiled_sql,
-            distilled_params,
+            self,
+            self._raw_conn,
             execution_options,
             compiled_sql,
             distilled_params,
             elem,
-            extracted_params,
-        )
+            None,
+        ).setup_result_proxy()
 
-    async def _execute_context(
-        self, dialect, constructor, statement, parameters, execution_options, *args
-    ):
-        context = constructor(dialect, self, self._raw_conn, execution_options, *args)
-        if context.compiled:
-            coro = context.pre_exec()
-            if hasattr(coro, "__await__"):
-                await coro
+    def execution_options(self, **kwargs):
+        self._execution_options = self._execution_options.union(kwargs)
+        return self
 
-        cursor, statement, parameters = (
-            context.cursor,
-            context.statement,
-            context.parameters,
-        )
-
-        if not context.executemany:
-            parameters = parameters[0]
-
-        if context.executemany:
-            dialect.do_executemany(cursor, statement, parameters, context)
-        elif not parameters and context.no_parameters:
-            dialect.do_execute_no_params(cursor, statement, context)
+    def execute(
+        self,
+        statement: Executable,
+        parameters: Optional[Union[Dict[str, Any], Sequence[Any]]] = None,
+        execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
+    ) -> AsyncResult:
+        # noinspection PyProtectedMember
+        multiparams, params, distilled_parameters = util._distill_params_20(parameters)
+        try:
+            # noinspection PyProtectedMember
+            meth = statement._execute_on_connection
+        except AttributeError:
+            raise ObjectNotExecutableError(statement)
         else:
-            await dialect.do_execute(cursor, statement, parameters, context)
+            return meth(self, multiparams, params, execution_options)
 
-        if context.compiled:
-            coro = context.post_exec()
-            if hasattr(coro, "__await__"):
-                await coro
+    async def scalar(
+        self,
+        statement: Executable,
+        parameters: Optional[Union[Dict[str, Any], Sequence[Any]]] = None,
+        execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
+    ) -> Any:
+        return await self.execute(statement, parameters, execution_options).scalar()
 
-        return context._setup_result_proxy()
+    def begin(self) -> AsyncTransaction:
+        return AsyncTransaction(self)
+
+    async def close(self):
+        conn, self._raw_conn = self._raw_conn, None
+        await self._pool.release(conn)
 
 
 class AsyncEngine:
-    _connection_cls = AsyncConnection
+    connection_cls = AsyncConnection
+    _execution_options = immutabledict()
 
     def __init__(self, pool, dialect, url, echo=False):
         self._pool = pool
@@ -206,60 +151,43 @@ class AsyncEngine:
         self._echo = echo
 
     @property
-    def dialect(self):
+    def pool(self) -> AsyncPool:
+        return self._pool
+
+    @property
+    def dialect(self) -> Union[AsyncDialect, Dialect]:
         return self._dialect
 
-    class _ConnectCtx:
-        def __init__(self, engine):
-            self.engine = engine
-            self.conn = None
+    @property
+    def url(self) -> URL:
+        return self._url
 
-        def connect(self):
-            self.conn = self.engine._connection_cls(self.engine)
-            return self.conn
+    async def __async_init__(self):
+        return self
 
-        def __await__(self):
-            return self.connect().__await__()
+    def __await__(self):
+        return self.__async_init__().__await__()
 
-        async def __aenter__(self):
-            return await self.connect()
+    def connect(self) -> connection_cls:
+        return self.connection_cls(self, self._execution_options)
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            await self.conn.close()
+    def begin(self) -> TransactionContext:
+        return TransactionContext(self)
 
-    def connect(self):
-        return self._ConnectCtx(self)
+    transaction = begin
 
-    class _TransCtx:
-        def __init__(self, engine):
-            self.engine = engine
-            self.conn = None
-            self.transaction = None
 
-        async def __aenter__(self):
-            conn = await self.engine.connect()
-            # noinspection PyBroadException
-            try:
-                self.transaction, self.conn = await conn.begin(), conn
-            except:  # noqa
-                with safe_reraise():
-                    await conn.close()
-            return conn
+async def create_engine(url: Union[str, URL], **kwargs) -> AsyncEngine:
+    url = make_url(url)
 
-        async def __aexit__(self, type_, value, traceback):
-            try:
-                if type_ is None:
-                    await self.transaction.commit()
-                else:
-                    await self.transaction.rollback()
-            finally:
-                await self.conn.close()
+    if url.drivername in {"postgresql", "postgres"}:
+        url = copy(url)
+        url.drivername = "postgresql+asyncpg"
 
-    def begin(self):
-        return self._TransCtx(self)
+    if url.drivername in {"mysql"}:
+        url = copy(url)
+        url.drivername = "mysql+aiomysql"
 
-    async def raw_connection(self):
-        return await self._pool.acquire()
+    kwargs["_future_engine_class"] = AsyncEngine
 
-    async def release_raw_connection(self, conn):
-        return await self._pool.release(conn)
+    return await sa_create_engine(url, **kwargs)

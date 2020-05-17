@@ -9,8 +9,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_connect_ctx(engine, db_val, get_db_val_sql):
     async with engine.connect() as conn:
-        async with conn.execute(get_db_val_sql) as result:
-            rows = await result.all()
+        rows = await conn.execute(get_db_val_sql).all()
 
     assert rows[0][0] == db_val
 
@@ -18,8 +17,7 @@ async def test_connect_ctx(engine, db_val, get_db_val_sql):
 async def test_connect_await(engine, db_val, get_db_val_sql):
     conn = await engine.connect()
     try:
-        async with conn.execute(get_db_val_sql) as result:
-            rows = await result.all()
+        rows = await conn.execute(get_db_val_sql).all()
 
         assert rows[0][0] == db_val
     finally:
@@ -36,8 +34,7 @@ async def test_engine_begin(engine, db_val, get_db_val_sql, set_db_val_sql):
         await conn.execute(set_db_val_sql.bindparams(value=db_val - 1))
 
     async with engine.begin() as conn:
-        async with conn.execute(get_db_val_sql) as result:
-            rows = await result.all()
+        rows = await conn.execute(get_db_val_sql).all()
 
     assert rows[0][0] == db_val - 1
 
@@ -53,8 +50,7 @@ async def test_conn_begin_ctx(engine, db_val, get_db_val_sql, set_db_val_sql):
             await conn.execute(set_db_val_sql.bindparams(value=db_val - 1))
 
         async with conn.begin() as tx:
-            async with conn.execute(get_db_val_sql) as result:
-                rows = await result.all()
+            rows = await conn.execute(get_db_val_sql).all()
 
             with pytest.raises(InterfaceError, match="already started"):
                 await tx
@@ -83,8 +79,7 @@ async def test_conn_begin_await(engine, method, db_val, get_db_val_sql, set_db_v
             async with tx:
                 pass
 
-        async with conn.execute(get_db_val_sql) as result:
-            rows = await result.all()
+        rows = await conn.execute(get_db_val_sql).all()
 
         await getattr(tx, method)()
 
@@ -107,8 +102,7 @@ async def test_conn_begin_not_started(engine, method, db_val, get_db_val_sql):
             async with tx:
                 pass
 
-        async with conn.execute(get_db_val_sql) as result:
-            rows = await result.all()
+        rows = await conn.execute(get_db_val_sql).all()
 
         await getattr(tx, method)()
 
@@ -125,7 +119,9 @@ async def test_begin_failed(engine, mocker):
     mocker.patch("gino.engine.AsyncConnection.begin").side_effect = Exception("BEGIN")
     mocked_close = mocker.MagicMock(wraps=AsyncConnection.close)
     mocker.patch("gino.engine.AsyncConnection.close", lambda conn: mocked_close(conn))
+
     with pytest.raises(Exception, match="BEGIN"):
         async with engine.begin():
             pass
+
     mocked_close.assert_called_once()

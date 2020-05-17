@@ -1,3 +1,7 @@
+from typing import Optional
+
+from asyncpg import Connection, connresource
+from asyncpg.cursor import Cursor
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
@@ -6,8 +10,8 @@ from sqlalchemy.dialects.postgresql.base import (
 
 from .base import (
     AsyncCursor,
-    AsyncDialectOverride,
-    AsyncExecutionContextOverride,
+    AsyncDialect,
+    AsyncExecutionContext,
     DBAPI,
 )
 from ..pool import AsyncPool
@@ -20,23 +24,101 @@ class AsyncpgDBAPI(DBAPI):
         self.connect = asyncpg.connect
 
 
-class AsyncpgBufferedCursor(AsyncCursor):
-    description = None
-    result = None
-    status_msg = None
+class AsyncpgCursor(AsyncCursor):
+    raw_conn: Connection
 
-    async def execute(self, statement, parameters):
+    def __init__(self, raw_conn):
+        super().__init__(raw_conn)
+        self.status_msg = None
+        self.execute_completed = False
+
+    def set_attributes(self, attributes):
+        self.description = [((a[0], a[1][0]) + (None,) * 5) for a in attributes]
+
+    async def _execute_many(self, statement, parameters):
+        await self.raw_conn.executemany(statement, parameters)
+
+    async def _execute(self, statement, parameters, *, limit: Optional[int] = None):
         with self.raw_conn._stmt_exclusive_section:
             result, stmt = await self.raw_conn._Connection__execute(
-                statement, parameters, 0, None, True
+                statement, parameters, 0 if limit is None else limit, None, True
             )
-        self.description = [
-            ((a[0], a[1][0]) + (None,) * 5) for a in stmt._get_attributes()
-        ]
-        self.result, self.status_msg = result[:2]
+        self.set_attributes(stmt._get_attributes())
+        result, self.status_msg, self.execute_completed = result
+        return result
 
-    async def fetchall(self):
-        return self.result
+
+class AsyncpgBufferedCursor(AsyncpgCursor):
+    def __init__(self, raw_conn):
+        super().__init__(raw_conn)
+        self.result = []
+        self.size = 0
+        self.offset = 0
+
+    async def _iterate(self, statement: str, parameters):
+        self.result = await self._execute(statement, parameters)
+        self.size = len(self.result)
+        return True
+
+    async def _fetchone(self):
+        if self.offset < self.size:
+            rv = self.result[self.offset]
+            self.offset += 1
+            return rv
+        else:
+            return None
+
+    async def _fetchmany(self, size):
+        rv = self.result[self.offset : self.offset + size]
+        self.offset += size
+        return rv
+
+    async def _fetchall(self):
+        rv = self.result[self.offset :]
+        self.offset = self.size
+        return rv
+
+    async def _close(self, cursor):
+        self.result.clear()
+
+
+@connresource.guarded
+async def _cursor_fetchall(self, *, timeout=None):
+    self._check_ready()
+    if self._exhausted:
+        return []
+    recs = await self._exec(0, timeout)
+    self._exhausted = True
+    return recs
+
+
+class AsyncpgSSCursor(AsyncpgCursor):
+    raw_cursor: Optional[Cursor]
+
+    def __init__(self, raw_conn):
+        super().__init__(raw_conn)
+        self.cursor_used = False
+
+    async def _iterate(self, statement: str, parameters):
+        stmt = await self.raw_conn.prepare(statement)
+        self.set_attributes(stmt.get_attributes())
+        return await stmt.cursor(*parameters)
+
+    async def _fetchone(self):
+        self.cursor_used = True
+        return await self.raw_cursor.fetchrow()
+
+    async def _fetchmany(self, size):
+        self.cursor_used = True
+        return await self.raw_cursor.fetch(size)
+
+    async def _fetchall(self):
+        self.cursor_used = True
+        return await _cursor_fetchall(self.raw_cursor)
+
+    async def _close(self, cursor):
+        if not self.cursor_used:
+            await cursor.fetchrow()
 
 
 class AsyncpgCompiler(PGCompiler):
@@ -55,14 +137,20 @@ class AsyncpgCompiler(PGCompiler):
             return super()._apply_numbered_params()
 
 
-class PGExecutionContext_asyncpg(AsyncExecutionContextOverride, PGExecutionContext):
+class PGExecutionContext_asyncpg(AsyncExecutionContext, PGExecutionContext):
     cursor_cls = AsyncpgBufferedCursor
+    server_side_cursor_cls = AsyncpgSSCursor
 
 
-class AsyncpgDialect(AsyncDialectOverride, PGDialect):
+class AsyncpgDialect(AsyncDialect, PGDialect):
     poolclass = AsyncPool
     execution_ctx_cls = PGExecutionContext_asyncpg
     statement_compiler = AsyncpgCompiler
+    supports_server_side_cursors = True
+
+    def __init__(self, server_side_cursors=False, **kwargs):
+        super().__init__(**kwargs)
+        self.server_side_cursors = server_side_cursors
 
     @classmethod
     def dbapi(cls):

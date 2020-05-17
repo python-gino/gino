@@ -1,105 +1,136 @@
-from sqlalchemy.engine import Result
-from sqlalchemy.engine.cursor import CursorResultMetaData, _no_result_metadata
-from sqlalchemy.util import immutabledict, HasMemoized
+from __future__ import annotations
+
+from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any
+
+from sqlalchemy.engine.default import DefaultExecutionContext
+from sqlalchemy.util import immutabledict
+
+from ..errors import InterfaceError
+from ..result import AsyncResult
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.compiler import Compiled
 
 NO_OPTIONS = immutabledict()
 
 
-class AsyncResult(Result):
-    _cursor_metadata = CursorResultMetaData
-
-    def __init__(self, context):
-        self.context = context
-        self.dialect = context.dialect
-        self.cursor = context.cursor
-        self.connection = context.root_connection
-        self._echo = self.connection._echo and context.engine._should_log_debug()
-        super().__init__(self._init_metadata())
-
-    def _init_metadata(self):
-        self.cursor_strategy = strat = self.context.get_result_cursor_strategy(self)
-
-        if strat.cursor_description is not None:
-            if self.context.compiled:
-                if self.context.compiled._cached_metadata:
-                    cached_md = self.context.compiled._cached_metadata
-                    metadata = cached_md._adapt_to_context(self.context)
-
-                else:
-                    metadata = (
-                        self.context.compiled._cached_metadata
-                    ) = self._cursor_metadata(self, strat.cursor_description)
-            else:
-                metadata = self._cursor_metadata(self, strat.cursor_description)
-            if self._echo:
-                self.context.engine.logger.debug(
-                    "Col %r", tuple(x[0] for x in strat.cursor_description)
-                )
-        else:
-            metadata = _no_result_metadata
-        return metadata
-
-    @HasMemoized.memoized_attribute
-    def _allrow_getter(self):
-
-        make_row = self._row_getter()
-
-        post_creational_filter = self._post_creational_filter
-
-        if self._unique_filter_state:
-            uniques, strategy = self._unique_strategy
-
-            async def allrows(self):
-                rows = await self._fetchall_impl()
-                rows = [
-                    made_row
-                    for made_row, sig_row in [
-                        (made_row, strategy(made_row) if strategy else made_row,)
-                        for made_row in [make_row(row) for row in rows]
-                    ]
-                    if sig_row not in uniques and not uniques.add(sig_row)
-                ]
-
-                if post_creational_filter:
-                    rows = [post_creational_filter(row) for row in rows]
-                return rows
-
-        else:
-
-            async def allrows(self):
-                rows = await self._fetchall_impl()
-                if post_creational_filter:
-                    rows = [post_creational_filter(make_row(row)) for row in rows]
-                else:
-                    rows = [make_row(row) for row in rows]
-                return rows
-
-        return allrows
-
-    async def _fetchall_impl(self):
-        return await self.cursor.fetchall()
-
-    async def close(self):
-        pass
+class DBAPI:
+    paramstyle = "numeric"
+    connect = None
 
 
 class AsyncCursor:
     def __init__(self, raw_conn):
         self.raw_conn = raw_conn
+        self.raw_cursor = None
+        self.description = None
 
-    @property
-    def description(self):
+    def _check_cursor_on_fetch(self):
+        if self.raw_cursor is None:
+            raise InterfaceError(
+                "Cursor is closed. To use `fetch*()` multiple times, wrap it with "
+                "`async with conn.execute(...):` block."
+            )
+
+    async def _execute_many(self, statement, parameters):
         raise NotImplementedError
 
-    async def execute(self, statement, parameters):
+    async def _execute(self, statement, parameters, *, limit: Optional[int] = None):
+        raise NotImplementedError
+
+    async def _iterate(self, statement: str, parameters):
         raise NotImplementedError()
+
+    async def _fetchone(self):
+        raise NotImplementedError()
+
+    async def _fetchmany(self, size):
+        raise NotImplementedError()
+
+    async def _fetchall(self):
+        raise NotImplementedError()
+
+    async def _close(self, cursor):
+        raise NotImplementedError()
+
+    async def execute(
+        self, context: AsyncExecutionContext, *, fetch: Optional[int] = None
+    ):
+        """
+
+        :param context:
+        :param fetch:
+            * None: prepare only
+            * -1: fetch all
+            * 0: exhaust all
+            * int: fetch exactly this number of results
+        :return:
+        """
+        rv = None
+
+        if context.compiled:
+            coro = context.pre_exec()
+            if hasattr(coro, "__await__"):
+                await coro
+
+        parameters = context.parameters
+        if context.executemany:
+            if fetch:
+                raise ValueError("executemany returns no result")
+            await self._execute_many(context.statement, parameters)
+        else:
+            parameters = parameters[0]
+            if fetch == 0:
+                self.raw_cursor = await self._iterate(context.statement, parameters)
+            elif fetch == -1:
+                rv = await self._execute(context.statement, parameters)
+            else:
+                rv = await self._execute(context.statement, parameters, limit=fetch)
+
+        try:
+            if context.compiled:
+                coro = context.post_exec()
+                if hasattr(coro, "__await__"):
+                    await coro
+        except Exception:
+            await self.close()
+            raise
+
+        return rv
+
+    async def fetchone(self):
+        self._check_cursor_on_fetch()
+        return await self._fetchone()
+
+    async def fetchmany(self, num):
+        self._check_cursor_on_fetch()
+        if num is None:
+            return await self._fetchall()
+        return await self._fetchmany(num)
 
     async def fetchall(self):
-        raise NotImplementedError()
+        self._check_cursor_on_fetch()
+        return await self._fetchall()
+
+    async def close(self):
+        cursor, self.raw_cursor = self.raw_cursor, None
+        if cursor is not None:
+            await self._close(cursor)
 
 
-class AsyncExecutionContextOverride:
-    cursor_cls = None
+# noinspection PyAbstractClass
+class AsyncExecutionContext(DefaultExecutionContext):
+    if TYPE_CHECKING:
+        dialect: AsyncDialect
+        cursor: AsyncCursor
+        compiled: Optional[Compiled]
+        statement: str
+        parameters: Union[Sequence, Dict]
+        executemany: bool
+        no_parameters: bool
+        _dbapi_connection: Any
+
+    cursor_cls = NotImplemented
     server_side_cursor_cls = None
 
     def create_cursor(self):
@@ -111,17 +142,10 @@ class AsyncExecutionContextOverride:
             cls = self.cursor_cls
         return cls(self._dbapi_connection)
 
-    def _setup_result_proxy(self):
-        result = AsyncResult(self)
-        if self.compiled and not self.isddl and self.compiled.has_out_parameters:
-            self._setup_out_parameters(result)
-        return result
+    def setup_result_proxy(self) -> AsyncResult:
+        return AsyncResult(self)
 
 
-class DBAPI:
-    paramstyle = "numeric"
-
-
-class AsyncDialectOverride:
-    async def do_execute(self, cursor, statement, parameters, context=None):
-        await cursor.execute(statement, parameters)
+class AsyncDialect:
+    execution_ctx_cls = AsyncExecutionContext
+    compiler_linting: int

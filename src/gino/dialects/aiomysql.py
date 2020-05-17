@@ -1,10 +1,13 @@
+from typing import Optional
+
+from aiomysql import Connection, Cursor, SSCursor
 from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
 from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
 from .base import (
     AsyncCursor,
-    AsyncDialectOverride,
-    AsyncExecutionContextOverride,
+    AsyncDialect,
+    AsyncExecutionContext,
     DBAPI,
 )
 from ..pool import AsyncPool
@@ -20,27 +23,55 @@ class AiomysqlDBAPI(DBAPI):
 
 
 class AiomysqlCursor(AsyncCursor):
-    cursor = None
+    raw_conn: Connection
+    raw_cursor_cls = Cursor
+    raw_cursor: raw_cursor_cls
 
-    @property
-    def description(self):
-        return self.cursor.description
+    async def _make_cursor(self):
+        return await self.raw_conn.cursor(self.raw_cursor_cls)
 
-    async def execute(self, statement, parameters):
-        cursor = self.cursor = await self.raw_conn.cursor()
+    async def _execute_many(self, statement, parameters):
+        cursor = await self._make_cursor()
+        await cursor.executemany(statement, parameters)
+
+    async def _execute(self, statement, parameters, *, limit: Optional[int] = None):
+        self.raw_cursor = await self._iterate(statement, parameters)
+        if limit is None:
+            return await self.raw_cursor.fetchall()
+        elif limit == 1:
+            return [await self.raw_cursor.fetchone()]
+        else:
+            return await self.raw_cursor.fetchmany(limit)
+
+    async def _iterate(self, statement: str, parameters):
+        cursor = await self._make_cursor()
         await cursor.execute(statement, parameters)
+        self.description = cursor.description
+        return cursor
 
-    async def fetchall(self):
-        return await self.cursor.fetchall()
+    async def _fetchone(self):
+        return await self.raw_cursor.fetchone()
+
+    async def _fetchmany(self, size):
+        return await self.raw_cursor.fetchmany(size)
+
+    async def _fetchall(self):
+        return await self.raw_cursor.fetchall()
+
+    async def _close(self, cursor):
+        await cursor.close()
 
 
-class MySQLExecutionContext_aiomysql(
-    AsyncExecutionContextOverride, MySQLExecutionContext
-):
+class AiomysqlSSCursor(AiomysqlCursor):
+    raw_cursor_cls = SSCursor
+
+
+class MySQLExecutionContext_aiomysql(AsyncExecutionContext, MySQLExecutionContext):
     cursor_cls = AiomysqlCursor
+    server_side_cursor_cls = AiomysqlSSCursor
 
 
-class AiomysqlDialect(AsyncDialectOverride, MySQLDialect_pymysql):
+class AiomysqlDialect(AsyncDialect, MySQLDialect_pymysql):
     poolclass = AsyncPool
     execution_ctx_cls = MySQLExecutionContext_aiomysql
 
