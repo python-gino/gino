@@ -75,7 +75,7 @@ class TransactionContext:
         # noinspection PyBroadException
         try:
             self.transaction, self.conn = await conn.begin(), conn
-        except:  # noqa
+        except Exception:
             with safe_reraise():
                 await conn.close()
         return conn

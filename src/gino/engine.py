@@ -115,7 +115,7 @@ class AsyncConnection:
         execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
     ) -> AsyncResult:
         # noinspection PyProtectedMember
-        multiparams, params, distilled_parameters = util._distill_params_20(parameters)
+        multiparams, params = util._distill_params_20(parameters)[:2]
         try:
             # noinspection PyProtectedMember
             meth = statement._execute_on_connection
