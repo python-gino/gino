@@ -79,7 +79,7 @@ class AsyncResult(Result):
             try:
                 await self._cursor.close()
             except BaseException as e:
-                self._connection._handle_dbapi_exception(
+                await self._connection._handle_dbapi_exception(
                     e, None, None, self._cursor, self._context
                 )
 
@@ -250,7 +250,7 @@ class AsyncResult(Result):
         try:
             return await self._cursor.execute(context, fetch=fetch)
         except BaseException as e:
-            self._connection._handle_dbapi_exception(
+            await self._connection._handle_dbapi_exception(
                 e, None, None, self._cursor, self._context
             )
 

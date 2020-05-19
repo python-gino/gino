@@ -1,8 +1,12 @@
 import pytest
+from aiomysql import OperationalError
+from asyncpg import ConnectionDoesNotExistError
+from sqlalchemy import text
+from sqlalchemy.engine.url import URL
+from sqlalchemy.exc import ObjectNotExecutableError, DBAPIError, InvalidRequestError
 
 from gino.engine import AsyncConnection
 from gino.errors import InterfaceError
-from sqlalchemy.exc import ObjectNotExecutableError
 
 pytestmark = pytest.mark.asyncio
 
@@ -125,3 +129,37 @@ async def test_begin_failed(engine, mocker):
             pass
 
     mocked_close.assert_called_once()
+
+
+async def test_dbapi_error(url: URL, conn: AsyncConnection):
+    with pytest.raises(DBAPIError):
+        await conn.execute(text("SELECT * FROM non_exist;"))
+
+    await conn.execute(text("SELECT 123"))
+    with pytest.raises(DBAPIError):
+        if url.drivername == "postgresql":
+            await conn.execute(
+                text(
+                    "SELECT pg_terminate_backend(pg_stat_activity.pid) "
+                    "FROM pg_stat_activity WHERE  pid = pg_backend_pid()"
+                )
+            )
+        else:
+            await conn.execute(text("KILL connection_id()"))
+    with pytest.raises(DBAPIError):
+        await conn.execute(text("SELECT 123"))
+
+
+async def test_connection_closed(url: URL, conn: AsyncConnection, mocker):
+    if url.drivername == "postgresql":
+        mocker.patch(
+            "gino.cursor.AsyncCursor.execute"
+        ).side_effect = ConnectionDoesNotExistError()
+    else:
+        mocker.patch("gino.cursor.AsyncCursor.execute").side_effect = OperationalError(
+            2014, "Command Out of Sync"
+        )
+    with pytest.raises(DBAPIError):
+        await conn.execute(text("SELECT 123"))
+    with pytest.raises(InvalidRequestError):
+        await conn.execute(text("SELECT 123"))

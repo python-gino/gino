@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing
 from copy import copy
 from typing import Union, Dict, Sequence, Optional, Any, TYPE_CHECKING
@@ -9,14 +10,14 @@ from sqlalchemy.engine import create_engine as sa_create_engine
 from sqlalchemy.engine import util
 from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.engine.url import make_url, URL
-from sqlalchemy.exc import ObjectNotExecutableError
+from sqlalchemy.exc import ObjectNotExecutableError, DBAPIError, InvalidRequestError
 from sqlalchemy.future.engine import NO_OPTIONS
 from sqlalchemy.sql import WARN_LINTING, ClauseElement
 from sqlalchemy.sql.compiler import Compiled
 from sqlalchemy.sql.ddl import DDLElement
 from sqlalchemy.sql.functions import FunctionElement
 from sqlalchemy.sql.schema import DefaultGenerator
-from sqlalchemy.util import immutabledict
+from sqlalchemy.util import immutabledict, raise_
 
 from .transaction import AsyncTransaction, TransactionContext
 
@@ -40,16 +41,27 @@ if TYPE_CHECKING:
 
 
 class AsyncConnection:
-    __slots__ = ("_execution_options", "_pool", "_dialect", "_raw_conn")
+    __slots__ = (
+        "_engine",
+        "_execution_options",
+        "_pool",
+        "_dialect",
+        "_raw_conn",
+        "_reentrant_error",
+        "_is_disconnect",
+    )
     _execution_options: immutabledict
     _is_future = True
     _echo = False
 
     def __init__(self, engine: AsyncEngine, execution_options):
+        self._engine = engine
         self._execution_options = execution_options
         self._pool = engine.pool
         self._dialect = engine.dialect
         self._raw_conn = None
+        self._reentrant_error = False
+        self._is_disconnect = False
 
     @property
     def dialect(self):
@@ -72,8 +84,67 @@ class AsyncConnection:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
-    def _handle_dbapi_exception(self, e, statement, parameters, cursor, context):
-        raise e
+    async def _handle_dbapi_exception(self, e, statement, parameters, cursor, context):
+        exc_info = sys.exc_info()
+
+        is_exit_exception = not isinstance(e, Exception)
+
+        if not self._is_disconnect:
+            self._is_disconnect = (
+                isinstance(e, self._dialect.dbapi.Error)
+                and not self.closed
+                and self._dialect.is_disconnect(e, self._raw_conn, cursor)
+            ) or (is_exit_exception and not self.closed)
+
+        if self._reentrant_error:
+            raise_(
+                DBAPIError.instance(
+                    statement,
+                    parameters,
+                    e,
+                    self._dialect.dbapi.Error,
+                    hide_parameters=self._engine.hide_parameters,
+                    dialect=self._dialect,
+                    ismulti=context.executemany if context is not None else None,
+                ),
+                with_traceback=exc_info[2],
+                from_=e,
+            )
+        self._reentrant_error = True
+        try:
+            # non-DBAPI error - if we already got a context,
+            # or there's no string statement, don't wrap it
+            should_wrap = isinstance(e, self._dialect.dbapi.Error) or (
+                statement is not None and context is None and not is_exit_exception
+            )
+
+            if should_wrap:
+                sqlalchemy_exception = DBAPIError.instance(
+                    statement,
+                    parameters,
+                    e,
+                    self._dialect.dbapi.Error,
+                    hide_parameters=self._engine.hide_parameters,
+                    connection_invalidated=self._is_disconnect,
+                    dialect=self._dialect,
+                    ismulti=context.executemany if context is not None else None,
+                )
+            else:
+                sqlalchemy_exception = None
+
+            if should_wrap and context:
+                coro = context.handle_dbapi_exception(e)
+                if hasattr(coro, "__await__"):
+                    await coro
+
+            if should_wrap:
+                raise_(sqlalchemy_exception, with_traceback=exc_info[2], from_=e)
+            else:
+                raise_(exc_info[1], with_traceback=exc_info[2])
+
+        finally:
+            if self._is_disconnect:
+                await self.close()
 
     def _execute_clauseelement(
         self, elem, multiparams=None, params=None, execution_options=NO_OPTIONS
@@ -117,6 +188,8 @@ class AsyncConnection:
         parameters: Optional[Union[Dict[str, Any], Sequence[Any]]] = None,
         execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
     ) -> AsyncResult:
+        if self._raw_conn is None:
+            raise InvalidRequestError("This Connection is closed")
         # noinspection PyProtectedMember
         multiparams, params = util._distill_params_20(parameters)[:2]
         try:
@@ -142,16 +215,23 @@ class AsyncConnection:
         conn, self._raw_conn = self._raw_conn, None
         await self._pool.release(conn)
 
+    @property
+    def closed(self):
+        return self._raw_conn is None
+
 
 class AsyncEngine:
     connection_cls = AsyncConnection
     _execution_options = immutabledict()
 
-    def __init__(self, pool, dialect, url, echo=False):
+    def __init__(
+        self, pool, dialect, url, echo=False, hide_parameters=False,
+    ):
         self._pool = pool
         self._dialect = dialect
         self._url = url
         self._echo = echo
+        self.hide_parameters = hide_parameters
 
     @property
     def pool(self) -> AsyncPool:

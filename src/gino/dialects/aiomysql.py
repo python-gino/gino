@@ -17,8 +17,8 @@ class AiomysqlDBAPI(DBAPI):
     def __init__(self):
         import aiomysql
 
-        self.connect = aiomysql.connect
-        self.Error = aiomysql.Error
+        for item in aiomysql.__all__:
+            setattr(self, item, getattr(aiomysql, item))
         self.cursor_cls = aiomysql.Cursor
         self.ss_cursor_cls = aiomysql.SSCursor
 
@@ -107,5 +107,5 @@ class AiomysqlDialect(AsyncDialect, MySQLDialect_pymysql):
     async def do_rollback(self, dbapi_connection):
         await dbapi_connection.rollback()
 
-    async def disconnect(self, conn):
+    async def _disconnect(self, conn):
         conn.close()

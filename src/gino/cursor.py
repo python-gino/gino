@@ -24,19 +24,24 @@ class AsyncCursorStrategy(CursorFetchStrategy):
         try:
             return await self.dbapi_cursor.fetchone()
         except BaseException as e:
-            self.handle_exception(result, e)
+            await self.handle_exception(result, e)
 
     async def fetchmany(self, result, size=None):
         try:
             return await self.dbapi_cursor.fetchmany(size)
         except BaseException as e:
-            self.handle_exception(result, e)
+            await self.handle_exception(result, e)
 
     async def fetchall(self, result):
         try:
             return await self.dbapi_cursor.fetchall()
         except BaseException as e:
-            self.handle_exception(result, e)
+            await self.handle_exception(result, e)
+
+    async def handle_exception(self, result, err):
+        await result.connection._handle_dbapi_exception(
+            err, None, None, self.dbapi_cursor, result.context
+        )
 
 
 class AsyncNoDMLStrategy(NoCursorDMLFetchStrategy):
@@ -67,7 +72,7 @@ class AsyncSSCursorStrategy(AsyncCursorStrategy, BufferedRowCursorFetchStrategy)
             else:
                 new_rows = await self.dbapi_cursor.fetchmany(size)
         except BaseException as e:
-            self.handle_exception(result, e)
+            await self.handle_exception(result, e)
 
         if not new_rows:
             return
@@ -92,7 +97,7 @@ class AsyncSSCursorStrategy(AsyncCursorStrategy, BufferedRowCursorFetchStrategy)
             try:
                 buf.extend(await self.dbapi_cursor.fetchmany(size - lb))
             except BaseException as e:
-                self.handle_exception(result, e)
+                await self.handle_exception(result, e)
 
         result = buf[0:size]
         self._rowbuffer = deque(buf[size:])
@@ -104,7 +109,7 @@ class AsyncSSCursorStrategy(AsyncCursorStrategy, BufferedRowCursorFetchStrategy)
             self._rowbuffer.clear()
             return ret
         except BaseException as e:
-            self.handle_exception(result, e)
+            await self.handle_exception(result, e)
 
 
 class AsyncCursor:
@@ -177,14 +182,10 @@ class AsyncCursor:
                     context.statement, parameters, limit=fetch
                 )
 
-        try:
-            if context.compiled:
-                coro = context.post_exec()
-                if hasattr(coro, "__await__"):
-                    await coro
-        except Exception:
-            await self.close()
-            raise
+        if context.compiled:
+            coro = context.post_exec()
+            if hasattr(coro, "__await__"):
+                await coro
 
         return rv
 

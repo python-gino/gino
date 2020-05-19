@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any
+from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any, Tuple
 
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.util import immutabledict
@@ -16,8 +16,8 @@ NO_OPTIONS = immutabledict()
 
 class DBAPI:
     paramstyle = "numeric"
-    connect = NotImplemented
-    Error = Exception
+    connect: Any
+    Error: Union[type, Tuple[type]]
 
 
 # noinspection PyAbstractClass
@@ -63,3 +63,10 @@ class AsyncDialect:
     execution_ctx_cls = AsyncExecutionContext
     compiler_linting: int
     dbapi: DBAPI
+
+    async def disconnect(self, conn):
+        if conn is not None:
+            await self._disconnect(conn)
+
+    async def _disconnect(self, conn):
+        raise NotImplementedError()

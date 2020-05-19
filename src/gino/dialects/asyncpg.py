@@ -23,6 +23,7 @@ class AsyncpgDBAPI(DBAPI):
 
         self.connect = asyncpg.connect
         self.Error = asyncpg.PostgresError, asyncpg.InterfaceError
+        self.connection_error_cls = asyncpg.PostgresConnectionError
 
 
 class AsyncpgCursor(AsyncCursor):
@@ -151,6 +152,8 @@ class AsyncpgDialect(AsyncDialect, PGDialect):
     execution_ctx_cls = PGExecutionContext_asyncpg
     statement_compiler = AsyncpgCompiler
     supports_server_side_cursors = True
+    if TYPE_CHECKING:
+        dbapi: AsyncpgDBAPI
 
     def __init__(self, server_side_cursors=False, **kwargs):
         super().__init__(**kwargs)
@@ -180,5 +183,8 @@ class AsyncpgDialect(AsyncDialect, PGDialect):
     async def do_rollback(self, tx):
         await tx.rollback()
 
-    async def disconnect(self, conn):
+    async def _disconnect(self, conn):
         await conn.close()
+
+    def is_disconnect(self, e, connection, cursor):
+        return isinstance(e, self.dbapi.connection_error_cls)
