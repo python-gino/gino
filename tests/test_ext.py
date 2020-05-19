@@ -74,7 +74,7 @@ def test_import_error():
 @pytest.fixture
 def extensions(mocker):
     EntryPoint = collections.namedtuple("EntryPoint", ["name", "value"])
-    importlib_metadata = mocker.patch("importlib.metadata")
+    importlib_metadata = mocker.Mock()
     importlib_metadata.entry_points = lambda: {
         "gino.extensions": [
             EntryPoint("demo1", "tests.stub1"),
