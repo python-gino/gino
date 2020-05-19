@@ -1,0 +1,9 @@
+[run]
+source =
+    ./src
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    except ImportError
+    if TYPE_CHECKING:

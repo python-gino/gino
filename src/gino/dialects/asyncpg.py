@@ -1,20 +1,20 @@
-from typing import Optional
+from __future__ import annotations
 
-from asyncpg import Connection, connresource
-from asyncpg.cursor import Cursor
+from typing import Optional, TYPE_CHECKING
+
 from sqlalchemy.dialects.postgresql.base import (
     PGCompiler,
     PGDialect,
     PGExecutionContext,
 )
 
-from .base import (
-    AsyncCursor,
-    AsyncDialect,
-    AsyncExecutionContext,
-    DBAPI,
-)
+from .base import AsyncDialect, AsyncExecutionContext, DBAPI
+from ..cursor import AsyncCursor
 from ..pool import AsyncPool
+
+if TYPE_CHECKING:
+    from asyncpg import Connection
+    from asyncpg.cursor import Cursor
 
 
 class AsyncpgDBAPI(DBAPI):
@@ -22,13 +22,15 @@ class AsyncpgDBAPI(DBAPI):
         import asyncpg
 
         self.connect = asyncpg.connect
+        self.Error = asyncpg.PostgresError, asyncpg.InterfaceError
 
 
 class AsyncpgCursor(AsyncCursor):
-    raw_conn: Connection
+    if TYPE_CHECKING:
+        raw_conn: Connection
 
-    def __init__(self, raw_conn):
-        super().__init__(raw_conn)
+    def __init__(self, dbapi, raw_conn):
+        super().__init__(dbapi, raw_conn)
         self.status_msg = None
         self.execute_completed = False
 
@@ -38,7 +40,9 @@ class AsyncpgCursor(AsyncCursor):
     async def _execute_many(self, statement, parameters):
         await self.raw_conn.executemany(statement, parameters)
 
-    async def _execute(self, statement, parameters, *, limit: Optional[int] = None):
+    async def _execute_and_fetch(
+        self, statement, parameters, *, limit: Optional[int] = None
+    ):
         with self.raw_conn._stmt_exclusive_section:
             result, stmt = await self.raw_conn._Connection__execute(
                 statement, parameters, 0 if limit is None else limit, None, True
@@ -49,14 +53,14 @@ class AsyncpgCursor(AsyncCursor):
 
 
 class AsyncpgBufferedCursor(AsyncpgCursor):
-    def __init__(self, raw_conn):
-        super().__init__(raw_conn)
+    def __init__(self, dbapi, raw_conn):
+        super().__init__(dbapi, raw_conn)
         self.result = []
         self.size = 0
         self.offset = 0
 
     async def _iterate(self, statement: str, parameters):
-        self.result = await self._execute(statement, parameters)
+        self.result = await self._execute_and_fetch(statement, parameters)
         self.size = len(self.result)
         return True
 
@@ -82,8 +86,8 @@ class AsyncpgBufferedCursor(AsyncpgCursor):
         self.result.clear()
 
 
-@connresource.guarded
 async def _cursor_fetchall(self, *, timeout=None):
+    self._check_conn_validity("_cursor_fetchall")
     self._check_ready()
     if self._exhausted:
         return []
@@ -95,8 +99,8 @@ async def _cursor_fetchall(self, *, timeout=None):
 class AsyncpgSSCursor(AsyncpgCursor):
     raw_cursor: Optional[Cursor]
 
-    def __init__(self, raw_conn):
-        super().__init__(raw_conn)
+    def __init__(self, dbapi, raw_conn):
+        super().__init__(dbapi, raw_conn)
         self.cursor_used = False
 
     async def _iterate(self, statement: str, parameters):

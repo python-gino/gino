@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from copy import copy
-from typing import Union, Dict, Sequence, Optional, Any
+from typing import Union, Dict, Sequence, Optional, Any, TYPE_CHECKING
 
 from sqlalchemy import cutils
 from sqlalchemy.engine import create_engine as sa_create_engine
@@ -20,7 +20,7 @@ from sqlalchemy.util import immutabledict
 
 from .transaction import AsyncTransaction, TransactionContext
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .dialects.base import AsyncDialect
     from .pool import AsyncPool
     from .result import AsyncResult
@@ -71,6 +71,9 @@ class AsyncConnection:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+    def _handle_dbapi_exception(self, e, statement, parameters, cursor, context):
+        raise e
 
     def _execute_clauseelement(
         self, elem, multiparams=None, params=None, execution_options=NO_OPTIONS

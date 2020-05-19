@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from sqlalchemy.util import safe_reraise
 
 from .errors import InterfaceError
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .engine import AsyncConnection
 
 

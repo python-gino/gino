@@ -1,16 +1,14 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from aiomysql import Connection, Cursor, SSCursor
 from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
 from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
-from .base import (
-    AsyncCursor,
-    AsyncDialect,
-    AsyncExecutionContext,
-    DBAPI,
-)
+from .base import AsyncDialect, AsyncExecutionContext, DBAPI
+from ..cursor import AsyncCursor
 from ..pool import AsyncPool
+
+if TYPE_CHECKING:
+    from aiomysql import Connection
 
 
 class AiomysqlDBAPI(DBAPI):
@@ -20,12 +18,19 @@ class AiomysqlDBAPI(DBAPI):
         import aiomysql
 
         self.connect = aiomysql.connect
+        self.Error = aiomysql.Error
+        self.cursor_cls = aiomysql.Cursor
+        self.ss_cursor_cls = aiomysql.SSCursor
 
 
 class AiomysqlCursor(AsyncCursor):
-    raw_conn: Connection
-    raw_cursor_cls = Cursor
-    raw_cursor: raw_cursor_cls
+    if TYPE_CHECKING:
+        raw_conn: Connection
+
+    def __init__(self, dbapi: AiomysqlDBAPI, raw_conn):
+        super().__init__(dbapi, raw_conn)
+        self.raw_cursor_cls = dbapi.cursor_cls
+        self.raw_cursor = None
 
     async def _make_cursor(self):
         return await self.raw_conn.cursor(self.raw_cursor_cls)
@@ -34,7 +39,9 @@ class AiomysqlCursor(AsyncCursor):
         cursor = await self._make_cursor()
         await cursor.executemany(statement, parameters)
 
-    async def _execute(self, statement, parameters, *, limit: Optional[int] = None):
+    async def _execute_and_fetch(
+        self, statement, parameters, *, limit: Optional[int] = None
+    ):
         self.raw_cursor = await self._iterate(statement, parameters)
         if limit is None:
             return await self.raw_cursor.fetchall()
@@ -63,7 +70,9 @@ class AiomysqlCursor(AsyncCursor):
 
 
 class AiomysqlSSCursor(AiomysqlCursor):
-    raw_cursor_cls = SSCursor
+    def __init__(self, dbapi: AiomysqlDBAPI, raw_conn):
+        super().__init__(dbapi, raw_conn)
+        self.raw_cursor_cls = dbapi.ss_cursor_cls
 
 
 class MySQLExecutionContext_aiomysql(AsyncExecutionContext, MySQLExecutionContext):
