@@ -5,6 +5,7 @@ import typing
 from copy import copy
 from typing import Union, Dict, Sequence, Optional, Any, TYPE_CHECKING
 
+from sniffio import current_async_library
 from sqlalchemy import cutils
 from sqlalchemy.engine import create_engine as sa_create_engine
 from sqlalchemy.engine import util
@@ -72,7 +73,10 @@ class AsyncConnection:
         return self._raw_conn
 
     async def __async_init__(self) -> AsyncConnection:
-        self._raw_conn = await self._pool.acquire()
+        try:
+            self._raw_conn = await self._pool.acquire()
+        except BaseException as e:
+            await self._handle_dbapi_exception(e, None, None, None, None)
         return self
 
     def __await__(self):
@@ -213,7 +217,8 @@ class AsyncConnection:
 
     async def close(self):
         conn, self._raw_conn = self._raw_conn, None
-        await self._pool.release(conn)
+        if conn is not None:
+            await self._pool.release(conn)
 
     @property
     def closed(self):
@@ -246,10 +251,20 @@ class AsyncEngine:
         return self._url
 
     async def __async_init__(self):
-        return self
+        async with self.connect():
+            return self
 
     def __await__(self):
         return self.__async_init__().__await__()
+
+    async def __aenter__(self):
+        return await self.__async_init__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def close(self):
+        await self._pool.close()
 
     def connect(self) -> connection_cls:
         return self.connection_cls(self, self._execution_options)
@@ -260,17 +275,23 @@ class AsyncEngine:
     transaction = begin
 
 
-async def create_engine(url: Union[str, URL], **kwargs) -> AsyncEngine:
+def create_engine(url: Union[str, URL], **kwargs) -> AsyncEngine:
     url = make_url(url)
 
     if url.drivername in {"postgresql", "postgres"}:
         url = copy(url)
-        url.drivername = "postgresql+asyncpg"
+        if current_async_library() == "asyncio":
+            url.drivername = "postgresql+asyncpg"
+        elif current_async_library() == "trio":
+            url.drivername = "postgresql+triopg"
 
     if url.drivername in {"mysql"}:
         url = copy(url)
-        url.drivername = "mysql+aiomysql"
+        if current_async_library() == "asyncio":
+            url.drivername = "mysql+aiomysql"
+        elif current_async_library() == "trio":
+            url.drivername = "mysql+trio_mysql"
 
     kwargs["_future_engine_class"] = AsyncEngine
 
-    return await sa_create_engine(url, **kwargs)
+    return sa_create_engine(url, **kwargs)

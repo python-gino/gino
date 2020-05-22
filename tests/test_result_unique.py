@@ -3,17 +3,15 @@ from sqlalchemy.exc import MultipleResultsFound
 
 from gino.engine import AsyncConnection
 
-pytestmark = pytest.mark.asyncio
+
+@pytest.fixture
+async def duplicate(db_val, con: AsyncConnection, add_db_val_sql):
+    await con.execute(add_db_val_sql, [dict(value=db_val)] * 3)
 
 
 @pytest.fixture
-async def duplicate(db_val, conn: AsyncConnection, add_db_val_sql):
-    await conn.execute(add_db_val_sql, [dict(value=db_val)] * 3)
-
-
-@pytest.fixture
-async def duplicate1(db_val, duplicate, conn: AsyncConnection, add_db_val_sql):
-    await conn.execute(add_db_val_sql, [dict(value=db_val + 1)] * 5)
+async def duplicate1(db_val, duplicate, con: AsyncConnection, add_db_val_sql):
+    await con.execute(add_db_val_sql, [dict(value=db_val + 1)] * 5)
 
 
 async def test_unique_iter(db_val, duplicate1, con: AsyncConnection, get_db_val_sql):

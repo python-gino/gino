@@ -65,8 +65,7 @@ class AsyncDialect:
     dbapi: DBAPI
 
     async def disconnect(self, conn):
-        if conn is not None:
-            await self._disconnect(conn)
+        raise NotImplementedError()
 
-    async def _disconnect(self, conn):
+    async def do_reset(self, conn, **kwargs):
         raise NotImplementedError()

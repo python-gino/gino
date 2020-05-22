@@ -4,13 +4,11 @@ import pytest
 
 from gino.engine import AsyncConnection
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
-async def more(add_db_val_sql, db_val, conn: AsyncConnection):
+async def more(add_db_val_sql, db_val, con: AsyncConnection):
     num = random.randint(128, 256)
-    await conn.execute(add_db_val_sql, [dict(value=i) for i in range(num)])
+    await con.execute(add_db_val_sql, [dict(value=i) for i in range(num)])
     return num
 
 

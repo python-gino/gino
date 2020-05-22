@@ -1,5 +1,4 @@
 import pytest
-from aiomysql import OperationalError
 from asyncpg import ConnectionDoesNotExistError
 from sqlalchemy import text
 from sqlalchemy.engine.url import URL
@@ -7,8 +6,6 @@ from sqlalchemy.exc import ObjectNotExecutableError, DBAPIError, InvalidRequestE
 
 from gino.engine import AsyncConnection
 from gino.errors import InterfaceError
-
-pytestmark = pytest.mark.asyncio
 
 
 async def test_connect_ctx(engine, db_val, get_db_val_sql):
@@ -150,7 +147,11 @@ async def test_dbapi_error(url: URL, conn: AsyncConnection):
         await conn.execute(text("SELECT 123"))
 
 
-async def test_connection_closed(url: URL, conn: AsyncConnection, mocker):
+async def test_connection_closed(url: URL, conn: AsyncConnection, mocker, use_trio):
+    if use_trio:
+        from trio_mysql import OperationalError
+    else:
+        from aiomysql import OperationalError
     if url.drivername == "postgresql":
         mocker.patch(
             "gino.cursor.AsyncCursor.execute"

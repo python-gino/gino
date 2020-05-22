@@ -3,8 +3,6 @@ import pytest
 from gino.engine import AsyncConnection
 from gino.errors import InterfaceError
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture(params=["all", "fetchmany"])
 def method(request):

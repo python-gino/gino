@@ -42,8 +42,6 @@ jobs:
       mysql:
         image: mysql:${{ matrix.mysql-version }}
         env:
-          MYSQL_USER: gino
-          MYSQL_PASSWORD: gino
           MYSQL_DATABASE: gino
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:
@@ -59,6 +57,7 @@ jobs:
       with:
         repository: sqlalchemy/sqlalchemy
         path: sqlalchemy
+        ref: d4182d4da96c622e262f1bb6ea9a077cde090b7e
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
@@ -81,22 +80,22 @@ jobs:
       working-directory: ./gino
       run: |
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-        $HOME/.poetry/bin/poetry install -E postgresql -E mysql
+        $HOME/.poetry/bin/poetry install -E _test
         $HOME/.poetry/bin/poetry run pip list
     - name: Test with pytest
       env:
         POSTGRESQL_USERNAME: gino
-        MYSQL_USERNAME: gino
-        MYSQL_PASSWORD: gino
+        MYSQL_USERNAME: root
+        MYSQL_DATABASE: gino
       working-directory: ./gino
       run: |
-        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=90 --cov-report xml
+        $HOME/.poetry/bin/poetry run make
     - name: Check code format with black
       working-directory: ./gino
       run: |
         $HOME/.poetry/bin/poetry run black --check src
     - name: Submit coverage report
-      if: matrix.report-coverage == 'true' && github.ref == 'refs/heads/v2.0.x'
+      if: matrix.report-coverage == 'true' && github.ref == 'refs/heads/v2.0.x' && github.repository == 'python-gino/gino'
       env:
         CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
       working-directory: ./gino

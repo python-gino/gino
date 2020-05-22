@@ -5,7 +5,7 @@ from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
 from ..cursor import AsyncCursor
-from ..pool import AsyncPool
+from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:
     from aiomysql import Connection
@@ -81,7 +81,7 @@ class MySQLExecutionContext_aiomysql(AsyncExecutionContext, MySQLExecutionContex
 
 
 class AiomysqlDialect(AsyncDialect, MySQLDialect_pymysql):
-    poolclass = AsyncPool
+    poolclass = QueuePool
     execution_ctx_cls = MySQLExecutionContext_aiomysql
 
     @classmethod
@@ -107,5 +107,8 @@ class AiomysqlDialect(AsyncDialect, MySQLDialect_pymysql):
     async def do_rollback(self, dbapi_connection):
         await dbapi_connection.rollback()
 
-    async def _disconnect(self, conn):
+    async def do_reset(self, conn, **kwargs):
+        await self.do_rollback(conn)
+
+    async def disconnect(self, conn):
         conn.close()

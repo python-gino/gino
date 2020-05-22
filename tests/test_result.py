@@ -3,8 +3,6 @@ import pytest
 from gino.engine import AsyncConnection
 from gino.errors import InterfaceError
 
-pytestmark = pytest.mark.asyncio
-
 
 async def test_execute(db_val, con: AsyncConnection, get_db_val_sql, incr_db_val_sql):
     rv = await con.execute(incr_db_val_sql)

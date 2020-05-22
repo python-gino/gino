@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql.base import (
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
 from ..cursor import AsyncCursor
-from ..pool import AsyncPool
+from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:
     from asyncpg import Connection
@@ -148,7 +148,7 @@ class PGExecutionContext_asyncpg(AsyncExecutionContext, PGExecutionContext):
 
 
 class AsyncpgDialect(AsyncDialect, PGDialect):
-    poolclass = AsyncPool
+    poolclass = QueuePool
     execution_ctx_cls = PGExecutionContext_asyncpg
     statement_compiler = AsyncpgCompiler
     supports_server_side_cursors = True
@@ -183,7 +183,10 @@ class AsyncpgDialect(AsyncDialect, PGDialect):
     async def do_rollback(self, tx):
         await tx.rollback()
 
-    async def _disconnect(self, conn):
+    async def do_reset(self, conn: Connection, **kwargs):
+        await conn.reset(timeout=kwargs.pop("timeout"))
+
+    async def disconnect(self, conn):
         await conn.close()
 
     def is_disconnect(self, e, connection, cursor):

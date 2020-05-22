@@ -4,12 +4,10 @@ from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from gino.engine import AsyncConnection
 from gino.errors import InterfaceError
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
-async def one_more(add_db_val_sql, db_val, conn: AsyncConnection):
-    await conn.execute(add_db_val_sql, dict(value=db_val + 1))
+async def one_more(add_db_val_sql, db_val, con: AsyncConnection):
+    await con.execute(add_db_val_sql, dict(value=db_val + 1))
 
 
 async def test_first(db_val, one_more, con: AsyncConnection, get_db_val_sql):
