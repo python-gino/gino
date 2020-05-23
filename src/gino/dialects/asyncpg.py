@@ -10,7 +10,6 @@ from sqlalchemy.dialects.postgresql.base import (
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
 from .cursor import AsyncCursor
-from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:
     from asyncpg import Connection
@@ -148,7 +147,6 @@ class PGExecutionContext_asyncpg(AsyncExecutionContext, PGExecutionContext):
 
 
 class AsyncpgDialect(AsyncDialect, PGDialect):
-    poolclass = QueuePool
     execution_ctx_cls = PGExecutionContext_asyncpg
     statement_compiler = AsyncpgCompiler
     supports_server_side_cursors = True

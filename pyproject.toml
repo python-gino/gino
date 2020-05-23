@@ -24,6 +24,7 @@ classifiers = [
 python = "^3.7"
 #sqlalchemy = {git = "https://github.com/sqlalchemy/sqlalchemy.git"}
 sqlalchemy = {path = "../sqlalchemy"}
+sniffio = "^1.1.0"
 trio = {version = "^0.15.0", optional = true}
 
 # dialects

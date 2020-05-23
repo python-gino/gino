@@ -5,7 +5,6 @@ from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
 from .cursor import AsyncCursor
-from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:
     from aiomysql import Connection
@@ -81,7 +80,6 @@ class MySQLExecutionContext_aiomysql(AsyncExecutionContext, MySQLExecutionContex
 
 
 class AiomysqlDialect(AsyncDialect, MySQLDialect_pymysql):
-    poolclass = QueuePool
     execution_ctx_cls = MySQLExecutionContext_aiomysql
 
     @classmethod

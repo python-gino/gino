@@ -4,7 +4,6 @@ from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
 
 from .aiomysql import AiomysqlDialect, AiomysqlCursor
 from .base import DBAPI, AsyncExecutionContext
-from ..pool.trio import QueuePool
 
 if TYPE_CHECKING:
     from trio_mysql.connections import Connection
@@ -51,7 +50,6 @@ class MySQLExecutionContext_trio_mysql(AsyncExecutionContext, MySQLExecutionCont
 
 
 class TrioMysqlDialect(AiomysqlDialect):
-    poolclass = QueuePool
     execution_ctx_cls = MySQLExecutionContext_trio_mysql
 
     @classmethod

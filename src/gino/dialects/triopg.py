@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from .asyncpg import AsyncpgDialect
 from .base import DBAPI
-from ..pool.trio import QueuePool
 
 if TYPE_CHECKING:
     from triopg._triopg import TrioConnectionProxy
@@ -23,7 +22,6 @@ class TriopgDBAPI(DBAPI):
 
 
 class TriopgDialect(AsyncpgDialect):
-    poolclass = QueuePool
     supports_server_side_cursors = False
 
     @classmethod

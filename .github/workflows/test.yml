@@ -90,10 +90,6 @@ jobs:
       working-directory: ./gino
       run: |
         $HOME/.poetry/bin/poetry run make
-    - name: Check code format with black
-      working-directory: ./gino
-      run: |
-        $HOME/.poetry/bin/poetry run black --check src
     - name: Submit coverage report
       if: matrix.report-coverage == 'true' && github.ref == 'refs/heads/v2.0.x' && github.repository == 'python-gino/gino'
       env:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any, Tuple
 
+from sniffio import current_async_library
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.util import immutabledict
 
@@ -63,6 +64,17 @@ class AsyncDialect:
     execution_ctx_cls = AsyncExecutionContext
     compiler_linting: int
     dbapi: DBAPI
+
+    @classmethod
+    def get_pool_class(cls, url):
+        if current_async_library() == "asyncio":
+            from ..pool.aio import QueuePool
+
+            return QueuePool
+        elif current_async_library() == "trio":
+            from ..pool.trio import QueuePool
+
+            return QueuePool
 
     async def disconnect(self, conn):
         raise NotImplementedError()
