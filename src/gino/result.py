@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy.engine.cursor import CursorResultMetaData, _no_result_metadata
 from sqlalchemy.engine.result import Result, _NO_ROW
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class AsyncResult(Result):
     _cursor: AsyncCursor
     _cursor_metadata = CursorResultMetaData
-    _cursor_strategy: AsyncCursorStrategy
+    _cursor_strategy: Optional[AsyncCursorStrategy]
 
     # noinspection PyMissingConstructor
     def __init__(self, context: AsyncExecutionContext):

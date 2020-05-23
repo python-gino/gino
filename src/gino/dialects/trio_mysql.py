@@ -2,16 +2,15 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
 
-from .aiomysql import AiomysqlDialect, AiomysqlCursor
-from .base import DBAPI, AsyncExecutionContext
+from .aiomysql import AiomysqlDialect, AiomysqlCursor, AiomysqlDBAPI
+from .base import AsyncExecutionContext
 
 if TYPE_CHECKING:
     from trio_mysql.connections import Connection
 
 
-class TrioMysqlDBAPI(DBAPI):
-    paramstyle = "pyformat"
-
+class TrioMysqlDBAPI(AiomysqlDBAPI):
+    # noinspection PyMissingConstructor
     def __init__(self):
         import trio_mysql
         from trio_mysql.cursors import Cursor, SSCursor

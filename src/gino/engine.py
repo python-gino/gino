@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import typing
 from copy import copy
 from typing import Union, Dict, Sequence, Optional, Any, TYPE_CHECKING
 
@@ -13,32 +12,21 @@ from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.exc import ObjectNotExecutableError, DBAPIError, InvalidRequestError
 from sqlalchemy.future.engine import NO_OPTIONS
-from sqlalchemy.sql import WARN_LINTING, ClauseElement
-from sqlalchemy.sql.compiler import Compiled
-from sqlalchemy.sql.ddl import DDLElement
-from sqlalchemy.sql.functions import FunctionElement
-from sqlalchemy.sql.schema import DefaultGenerator
+from sqlalchemy.sql import WARN_LINTING
 from sqlalchemy.util import immutabledict, raise_
 
 from .transaction import AsyncTransaction, TransactionContext
 
 if TYPE_CHECKING:
+    from typing_extensions import Protocol
+
     from .dialects.base import AsyncDialect
-    from .pool import AsyncPool
+    from .pool.base import AsyncPool
     from .result import AsyncResult
 
-    try:
-
-        class Executable(typing.Protocol):
-            def _execute_on_connection(
-                self, conn, multiparams, params, execution_options
-            ):
-                ...
-
-    except AttributeError:
-        Executable = Union[
-            ClauseElement, FunctionElement, DDLElement, DefaultGenerator, Compiled
-        ]
+    class Executable(Protocol):
+        def _execute_on_connection(self, conn, multiparams, params, execution_options):
+            ...
 
 
 class AsyncConnection:
@@ -266,7 +254,7 @@ class AsyncEngine:
     async def close(self):
         await self._pool.close()
 
-    def connect(self) -> connection_cls:
+    def connect(self) -> AsyncConnection:
         return self.connection_cls(self, self._execution_options)
 
     def begin(self) -> TransactionContext:

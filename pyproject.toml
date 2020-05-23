@@ -72,6 +72,7 @@ pytest-mock = "^3.0.0"
 pytest-cov = "^2.8.1"
 black = { version = "^19.10b0" }
 anyio = "^1.3.0"
+mypy = "^0.770"
 
 # docs
 sphinx = "^3.0.3"

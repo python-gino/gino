@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.util import safe_reraise
@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 
 class AsyncTransaction:
+    _managed: Optional[bool]
+
     def __init__(self, conn: AsyncConnection):
         self._dialect = conn.dialect
         self._raw_conn = conn.raw_connection

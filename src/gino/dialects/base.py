@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any, Tuple
+from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any, Tuple, Type
 
 from sniffio import current_async_library
 from sqlalchemy.engine.default import DefaultExecutionContext
@@ -35,7 +35,7 @@ class AsyncExecutionContext(DefaultExecutionContext):
         _dbapi_connection: Any
 
     cursor_cls = NotImplemented
-    server_side_cursor_cls = None
+    server_side_cursor_cls: Optional[Type[AsyncCursor]] = None
     cursor_strategy_cls = AsyncCursorStrategy
     server_side_cursor_strategy_cls = AsyncSSCursorStrategy
 

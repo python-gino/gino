@@ -150,8 +150,6 @@ class AsyncpgDialect(AsyncDialect, PGDialect):
     execution_ctx_cls = PGExecutionContext_asyncpg
     statement_compiler = AsyncpgCompiler
     supports_server_side_cursors = True
-    if TYPE_CHECKING:
-        dbapi: AsyncpgDBAPI
 
     def __init__(self, server_side_cursors=False, **kwargs):
         super().__init__(**kwargs)
