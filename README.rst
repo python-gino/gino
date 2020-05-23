@@ -1,22 +1,13 @@
-======
-|GINO|
-======
+|GINO| 2
+========
 
-.. image:: https://img.shields.io/pypi/v/gino?logo=python&logoColor=white
-        :alt: PyPI Release Version
-        :target: https://pypi.python.org/pypi/gino
-
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test/v2.0.x?label=test&logo=github
         :alt: GitHub Workflow Status for tests
-        :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
+        :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest+branch%3Av2.0.x
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/docs?label=docs&logo=github
-        :alt: GitHub Workflow Status for docs
-        :target: https://python-gino.org/docs/
-
-.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
+.. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97/v2.0.x?logo=codacy
         :alt: Codacy coverage
-        :target: https://app.codacy.com/gh/python-gino/gino/dashboard
+        :target: https://app.codacy.com/gh/python-gino/gino/dashboard?bid=18025113
 
 .. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
         :target: https://app.dependabot.com/accounts/python-gino/projects/129260
@@ -26,66 +17,40 @@
         :target: https://gitter.im/python-gino/Lobby
         :alt: Gitter chat
 
+GINO 2 is a copy-n-rewrite of GINO 1.x from scratch.
 
-GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
-SQLAlchemy_ core for Python asyncio_. GINO 1.0 supports only PostgreSQL_ with asyncpg_.
-
+* Only compatible with the redesigned SQLAlchemy_
+  `1.4 <https://docs.sqlalchemy.org/en/14/changelog/migration_14.html>`__ /
+  `2.0 <https://docs.sqlalchemy.org/en/14/changelog/migration_20.html>`__
+* Support both PostgreSQL_ and MySQL_ from the beginning
+* Support both asyncio_ and Trio_
+* Complete SQLAlchemy events
+* Typing support
+* Python 3.7 or above
 * Free software: BSD license
-* Requires: Python 3.5
-* GINO is developed proudly with |PyCharm|.
 
++-------------+------------+---------------+
+| IO \ DB     | PostgreSQL | MySQL         |
++=============+============+===============+
+| **asyncio** | asyncpg_   | aiomysql_     |
++-------------+------------+---------------+
+| **Trio**    | triopg_    | `Trio-MySQL`_ |
++-------------+------------+---------------+
 
-Home
-----
+Development
+-----------
 
-`python-gino.org <https://python-gino.org/>`__
+https://github.com/python-gino/gino/projects/1
 
-
-Documentation
--------------
-
-* English_
-* Chinese_
-
-
-Installation
-------------
-
-.. code-block:: console
-
-    $ pip install gino
-
-
-Features
---------
-
-* Robust SQLAlchemy-asyncpg bi-translator with no hard hack
-* Asynchronous SQLAlchemy-alike engine and connection
-* Asynchronous dialect API
-* Asynchronous-friendly CRUD objective models
-* Well-considered contextual connection and transaction management
-* Reusing native SQLAlchemy core to build queries with grammar sugars
-* Support SQLAlchemy ecosystem, e.g. Alembic_ for migration
-* `Community support <https://github.com/python-gino/>`_ for Starlette_/FastAPI_, aiohttp_, Sanic_, Tornado_ and Quart_
-* Rich PostgreSQL JSONB support
-
-
+.. _Trio: https://github.com/python-trio/trio
+.. _aiomysql: https://github.com/aio-libs/aiomysql
+.. _triopg: https://github.com/python-trio/triopg
+.. _Trio-MySQL: https://github.com/python-trio/trio-mysql
 .. _SQLAlchemy: https://www.sqlalchemy.org/
 .. _asyncpg: https://github.com/MagicStack/asyncpg
 .. _PostgreSQL: https://www.postgresql.org/
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
-.. _Alembic: https://bitbucket.org/zzzeek/alembic
-.. _Sanic: https://github.com/channelcat/sanic
-.. _Tornado: http://www.tornadoweb.org/
-.. _Quart: https://gitlab.com/pgjones/quart/
-.. _English: https://python-gino.org/docs/en/
-.. _Chinese: https://python-gino.org/docs/zh/
-.. _aiohttp: https://github.com/aio-libs/aiohttp
-.. _Starlette: https://www.starlette.io/
-.. _FastAPI: https://fastapi.tiangolo.com/
-.. |PyCharm| image:: ./docs/images/pycharm.svg
-        :height: 20px
-        :target: https://www.jetbrains.com/?from=GINO
+.. _MySQL: https://www.mysql.com/
 
 .. |GINO| image:: ./docs/theme/static/logo.svg
         :alt: GINO
