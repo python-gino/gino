@@ -1,7 +1,7 @@
 import pytest
+from sqlalchemy.exc import InvalidRequestError
 
 from gino.engine import AsyncConnection
-from gino.errors import InterfaceError
 
 
 @pytest.fixture(params=["all", "fetchmany"])
@@ -27,7 +27,7 @@ async def test_multiple_multiple(db_val, con: AsyncConnection, get_db_val_sql, m
     rows = await getattr(result, method)()
     assert len(rows) == 1
     assert rows[0][0] == db_val
-    with pytest.raises(InterfaceError):
+    with pytest.raises(InvalidRequestError):
         await getattr(result, method)()
 
 

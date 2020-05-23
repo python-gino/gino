@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql.base import (
 )
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
-from ..cursor import AsyncCursor
+from .cursor import AsyncCursor
 from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:

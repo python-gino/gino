@@ -8,8 +8,7 @@ from sqlalchemy.engine.cursor import (
     CursorFetchStrategy,
     NoCursorDMLFetchStrategy,
 )
-
-from .errors import InterfaceError
+from sqlalchemy.exc import InvalidRequestError
 
 
 class AsyncCursorStrategy(CursorFetchStrategy):
@@ -120,7 +119,7 @@ class AsyncCursor:
 
     def _check_cursor_on_fetch(self):
         if self.raw_cursor is None:
-            raise InterfaceError(
+            raise InvalidRequestError(
                 "Cursor is closed. To use `fetch*()` multiple times, wrap it with "
                 "`async with conn.execute(...):` block."
             )

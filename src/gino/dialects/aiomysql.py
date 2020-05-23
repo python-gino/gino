@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mysql.base import MySQLExecutionContext
 from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 
 from .base import AsyncDialect, AsyncExecutionContext, DBAPI
-from ..cursor import AsyncCursor
+from .cursor import AsyncCursor
 from ..pool.aio import QueuePool
 
 if TYPE_CHECKING:

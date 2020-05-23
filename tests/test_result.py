@@ -1,7 +1,7 @@
 import pytest
+from sqlalchemy.exc import InvalidRequestError
 
 from gino.engine import AsyncConnection
-from gino.errors import InterfaceError
 
 
 async def test_execute(db_val, con: AsyncConnection, get_db_val_sql, incr_db_val_sql):
@@ -16,7 +16,7 @@ async def test_execute_multiple(
     result = con.execute(incr_db_val_sql)
     await result
     assert (await con.scalar(get_db_val_sql)) == db_val + 1
-    with pytest.raises(InterfaceError):
+    with pytest.raises(InvalidRequestError):
         await result
 
 
@@ -41,7 +41,7 @@ async def test_execute_nested_ctx(
 async def test_execute_again_in_ctx(
     db_val, con: AsyncConnection, get_db_val_sql, incr_db_val_sql
 ):
-    with pytest.raises(InterfaceError):
+    with pytest.raises(InvalidRequestError):
         async with con.execute(incr_db_val_sql) as result:
             await result
     assert (await con.scalar(get_db_val_sql)) == db_val + 1
@@ -61,7 +61,7 @@ async def test_fetchone_multiple(db_val, con: AsyncConnection, get_db_val_sql):
     result = con.execute(get_db_val_sql)
     row = await result.fetchone()
     assert row[0] == db_val
-    with pytest.raises(InterfaceError):
+    with pytest.raises(InvalidRequestError):
         await result.fetchone()
 
 

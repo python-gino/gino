@@ -5,7 +5,6 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import ObjectNotExecutableError, DBAPIError, InvalidRequestError
 
 from gino.engine import AsyncConnection
-from gino.errors import InterfaceError
 
 
 async def test_connect_ctx(engine, db_val, get_db_val_sql):
@@ -53,11 +52,11 @@ async def test_conn_begin_ctx(engine, db_val, get_db_val_sql, set_db_val_sql):
         async with conn.begin() as tx:
             rows = await conn.execute(get_db_val_sql).all()
 
-            with pytest.raises(InterfaceError, match="already started"):
+            with pytest.raises(InvalidRequestError, match="already started"):
                 await tx
-            with pytest.raises(InterfaceError, match="is managed"):
+            with pytest.raises(InvalidRequestError, match="is managed"):
                 await tx.commit()
-            with pytest.raises(InterfaceError, match="is managed"):
+            with pytest.raises(InvalidRequestError, match="is managed"):
                 await tx.rollback()
 
         assert rows[0][0] == db_val - 1
@@ -76,7 +75,7 @@ async def test_conn_begin_await(engine, method, db_val, get_db_val_sql, set_db_v
 
         tx = await conn.begin()
 
-        with pytest.raises(InterfaceError, match="already started"):
+        with pytest.raises(InvalidRequestError, match="already started"):
             async with tx:
                 pass
 
@@ -92,14 +91,14 @@ async def test_conn_begin_not_started(engine, method, db_val, get_db_val_sql):
     async with engine.connect() as conn:
         tx = conn.begin()
 
-        with pytest.raises(InterfaceError, match="not started"):
+        with pytest.raises(InvalidRequestError, match="not started"):
             await tx.commit()
-        with pytest.raises(InterfaceError, match="not started"):
+        with pytest.raises(InvalidRequestError, match="not started"):
             await tx.rollback()
 
         await tx
 
-        with pytest.raises(InterfaceError, match="already started"):
+        with pytest.raises(InvalidRequestError, match="already started"):
             async with tx:
                 pass
 
@@ -154,12 +153,12 @@ async def test_connection_closed(url: URL, conn: AsyncConnection, mocker, use_tr
         from aiomysql import OperationalError
     if url.drivername == "postgresql":
         mocker.patch(
-            "gino.cursor.AsyncCursor.execute"
+            "gino.dialects.cursor.AsyncCursor.execute"
         ).side_effect = ConnectionDoesNotExistError()
     else:
-        mocker.patch("gino.cursor.AsyncCursor.execute").side_effect = OperationalError(
-            2014, "Command Out of Sync"
-        )
+        mocker.patch(
+            "gino.dialects.cursor.AsyncCursor.execute"
+        ).side_effect = OperationalError(2014, "Command Out of Sync")
     with pytest.raises(DBAPIError):
         await conn.execute(text("SELECT 123"))
     with pytest.raises(InvalidRequestError):

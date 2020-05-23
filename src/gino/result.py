@@ -8,11 +8,10 @@ from sqlalchemy.exc import InvalidRequestError, NoResultFound, MultipleResultsFo
 from sqlalchemy.sql.base import _generative
 from sqlalchemy.util import HasMemoized
 
-from .errors import InterfaceError
 
 if TYPE_CHECKING:
     from .dialects.base import AsyncExecutionContext
-    from .cursor import AsyncCursor, AsyncCursorStrategy
+    from .dialects.cursor import AsyncCursor, AsyncCursorStrategy
 
 
 class AsyncResult(Result):
@@ -103,7 +102,7 @@ class AsyncResult(Result):
 
     async def _execute(self) -> None:
         if self._prepared:
-            raise InterfaceError("Cannot await on an AsyncResult more than once.")
+            raise InvalidRequestError("Cannot await on an AsyncResult more than once.")
         async with self.__ensure_init__():
             await self._execute_impl(self._context)
 
@@ -265,7 +264,7 @@ class AsyncResult(Result):
 
     async def _only_one_row(self, raise_for_second_row, raise_for_none):
         if self._prepared:
-            raise InterfaceError(
+            raise InvalidRequestError(
                 "first/one*/scalar() cannot be used in `async with conn.execute(...)` "
                 "block, use them directly like `await conn.execute(...).first()`, "
                 "or use fetchone() instead."

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.util import safe_reraise
-
-from .errors import InterfaceError
 
 if TYPE_CHECKING:
     from .engine import AsyncConnection
@@ -18,8 +17,7 @@ class AsyncTransaction:
         self._managed = None
 
     async def __async_init__(self) -> AsyncTransaction:
-        if self._managed is not None:
-            raise InterfaceError("Transaction already started")
+        self._ensure_not_started()
         self._managed = False
         await self._begin()
         return self
@@ -28,8 +26,7 @@ class AsyncTransaction:
         return self.__async_init__().__await__()
 
     async def __aenter__(self):
-        if self._managed is not None:
-            raise InterfaceError("Transaction already started")
+        self._ensure_not_started()
         self._managed = True
         return await self._begin()
 
@@ -38,6 +35,10 @@ class AsyncTransaction:
             await self._commit()
         else:
             await self._rollback()
+
+    def _ensure_not_started(self):
+        if self._managed is not None:
+            raise InvalidRequestError("Transaction already started")
 
     async def _begin(self):
         self._tx = await self._dialect.do_begin(self._raw_conn)
@@ -49,18 +50,19 @@ class AsyncTransaction:
     async def _rollback(self):
         await self._dialect.do_rollback(self._tx)
 
-    async def commit(self) -> None:
+    def _ensure_not_managed(self):
         if self._managed is None:
-            raise InterfaceError("Transaction not started")
+            raise InvalidRequestError("Transaction is not started")
+
         if self._managed:
-            raise InterfaceError("Transaction is managed")
+            raise InvalidRequestError("Transaction is managed")
+
+    async def commit(self) -> None:
+        self._ensure_not_managed()
         await self._commit()
 
     async def rollback(self) -> None:
-        if self._managed is None:
-            raise InterfaceError("Transaction not started")
-        if self._managed:
-            raise InterfaceError("Transaction is managed")
+        self._ensure_not_managed()
         await self._rollback()
 
 

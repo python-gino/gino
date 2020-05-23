@@ -5,7 +5,7 @@ from typing import Optional, Union, Sequence, Dict, TYPE_CHECKING, Any, Tuple
 from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.util import immutabledict
 
-from ..cursor import AsyncCursor, AsyncCursorStrategy, AsyncSSCursorStrategy
+from .cursor import AsyncCursor, AsyncCursorStrategy, AsyncSSCursorStrategy
 from ..result import AsyncResult
 
 if TYPE_CHECKING:
