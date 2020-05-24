@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "sql-mysql-trio"
+version = "0.1.0"
+description = ""
+authors = ["Fantix King <fantix.king@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+gino = {path = "../..", extras = ["trio_mysql"]}
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.4.2"
+pytest-trio = "^0.6.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

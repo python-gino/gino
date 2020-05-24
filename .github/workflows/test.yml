@@ -17,20 +17,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.7', '3.8' ]
-        deps-version: [ 'highest' ]
-        postgres-version: [ '12.1' ]
-        mysql-version: [ '8.0' ]
         include:
-          - python-version: '3.7'
-            deps-version: 'highest'
-            postgres-version: '9.6'
-            mysql-version: '5.7'
           - python-version: '3.8'
-            deps-version: 'highest'
             postgres-version: '12.1'
             mysql-version: '8.0'
-            report-coverage: 'true'
+            tags: ['cov', 'examples']
+          - python-version: '3.7'
+            postgres-version: '9.6'
+            mysql-version: '5.7'
+            tags: ['lowdeps']
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
@@ -66,9 +61,9 @@ jobs:
       uses: actions/cache@preview
       with:
         path: ~/.cache/pypoetry/virtualenvs
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv2-${{ hashFiles(format('{0}{1}', github.workspace, '/gino/poetry.lock')) }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-venv2-${{ contains(matrix.tags, 'lowdeps') }}-${{ hashFiles(format('{0}{1}', github.workspace, '/gino/poetry.lock')) }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv2-
+          ${{ runner.os }}-${{ matrix.python-version }}-venv2-
     - name: Poetry cache
       uses: actions/cache@preview
       with:
@@ -82,16 +77,22 @@ jobs:
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
         $HOME/.poetry/bin/poetry install -E _test
         $HOME/.poetry/bin/poetry run pip list
-    - name: Test with pytest
+    - name: Downgrade Python dependencies to the lowest
+      if: contains(matrix.tags, 'lowdeps')
+      working-directory: ./gino
+      run: |
+        $HOME/.poetry/bin/poetry run pip list
+    - name: Run the test suite
       env:
+        TEST_EXAMPLES: ${{ contains(matrix.tags, 'examples') }}
         POSTGRESQL_USERNAME: gino
         MYSQL_USERNAME: root
         MYSQL_DATABASE: gino
       working-directory: ./gino
       run: |
-        $HOME/.poetry/bin/poetry run make
+        PATH=$HOME/.poetry/bin:$PATH poetry run make
     - name: Submit coverage report
-      if: matrix.report-coverage == 'true' && github.ref == 'refs/heads/v2.0.x' && github.repository == 'python-gino/gino'
+      if: contains(matrix.tags, 'cov') && github.ref == 'refs/heads/v2.0.x' && github.repository == 'python-gino/gino'
       env:
         CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
       working-directory: ./gino

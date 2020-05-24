@@ -70,3 +70,6 @@ target/
 
 # VS Code
 .vscode
+
+# mypy
+.mypy_cache/
