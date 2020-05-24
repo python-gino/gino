@@ -1,85 +1,51 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from sqlalchemy.engine.cursor import CursorResultMetaData, _no_result_metadata
-from sqlalchemy.engine.result import Result, _NO_ROW
+from sqlalchemy.engine.cursor import CursorResult
+from sqlalchemy.engine.result import _NO_ROW
 from sqlalchemy.exc import InvalidRequestError, NoResultFound, MultipleResultsFound
 from sqlalchemy.sql.base import _generative
 from sqlalchemy.util import HasMemoized
-
 
 if TYPE_CHECKING:
     from .dialects.base import AsyncExecutionContext
     from .dialects.cursor import AsyncCursor, AsyncCursorStrategy
 
 
-class AsyncResult(Result):
-    _cursor: AsyncCursor
-    _cursor_metadata = CursorResultMetaData
-    _cursor_strategy: Optional[AsyncCursorStrategy]
+class AsyncResult(CursorResult):
+    cursor: AsyncCursor
+    cursor_strategy: AsyncCursorStrategy
 
-    # noinspection PyMissingConstructor
     def __init__(self, context: AsyncExecutionContext):
-        self._context = context
-        self._dialect = context.dialect
-        self._cursor = context.cursor
-        self._connection = context.root_connection
+        super().__init__(context)
         self._ctx_count = 0
         self._prepared = False
         self._initialized = False
-        self._cursor_strategy = None
-
-    @property
-    def context(self):
-        return self._context
-
-    @property
-    def cursor(self):
-        return self._cursor
-
-    @property
-    def connection(self):
-        return self._connection
 
     async def __aenter__(self):
         self._ctx_count += 1
         if not self._prepared:
             self._prepared = True
-            await self._execute_impl(self._context, fetch=0)
+            await self._execute_impl(self.context, fetch=0)
         if not self._initialized:
             self._initialized = True
 
-            self._cursor_strategy = strat = self._context.get_result_cursor_strategy(
-                self
-            )
+            self.cursor_strategy = strat = self.context.get_result_cursor_strategy(self)
             if strat.cursor_description is not None:
-                if self._context.compiled:
-                    if self._context.compiled._cached_metadata:
-                        cached_md = self._context.compiled._cached_metadata
-                        metadata = cached_md._adapt_to_context(self._context)
-
-                    else:
-                        metadata = (
-                            self._context.compiled._cached_metadata
-                        ) = self._cursor_metadata(self, strat.cursor_description)
-                else:
-                    metadata = self._cursor_metadata(self, strat.cursor_description)
-            else:
-                metadata = _no_result_metadata
+                self._init_metadata(self.context, strat.cursor_description)
             if self._yield_per is not None:
                 self.yield_per(self._yield_per)
-            super().__init__(metadata)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self._ctx_count -= 1
         if self._ctx_count == 0:
             try:
-                await self._cursor.close()
+                await self.cursor.close()
             except BaseException as e:
-                await self._connection._handle_dbapi_exception(
-                    e, None, None, self._cursor, self._context
+                await self.connection._handle_dbapi_exception(
+                    e, None, None, self.cursor, self.context
                 )
 
     def __await__(self):
@@ -104,7 +70,7 @@ class AsyncResult(Result):
         if self._prepared:
             raise InvalidRequestError("Cannot await on an AsyncResult more than once.")
         async with self.__ensure_init__():
-            await self._execute_impl(self._context)
+            await self._execute_impl(self.context)
 
     async def _iterator_getter(self):
         async with self:
@@ -120,7 +86,7 @@ class AsyncResult(Result):
             if self._prepared:
                 rows = await self._fetchall_impl()
             else:
-                rows = await self._execute_impl(self._context, fetch=-1)
+                rows = await self._execute_impl(self.context, fetch=-1)
             async with self.__ensure_init__():
                 make_row = self._row_getter()
                 post_creational_filter = self._post_creational_filter
@@ -175,7 +141,7 @@ class AsyncResult(Result):
             if self._prepared:
                 row = await self._fetchone_impl()
             else:
-                rows = await self._execute_impl(self._context, fetch=1)
+                rows = await self._execute_impl(self.context, fetch=1)
                 row = rows[0] if rows else None
             async with self.__ensure_init__():
                 if row is None:
@@ -235,7 +201,7 @@ class AsyncResult(Result):
                 if self._prepared:
                     rows = await self._fetchmany_impl(num)
                 else:
-                    rows = await self._execute_impl(self._context, fetch=num)
+                    rows = await self._execute_impl(self.context, fetch=num)
                 async with self.__ensure_init__():
                     make_row = self._row_getter()
                     rows = [make_row(row) for row in rows]
@@ -247,20 +213,11 @@ class AsyncResult(Result):
 
     async def _execute_impl(self, context, fetch=None):
         try:
-            return await self._cursor.execute(context, fetch=fetch)
+            return await self.cursor.execute(context, fetch=fetch)
         except BaseException as e:
-            await self._connection._handle_dbapi_exception(
-                e, None, None, self._cursor, self._context
+            await self.connection._handle_dbapi_exception(
+                e, None, None, self.cursor, self.context
             )
-
-    def _fetchone_impl(self):
-        return self._cursor_strategy.fetchone(self)
-
-    def _fetchall_impl(self):
-        return self._cursor_strategy.fetchall(self)
-
-    def _fetchmany_impl(self, size=None):
-        return self._cursor_strategy.fetchmany(self, size)
 
     async def _only_one_row(self, raise_for_second_row, raise_for_none):
         if self._prepared:
@@ -316,9 +273,3 @@ class AsyncResult(Result):
             return row[0]
         else:
             return None
-
-    @_generative
-    def yield_per(self, num):
-        super().yield_per(num)
-        if self._cursor_strategy is not None:
-            self._cursor_strategy.yield_per(self, num)

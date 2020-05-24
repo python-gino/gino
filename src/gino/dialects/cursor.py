@@ -48,6 +48,9 @@ class AsyncNoDMLStrategy(NoCursorDMLFetchStrategy):
         super()._non_result(result, default, err)
 
 
+_NO_CURSOR_DML = AsyncNoDMLStrategy()
+
+
 class AsyncSSCursorStrategy(AsyncCursorStrategy, BufferedRowCursorFetchStrategy):
     @classmethod
     def create(cls, result):
@@ -56,7 +59,7 @@ class AsyncSSCursorStrategy(AsyncCursorStrategy, BufferedRowCursorFetchStrategy)
         initial_buffer = deque()
         description = dbapi_cursor.description
         if description is None:
-            return AsyncNoDMLStrategy(False)
+            return _NO_CURSOR_DML
         else:
             max_row_buffer = result.context.execution_options.get(
                 "max_row_buffer", 1000

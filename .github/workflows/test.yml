@@ -52,7 +52,7 @@ jobs:
       with:
         repository: sqlalchemy/sqlalchemy
         path: sqlalchemy
-        ref: d4182d4da96c622e262f1bb6ea9a077cde090b7e
+        ref: 906bb6533d900dd0bcc84007c3abe8aa0701acfd
     - name: Set up Python
       uses: actions/setup-python@v1
       with:

@@ -15,7 +15,7 @@ examples_dir = Path(__file__).parent.parent / "examples"
     ],
 )
 @pytest.mark.skipif(
-    os.getenv("TEST_EXAMPLES", "1").lower() not in {"1", "yes", "true", "t"},
+    os.getenv("TEST_EXAMPLES", "0").lower() not in {"1", "yes", "true", "t"},
     reason="TEST_EXAMPLES=" + os.getenv("TEST_EXAMPLES", ""),
 )
 def test_examples(example: Path, virtualenv):
