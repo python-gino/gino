@@ -99,35 +99,6 @@ async def test_crud(bind):
 
 
 # noinspection PyUnusedLocal
-async def test_non_jsonb(bind):
-    from gino.dialects.asyncpg import JSON
-
-    class News(db.Model):
-        __tablename__ = "news"
-
-        id = db.Column(db.Integer(), primary_key=True)
-        profile = db.Column(JSON(), nullable=False, server_default="{}")
-        visits = db.IntegerProperty(default=0)
-
-    await News.gino.create()
-    try:
-        news = await News.create()
-        assert news.visits == 0
-        with pytest.raises(TypeError, match="JSON is not supported"):
-            await news.update(visits=News.visits + 10).apply()
-        assert news.visits == 0
-        with pytest.raises(TypeError, match="JSON is not supported"):
-            await news.update(visits=10).apply()
-        assert news.visits == 10
-        assert await news.select("visits").gino.scalar() == 0
-        await news.update(profile=dict(visits=20)).apply()
-        assert news.visits == 10
-        assert await news.select("visits").gino.scalar() == 20
-    finally:
-        await News.gino.drop()
-
-
-# noinspection PyUnusedLocal
 async def test_reload(bind):
     u = await User.create()
     await u.update(realname=db.cast("888", db.Unicode)).apply()
@@ -140,11 +111,11 @@ async def test_reload(bind):
 
 # noinspection PyUnusedLocal
 async def test_properties(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest(db.Model):
         __tablename__ = "props_test"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
 
         raw = db.JSONProperty()
         bool = db.BooleanProperty()
@@ -180,11 +151,11 @@ async def test_properties(bind):
 
 # noinspection PyUnusedLocal
 async def test_unknown_properties(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest1(db.Model):
         __tablename__ = "props_test1"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
         bool = db.BooleanProperty()
 
     await PropsTest1.gino.create()
@@ -198,11 +169,11 @@ async def test_unknown_properties(bind):
 
 
 async def test_property_in_profile_and_attribute_collide(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest2(db.Model):
         __tablename__ = "props_test2"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
         bool_profile = db.BooleanProperty()
         bool_attr = db.Column(db.Boolean)
 
@@ -232,28 +203,25 @@ async def test_no_profile():
 
 
 async def test_t291_t402(bind):
-    from gino.dialects.asyncpg import JSON, JSONB
+    from gino.dialects.aiomysql import JSON
 
-    class CustomJSONB(db.TypeDecorator):
-        impl = JSONB
+    class CustomJSON(db.TypeDecorator):
+        impl = JSON
 
         def process_result_value(self, *_):
             return 123
 
     class PropsTest(db.Model):
         __tablename__ = "props_test_291"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
-        profile1 = db.Column(JSON(), nullable=False, server_default="{}")
-        profile2 = db.Column(CustomJSONB(), nullable=False, server_default="{}")
+        profile1 = db.Column(JSON(), nullable=False, default="{}")
+        profile2 = db.Column(CustomJSON(), nullable=False, default="{}")
 
-        bool = db.BooleanProperty()
-        bool1 = db.BooleanProperty(prop_name="profile1")
+        bool = db.BooleanProperty(prop_name="profile1")
+        bool1 = db.BooleanProperty(prop_name="profile2")
 
     await PropsTest.gino.create()
     try:
-        t = await PropsTest.create(bool=True, bool1=True,)
-        profile = await bind.scalar("SELECT profile FROM props_test_291")
-        assert isinstance(profile, dict)
+        await PropsTest.create(bool=True, bool1=True)
         profile1 = await bind.scalar("SELECT profile1 FROM props_test_291")
         assert isinstance(profile1, dict)
         profile2 = await bind.scalar("SELECT profile2 FROM props_test_291")
@@ -266,17 +234,17 @@ async def test_t291_t402(bind):
 
 
 async def test_json_path(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PathTest(db.Model):
         __tablename__ = "path_test_json_path"
-        data = db.Column(JSONB())
+        data = db.Column(JSON())
 
     await PathTest.gino.create()
     try:
         t1 = await PathTest.create(data=dict(a=dict(b="c")))
         t2 = await PathTest.query.where(
-            PathTest.data[("a", "b")].astext == "c"
+            PathTest.data[("a", "b")] == "c"
         ).gino.first()
         assert t1.data == t2.data
     finally:

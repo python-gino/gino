@@ -251,7 +251,7 @@ async def test_t291_t402(bind):
 
     await PropsTest.gino.create()
     try:
-        t = await PropsTest.create(bool=True, bool1=True,)
+        await PropsTest.create(bool=True, bool1=True,)
         profile = await bind.scalar("SELECT profile FROM props_test_291")
         assert isinstance(profile, dict)
         profile1 = await bind.scalar("SELECT profile1 FROM props_test_291")

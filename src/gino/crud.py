@@ -140,15 +140,20 @@ class UpdateRequest:
                 updates[sa.cast(prop.name, sa.Unicode)] = value
         for prop_name, updates in json_updates.items():
             prop = getattr(cls, prop_name)
-            from .dialects.asyncpg import JSONB
+            from .dialects.asyncpg import JSONB as psql_JSONB
+            from .dialects.aiomysql import JSON as mysql_JSON
 
-            if isinstance(prop.type, JSONB):
+            if isinstance(prop.type, psql_JSONB):
                 if self._literal:
                     values[prop_name] = prop.concat(updates)
                 else:
                     values[prop_name] = prop.concat(
                         sa.func.jsonb_build_object(*itertools.chain(*updates.items()))
                     )
+            elif isinstance(prop.type, mysql_JSON):
+                values[prop_name] = sa.func.json_merge_patch(
+                    prop,
+                    sa.func.json_object(*itertools.chain(*updates.items())))
             else:
                 raise TypeError(
                     "{} is not supported to update json "

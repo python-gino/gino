@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import mysql
 
 from .exceptions import UnknownJSONPropertyError
 
@@ -111,12 +112,18 @@ class JSONProperty:
 
 class StringProperty(JSONProperty):
     def make_expression(self, base_exp):
-        return base_exp.astext
+        try:
+            return base_exp.astext
+        except AttributeError:
+            return base_exp.cast(sa.String)
 
 
 class DateTimeProperty(JSONProperty):
     def make_expression(self, base_exp):
-        return base_exp.astext.cast(sa.DateTime)
+        try:
+            return base_exp.astext.cast(sa.DateTime)
+        except AttributeError:
+            return sa.func.json_unquote(base_exp).cast(mysql.DATETIME(fsp=6))
 
     def decode(self, val):
         if val:
@@ -131,7 +138,10 @@ class DateTimeProperty(JSONProperty):
 
 class IntegerProperty(JSONProperty):
     def make_expression(self, base_exp):
-        return base_exp.astext.cast(sa.Integer)
+        try:
+            return base_exp.astext.cast(sa.Integer)
+        except AttributeError:
+            return base_exp.cast(sa.Integer)
 
     def decode(self, val):
         if val is not None:
@@ -146,7 +156,10 @@ class IntegerProperty(JSONProperty):
 
 class BooleanProperty(JSONProperty):
     def make_expression(self, base_exp):
-        return base_exp.astext.cast(sa.Boolean)
+        try:
+            return base_exp.astext.cast(sa.Boolean)
+        except AttributeError:
+            return base_exp.cast(sa.Boolean)
 
     def decode(self, val):
         if val is not None:

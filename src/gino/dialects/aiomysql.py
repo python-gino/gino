@@ -29,6 +29,7 @@ try:
     import click
 except ImportError:
     click = None
+JSON_COLTYPE = 245
 
 #: Regular expression for :meth:`Cursor.executemany`.
 #: executemany only suports simple bulk insert.
@@ -352,18 +353,11 @@ class Transaction(base.Transaction):
         await self._conn.rollback()
 
 
-class AiomysqlJSONPathType(json.JSONPathType):
-    def bind_processor(self, dialect):
-        super_proc = self.string_bind_processor(dialect)
-
-        def process(value):
-            assert isinstance(value, util.collections_abc.Sequence)
-            if super_proc:
-                return [super_proc(util.text_type(elem)) for elem in value]
-            else:
-                return [util.text_type(elem) for elem in value]
-
-        return process
+class GinoNullType(sqltypes.NullType):
+    def result_processor(self, dialect, coltype):
+        if coltype == JSON_COLTYPE:
+            return JSON().result_processor(dialect, coltype)
+        return super().result_processor(dialect, coltype)
 
 
 # noinspection PyAbstractClass
@@ -382,15 +376,14 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
             ]
         )
     ) - {'echo'}  # use SQLAlchemy's echo instead
-    # colspecs = util.update_copy(
-    #     PGDialect.colspecs,
-    #     {
-    #         ENUM: AsyncEnum,
-    #         sqltypes.Enum: AsyncEnum,
-    #         sqltypes.NullType: GinoNullType,
-    #         sqltypes.JSON.JSONPathType: AsyncpgJSONPathType,
-    #     },
-    # )
+    colspecs = util.update_copy(
+        MySQLDialect.colspecs,
+        {
+            # ENUM: AsyncEnum,
+            # sqltypes.Enum: AsyncEnum,
+            sqltypes.NullType: GinoNullType,
+        },
+    )
     postfetch_lastrowid = False
     support_returning = False
     support_prepare = False
