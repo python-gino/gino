@@ -30,6 +30,22 @@ try:
 except ImportError:
     click = None
 
+#: Regular expression for :meth:`Cursor.executemany`.
+#: executemany only suports simple bulk insert.
+#: You can use it to load large dataset.
+_RE_INSERT_VALUES = re.compile(
+    r"\s*((?:INSERT|REPLACE)\s.+\sVALUES?\s+)" +
+    r"(\(\s*(?:%s|%\(.+\)s)\s*(?:,\s*(?:%s|%\(.+\)s)\s*)*\))" +
+    r"(\s*(?:ON DUPLICATE.*)?);?\s*\Z",
+    re.IGNORECASE | re.DOTALL)
+
+#: Max statement size which :meth:`executemany` generates.
+#:
+#: Max size of allowed statement is max_allowed_packet -
+# packet_header_size.
+#: Default value of max_allowed_packet is 1048576.
+_MAX_STMT_LENGTH = 1024000
+
 
 class AiomysqlDBAPI(base.BaseDBAPI):
     paramstyle = "format"
@@ -86,65 +102,57 @@ class AiomysqlExecutionContext(base.ExecutionContextOverride,
         return self.cursor.affected_rows
 
 
-class AiomysqlIterator:
-    def __init__(self, context, iterator):
-        self._context = context
-        self._iterator = iterator
-
-    async def __anext__(self):
-        row = await self._iterator.__anext__()
-        return self._context.process_rows([row])[0]
-
-
-class AiomysqlCursor(base.Cursor):
+class AiomysqlIterator(base.Cursor):
     def __init__(self, context, cursor):
         self._context = context
         self._cursor = cursor
+        self._queried = False
+
+    def __await__(self):
+        async def return_self():
+            return self
+
+        return return_self().__await__()
+
+    def __aiter__(self):
+        return self
+
+    async def _init(self):
+        if not self._queried:
+            query = self._context.statement
+            args = self._context.parameters[0]
+            await self._cursor.execute(query, args)
+            self._context.cursor._cursor_description = self._cursor.description
+            self._queried = True
+
+    async def __anext__(self):
+        await self._init()
+        row = await asyncio.wait_for(
+            self._cursor.fetchone(), self._context.timeout)
+        if row is None:
+            raise StopAsyncIteration
+        return self._context.process_rows([row])[0]
 
     async def many(self, n, *, timeout=base.DEFAULT):
+        await self._init()
         if timeout is base.DEFAULT:
             timeout = self._context.timeout
-        rows = await self._cursor.fetch(n, timeout=timeout)
+        rows = await asyncio.wait_for(self._cursor.fetchmany(n), timeout)
+        if not rows:
+            return []
         return self._context.process_rows(rows)
 
     async def next(self, *, timeout=base.DEFAULT):
-        if timeout is base.DEFAULT:
-            timeout = self._context.timeout
-        row = await self._cursor.fetchrow(timeout=timeout)
-        if not row:
+        try:
+            return await self.__anext__()
+        except StopAsyncIteration:
             return None
-        return self._context.process_rows([row])[0]
 
     async def forward(self, n, *, timeout=base.DEFAULT):
+        await self._init()
         if timeout is base.DEFAULT:
             timeout = self._context.timeout
-        await self._cursor.forward(n, timeout=timeout)
-
-
-class PreparedStatement(base.PreparedStatement):
-    def __init__(self, prepared, clause=None):
-        super().__init__(clause)
-        self._prepared = prepared
-
-    def _get_iterator(self, *params, **kwargs):
-        return AiomysqlIterator(
-            self.context, self._prepared.cursor(*params, **kwargs).__aiter__()
-        )
-
-    async def _get_cursor(self, *params, **kwargs):
-        iterator = await self._prepared.cursor(*params, **kwargs)
-        return AiomysqlCursor(self.context, iterator)
-
-    async def _execute(self, params, one):
-        if one:
-            rv = await self._prepared.fetchrow(*params)
-            if rv is None:
-                rv = []
-            else:
-                rv = [rv]
-        else:
-            rv = await self._prepared.fetch(*params)
-        return self._prepared.get_statusmsg(), rv
+        await asyncio.wait_for(self._cursor.scroll(n, mode='relative'), timeout)
 
 
 class DBAPICursor(base.DBAPICursor):
@@ -156,22 +164,7 @@ class DBAPICursor(base.DBAPICursor):
         self.affected_rows = 0
 
     async def prepare(self, context, clause=None):
-        timeout = context.timeout
-        if timeout is None:
-            conn = await self._conn.acquire(timeout=timeout)
-        else:
-            before = time.monotonic()
-            conn = await self._conn.acquire(timeout=timeout)
-            after = time.monotonic()
-            timeout -= after - before
-        prepared = await conn.prepare(context.statement, timeout=timeout)
-        try:
-            self._cursor_description = prepared.get_attributes()
-        except TypeError:  # asyncpg <= 0.12.0
-            self._cursor_description = []
-        rv = PreparedStatement(prepared, clause)
-        rv.context = context
-        return rv
+        raise Exception("aiomysql doesn't support prepare")
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
         if timeout is None:
@@ -182,8 +175,15 @@ class DBAPICursor(base.DBAPICursor):
             after = time.monotonic()
             timeout -= after - before
 
+        if not many:
+            return await self._async_execute(conn, query, timeout, args)
+
+        return await asyncio.wait_for(
+            self._async_executemany(conn, query, args), timeout=timeout)
+
+    async def _async_execute(self, conn, query, timeout, args):
         if args is not None:
-            query = query % self._escape_args(args, conn)
+            query = query % _escape_args(args, conn)
         await asyncio.wait_for(conn.query(query), timeout=timeout)
         # noinspection PyProtectedMember
         result = conn._result
@@ -193,15 +193,51 @@ class DBAPICursor(base.DBAPICursor):
         self.affected_rows = result.affected_rows
         return result.rows
 
-    def _escape_args(self, args, conn):
-        if isinstance(args, (tuple, list)):
-            return tuple(conn.escape(arg) for arg in args)
-        elif isinstance(args, dict):
-            return dict((key, conn.escape(val)) for (key, val) in args.items())
+    async def _async_executemany(self, conn, query, args):
+        m = _RE_INSERT_VALUES.match(query)
+        if m:
+            q_prefix = m.group(1)
+            q_values = m.group(2).rstrip()
+            q_postfix = m.group(3) or ''
+            assert q_values[0] == '(' and q_values[-1] == ')'
+            return (await self._do_execute_many(
+                conn, q_prefix, q_values, q_postfix, args))
         else:
-            # If it's not a dictionary let's try escaping it anyways.
-            # Worst case it will throw a Value error
-            return conn.escape(args)
+            rows = 0
+            for arg in args:
+                await self.execute(query, arg)
+                rows += self.affected_rows
+            self.affected_rows = rows
+        return None
+
+    async def _do_execute_many(self, conn, prefix, values, postfix, args):
+        escape = _escape_args
+        if isinstance(prefix, str):
+            prefix = prefix.encode(conn.encoding)
+        if isinstance(postfix, str):
+            postfix = postfix.encode(conn.encoding)
+        stmt = bytearray(prefix)
+        args = iter(args)
+        v = values % escape(next(args), conn)
+        if isinstance(v, str):
+            v = v.encode(conn.encoding, 'surrogateescape')
+        stmt += v
+        rows = 0
+        for arg in args:
+            v = values % escape(arg, conn)
+            if isinstance(v, str):
+                v = v.encode(conn.encoding, 'surrogateescape')
+            if len(stmt) + len(v) + len(postfix) + 1 > _MAX_STMT_LENGTH:
+                await self._async_execute(conn, stmt + postfix, None, None)
+                rows += self.affected_rows
+                stmt = bytearray(prefix)
+            else:
+                stmt += b','
+            stmt += v
+        await self._async_execute(conn, stmt + postfix, None, None)
+        rows += self.affected_rows
+        self.affected_rows = rows
+        return None
 
     @property
     def description(self):
@@ -209,6 +245,11 @@ class DBAPICursor(base.DBAPICursor):
 
     def get_statusmsg(self):
         return self._status
+
+    def iterate(self, context):
+        # use SSCursor to get server side cursor
+        return AiomysqlIterator(
+            context, aiomysql.SSCursor(self._conn.raw_connection))
 
 
 class Pool(base.Pool):
@@ -352,6 +393,7 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     # )
     postfetch_lastrowid = False
     support_returning = False
+    support_prepare = False
 
     def __init__(self, *args, **kwargs):
         self._pool_kwargs = {}
@@ -548,3 +590,14 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     #             ),
     #         )
     #     return bool(await connection.scalar(query))
+
+
+def _escape_args(args, conn):
+    if isinstance(args, (tuple, list)):
+        return tuple(conn.escape(arg) for arg in args)
+    elif isinstance(args, dict):
+        return dict((key, conn.escape(val)) for (key, val) in args.items())
+    else:
+        # If it's not a dictionary let's try escaping it anyways.
+        # Worst case it will throw a Value error
+        return conn.escape(args)

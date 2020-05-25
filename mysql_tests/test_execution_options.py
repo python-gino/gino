@@ -74,4 +74,4 @@ async def test_query_ext(bind):
     assert user.type == UserType.USER
 
     with pytest.raises(asyncio.TimeoutError):
-        await db.select([db.func.pg_sleep(1), User.id]).gino.timeout(0.1).status()
+        await db.select([db.func.SLEEP(1), User.id]).gino.timeout(0.1).status()

@@ -90,7 +90,7 @@ class PreparedStatement:
         ).context
         if ctx.executemany:
             raise ValueError(
-                "PreparedStatement does not support multiple " "parameters."
+                "PreparedStatement does not support multiple parameters."
             )
         assert (
             ctx.statement == self.context.statement
@@ -155,10 +155,12 @@ class _IterableCursor:
         self._context = context
 
     async def _iterate(self):
-        prepared = await self._context.cursor.prepare(self._context)
-        return prepared.iterate(
-            *self._context.parameters[0], timeout=self._context.timeout
-        )
+        if self._context.dialect.support_prepare:
+            prepared = await self._context.cursor.prepare(self._context)
+            return prepared.iterate(
+                *self._context.parameters[0], timeout=self._context.timeout
+            )
+        return self._context.cursor.iterate(self._context)
 
     async def _get_cursor(self):
         return await (await self._iterate())
@@ -288,7 +290,7 @@ class ExecutionContextOverride:
 
     def process_rows(self, rows, return_model=True):
         if not rows:
-            return
+            return []
         # noinspection PyUnresolvedReferences
         rv = rows = super().get_result_proxy().process_rows(rows)
         loader = self.loader
@@ -400,6 +402,7 @@ class AsyncDialectMixin:
     cursor_cls = DBAPICursor
     dbapi_class = BaseDBAPI
     support_returning = True
+    support_prepare = True
 
     def _init_mixin(self):
         self._sa_conn = _SAConnection(

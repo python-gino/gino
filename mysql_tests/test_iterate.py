@@ -52,7 +52,7 @@ async def test_bind(bind, names):
     with pytest.raises(ValueError, match="too many multiparams"):
         async with bind.transaction():
             await db.iterate(
-                User.insert().returning(User.nickname),
+                User.insert(),
                 [dict(nickname="444"), dict(nickname="555"), dict(nickname="666"),],
             )
 

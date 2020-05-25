@@ -41,7 +41,7 @@ class User(db.Model):
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column("name", db.Unicode(255), default=_random_name)
     profile = db.Column("props", JSON(), nullable=False, default="{}")
-    type = db.Column(db.Enum(UserType), nullable=False, default=UserType.USER,)
+    type = db.Column(db.Enum(UserType), nullable=False, default=UserType.USER)
     realname = db.StringProperty()
     age = db.IntegerProperty(default=18)
     balance = db.IntegerProperty(default=0)
