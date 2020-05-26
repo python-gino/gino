@@ -79,7 +79,7 @@ class Team(db.Model):
 
     id = db.Column(db.BigInteger(), primary_key=True)
     name = db.Column(db.Unicode(255), default=_random_name)
-    parent_id = db.Column(db.ForeignKey("gino_teams.id"))
+    parent_id = db.Column(db.ForeignKey("gino_teams.id", ondelete='CASCADE'))
     company_id = db.Column(db.ForeignKey("gino_companies.id"))
 
     def __init__(self, **kw):

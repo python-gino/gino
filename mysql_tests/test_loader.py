@@ -281,7 +281,7 @@ async def test_literal(user):
     sample = tuple(random.random() for _ in range(5))
     now = db.Column("time", db.DateTime())
     row = await db.first(
-        db.text("SELECT now() AT TIME ZONE 'UTC'")
+        db.text("SELECT UTC_TIMESTAMP")
         .columns(now)
         .gino.load(sample + (lambda r, c: datetime.utcnow(), now))
         .query
