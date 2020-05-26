@@ -8,14 +8,6 @@ import warnings
 import aiomysql
 from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.mysql import (JSON, ENUM)
-# from sqlalchemy.dialects.postgresql import (  # noqa: F401
-#     ARRAY,
-#     CreateEnumType,
-#     DropEnumType,
-#     JSON,
-#     JSONB,
-#     json,
-# )
 from sqlalchemy.dialects.mysql.base import (
     MySQLCompiler,
     MySQLDialect,
@@ -50,22 +42,6 @@ _MAX_STMT_LENGTH = 1024000
 
 class AiomysqlDBAPI(base.BaseDBAPI):
     paramstyle = "format"
-    # Error = asyncpg.PostgresError, asyncpg.InterfaceError
-
-
-# class AiomysqlCompiler(PGCompiler):
-#     @property
-#     def bindtemplate(self):
-#         return self._bindtemplate
-#
-#     @bindtemplate.setter
-#     def bindtemplate(self, val):
-#         # noinspection PyAttributeOutsideInit
-#         self._bindtemplate = val.replace(":", "$")
-#
-#     def _apply_numbered_params(self):
-#         if hasattr(self, "string"):
-#             return super()._apply_numbered_params()
 
 
 # noinspection PyAbstractClass
@@ -353,6 +329,7 @@ class Transaction(base.Transaction):
         await self._conn.rollback()
 
 
+# MySQL doesn't need to create ENUM types like PostgreSQL, do nothing here
 class AsyncEnum(ENUM):
     async def create_async(self, bind=None, checkfirst=True):
         pass
