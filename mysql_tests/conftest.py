@@ -35,7 +35,9 @@ async def engine(sa_engine):
 @pytest.fixture
 @async_generator
 async def bind(sa_engine):
-    async with db.with_bind(MYSQL_URL, echo=ECHO, autocommit=True) as e:
+    async with db.with_bind(
+        MYSQL_URL, echo=ECHO, minsize=10, autocommit=True,
+    ) as e:
         await yield_(e)
     sa_engine.execute("DELETE FROM gino_user_settings")
     sa_engine.execute("DELETE FROM gino_users")

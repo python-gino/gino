@@ -40,7 +40,7 @@ async def test_connection_ctx(bind, mocker):
         tx = await conn.transaction().__aenter__()
         await u.update(nickname="rollback").apply()
         assert await get_name() == "rollback"
-        mocker.patch("asyncpg.transaction.Transaction.commit").side_effect = IndexError
+        mocker.patch("aiomysql.connection.Connection.commit").side_effect = IndexError
         with pytest.raises(IndexError):
             await tx.__aexit__(None, None, None)
         # clean up, and to simulate commit failed
@@ -102,11 +102,11 @@ async def test_engine(bind):
 
 
 async def test_begin_failed(bind, mocker):
-    from asyncpg.transaction import Transaction
+    from aiomysql.connection import Connection
 
     init_size = qsize(bind)
-    mocker.patch("asyncpg.transaction.Transaction.start")
-    Transaction.start.side_effect = ZeroDivisionError
+    mocker.patch("aiomysql.connection.Connection.begin")
+    Connection.begin.side_effect = ZeroDivisionError
     with pytest.raises(ZeroDivisionError):
         async with bind.transaction():
             pass  # pragma: no cover
@@ -114,12 +114,12 @@ async def test_begin_failed(bind, mocker):
 
 
 async def test_commit_failed(bind, mocker):
-    from asyncpg.transaction import Transaction
+    from aiomysql.connection import Connection
 
     init_size = qsize(bind)
-    mocker.patch("asyncpg.transaction.Transaction._Transaction__commit")
+    mocker.patch("aiomysql.connection.Connection.begin")
     # noinspection PyUnresolvedReferences,PyProtectedMember
-    Transaction._Transaction__commit.side_effect = ZeroDivisionError
+    Connection.begin.side_effect = ZeroDivisionError
     with pytest.raises(ZeroDivisionError):
         async with bind.transaction():
             pass
@@ -127,13 +127,13 @@ async def test_commit_failed(bind, mocker):
 
 
 async def test_reuse(bind):
-    from asyncpg.transaction import Transaction
+    from aiomysql.connection import Connection
 
     init_size = qsize(bind)
     async with db.acquire() as conn:
         async with db.transaction() as tx:
             assert tx.connection.raw_connection is conn.raw_connection
-            assert isinstance(tx.raw_transaction, Transaction)
+            assert isinstance(tx.raw_transaction, Connection)
             async with db.transaction() as tx2:
                 assert tx2.connection.raw_connection is conn.raw_connection
             async with db.transaction(reuse=False) as tx2:
@@ -256,7 +256,7 @@ async def test_base_exception(engine):
 
 
 async def test_no_rollback_on_commit_fail(engine, mocker):
-    mocker.patch("asyncpg.transaction.Transaction.commit").side_effect = IndexError
+    mocker.patch("aiomysql.connection.Connection.commit").side_effect = IndexError
     async with engine.acquire() as conn:
         tx = await conn.transaction().__aenter__()
         rollback = mocker.patch.object(tx._tx, "rollback")

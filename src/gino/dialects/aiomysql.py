@@ -339,7 +339,7 @@ class Transaction(base.Transaction):
 
     @property
     def raw_transaction(self):
-        raise NotImplementedError
+        return self._conn
 
     async def begin(self):
         await self._conn.begin()

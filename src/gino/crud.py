@@ -808,7 +808,7 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
         # "dirty" row
         release_conn = False
         if not isinstance(bind, GinoConnection):
-            conn = await bind.acquire()
+            conn = await bind.acquire(reuse=True)
             release_conn = True
         else:
             conn = bind
