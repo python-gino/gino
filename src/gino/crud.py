@@ -435,7 +435,6 @@ class CRUDModel(Model):
 
     @classmethod
     def _init_table(cls, sub_cls):
-        rv = Model._init_table(sub_cls)
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in each_cls.__dict__.items():
                 if isinstance(v, json_support.JSONProperty):
@@ -444,6 +443,7 @@ class CRUDModel(Model):
                             'Requires "{}" JSON[B] column.'.format(v.prop_name)
                         )
                     v.name = k
+        rv = Model._init_table(sub_cls)
         if rv is not None:
             rv.__model__ = weakref.ref(sub_cls)
         return rv
@@ -813,7 +813,8 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
         else:
             conn = bind
         try:
-            lastrowid, affected_rows = await conn.all(query)
+            lastrowid, affected_rows = await conn.all(
+                query.execution_options(return_affected_rows=True))
             if not lastrowid and not affected_rows:
                 raise NoSuchRowError()
             # It's insertion and primary key is AUTO_INCREMENT

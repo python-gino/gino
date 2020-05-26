@@ -217,8 +217,11 @@ class _ResultProxy:
             )
             if (not self.context.dialect.support_returning and
                     (self.context.isinsert or self.context.isupdate)):
-                # TODO: a better way to return execution status
-                return context.get_lastrowid(), context.get_affected_rows()
+                if self.context.execution_options.get(
+                    'return_affected_rows', False
+                ):
+                    return context.get_lastrowid(), context.get_affected_rows()
+                return context.get_lastrowid()
             item = context.process_rows(rows, return_model=return_model)
             if one:
                 if item:
@@ -284,9 +287,9 @@ class ExecutionContextOverride:
     def loader(self):
         return self._compiled_first_opt("loader", None)
 
-    # @util.memoized_property
-    # def return_lastrowid(self):
-    #     return self._compiled_first_opt("return_lastrowid", False)
+    @util.memoized_property
+    def return_affected_rows(self):
+        return self._compiled_first_opt("return_affected_rows", False)
 
     def process_rows(self, rows, return_model=True):
         if not rows:
