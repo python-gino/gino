@@ -7,7 +7,7 @@ import warnings
 
 import aiomysql
 from sqlalchemy import util, exc, sql
-from sqlalchemy.dialects.mysql import (JSON, json)
+from sqlalchemy.dialects.mysql import (JSON, ENUM)
 # from sqlalchemy.dialects.postgresql import (  # noqa: F401
 #     ARRAY,
 #     CreateEnumType,
@@ -353,6 +353,26 @@ class Transaction(base.Transaction):
         await self._conn.rollback()
 
 
+class AsyncEnum(ENUM):
+    async def create_async(self, bind=None, checkfirst=True):
+        pass
+
+    async def drop_async(self, bind=None, checkfirst=True):
+        pass
+
+    async def _on_table_create_async(self, target, bind, checkfirst=False, **kw):
+        pass
+
+    async def _on_table_drop_async(self, target, bind, checkfirst=False, **kw):
+        pass
+
+    async def _on_metadata_create_async(self, target, bind, checkfirst=False, **kw):
+        pass
+
+    async def _on_metadata_drop_async(self, target, bind, checkfirst=False, **kw):
+        pass
+
+
 class GinoNullType(sqltypes.NullType):
     def result_processor(self, dialect, coltype):
         if coltype == JSON_COLTYPE:
@@ -379,8 +399,8 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     colspecs = util.update_copy(
         MySQLDialect.colspecs,
         {
-            # ENUM: AsyncEnum,
-            # sqltypes.Enum: AsyncEnum,
+            ENUM: AsyncEnum,
+            sqltypes.Enum: AsyncEnum,
             sqltypes.NullType: GinoNullType,
         },
     )
@@ -485,20 +505,6 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
                     version.append(n)
         return tuple(version)
 
-
-    # async def has_schema(self, connection, schema):
-    #     row = await connection.first(
-    #         sql.text(
-    #             "select nspname from pg_namespace " "where lower(nspname)=:schema"
-    #         ).bindparams(
-    #             sql.bindparam(
-    #                 "schema", util.text_type(schema.lower()), type_=sqltypes.Unicode,
-    #             )
-    #         )
-    #     )
-    #
-    #     return bool(row)
-
     async def has_table(self, connection, table_name, schema=None):
         full_name = ".".join(
             self.identifier_preparer._quote_free_identifiers(
@@ -518,72 +524,6 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
         if isinstance(exception.args[0], Exception):
             exception = exception.args[0]
         return exception.args[0]
-    #
-    # async def has_sequence(self, connection, sequence_name, schema=None):
-    #     if schema is None:
-    #         row = await connection.first(
-    #             sql.text(
-    #                 "SELECT relname FROM pg_class c join pg_namespace n on "
-    #                 "n.oid=c.relnamespace where relkind='S' and "
-    #                 "n.nspname=current_schema() "
-    #                 "and relname=:name"
-    #             ).bindparams(
-    #                 sql.bindparam(
-    #                     "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
-    #                 )
-    #             )
-    #         )
-    #     else:
-    #         row = await connection.first(
-    #             sql.text(
-    #                 "SELECT relname FROM pg_class c join pg_namespace n on "
-    #                 "n.oid=c.relnamespace where relkind='S' and "
-    #                 "n.nspname=:schema and relname=:name"
-    #             ).bindparams(
-    #                 sql.bindparam(
-    #                     "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
-    #                 ),
-    #                 sql.bindparam(
-    #                     "schema", util.text_type(schema), type_=sqltypes.Unicode,
-    #                 ),
-    #             )
-    #         )
-    #
-    #     return bool(row)
-    #
-    # async def has_type(self, connection, type_name, schema=None):
-    #     if schema is not None:
-    #         query = """
-    #         SELECT EXISTS (
-    #             SELECT * FROM pg_catalog.pg_type t, pg_catalog.pg_namespace n
-    #             WHERE t.typnamespace = n.oid
-    #             AND t.typname = :typname
-    #             AND n.nspname = :nspname
-    #             )
-    #             """
-    #         query = sql.text(query)
-    #     else:
-    #         query = """
-    #         SELECT EXISTS (
-    #             SELECT * FROM pg_catalog.pg_type t
-    #             WHERE t.typname = :typname
-    #             AND pg_type_is_visible(t.oid)
-    #             )
-    #             """
-    #         query = sql.text(query)
-    #     query = query.bindparams(
-    #         sql.bindparam(
-    #             "typname", util.text_type(type_name), type_=sqltypes.Unicode,
-    #         ),
-    #     )
-    #     if schema is not None:
-    #         query = query.bindparams(
-    #             sql.bindparam(
-    #                 "nspname", util.text_type(schema), type_=sqltypes.Unicode,
-    #             ),
-    #         )
-    #     return bool(await connection.scalar(query))
-
 
 def _escape_args(args, conn):
     if isinstance(args, (tuple, list)):

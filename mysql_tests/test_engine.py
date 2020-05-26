@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pymysql
 import aiomysql
-import asyncpg
 from gino import create_engine, UninitializedError
 import pytest
 from sqlalchemy.exc import ObjectNotExecutableError
