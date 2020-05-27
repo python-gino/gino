@@ -423,7 +423,7 @@ class AsyncDialectMixin:
         else:
             return context.statement, context.parameters[0]
 
-    async def init_pool(self, url, loop):
+    async def init_pool(self, url, loop, pool_class=None):
         raise NotImplementedError
 
     def transaction(self, raw_conn, args, kwargs):

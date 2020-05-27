@@ -6,7 +6,7 @@ import time
 import warnings
 
 import aiomysql
-from sqlalchemy import util, exc, sql
+from sqlalchemy import util, exc
 from sqlalchemy.dialects.mysql import (JSON, ENUM)
 from sqlalchemy.dialects.mysql.base import (
     MySQLCompiler,
@@ -176,7 +176,6 @@ class DBAPICursor(base.DBAPICursor):
             q_prefix = m.group(1)
             q_values = m.group(2).rstrip()
             q_postfix = m.group(3) or ''
-            assert q_values[0] == '(' and q_values[-1] == ')'
             return (await self._do_execute_many(
                 conn, q_prefix, q_values, q_postfix, args))
         else:
@@ -396,7 +395,8 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
+        return await pool_class(
+            url, loop, init=self.on_connect(), **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
