@@ -258,7 +258,6 @@ Finally, run an insert statement on the model.
 ::
 
     await User.insert().gino.all(new_names_dict)
-    >>
 
 How to print the executed SQL?
 ------------------------------
