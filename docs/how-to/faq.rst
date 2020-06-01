@@ -236,11 +236,29 @@ same time, using a :class:`~gino.loader.TupleLoader` with two sub-loaders -
 Be ware of the :class:`tuple` in ``.gino.load((...))``.
 
 
-How to do bulk insert / update?
--------------------------------
 
-TBD #314
+How to do bulk or batch insert / update?
+-----------------------------------------
 
+For a simple example, take a model that has one field, "name." In your application you have a list of names you would like to add to the database:
+
+::
+
+    new_names = ["Austin", "Ali", "Jeff", "Marissa"]
+
+To quickly insert the names in one query, first construct a dict with the ``{"model_key": "value"}`` format.
+
+::
+
+    new_names_dict = [dict(name=new_name) for new_name in new_names]
+    >> [{'name': 'Austin'}, {'name': 'Ali'}, {'name': 'Jeff'}, {'name': 'Marissa'}]
+
+Finally, run an insert statement on the model.
+
+::
+
+    await User.insert().gino.all(new_names_dict)
+    >>
 
 How to print the executed SQL?
 ------------------------------
