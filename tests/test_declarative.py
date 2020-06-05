@@ -328,3 +328,20 @@ async def test_declared_attr_with_table():
     assert n_call == 1
     assert Model.table_name == "model6"
     assert n_call == 1
+
+
+async def test_override():
+    class ModelMixin:
+        field = db.Column(db.String)
+
+    class Model(db.Model, ModelMixin):
+        __tablename__ = "model7"
+
+        normal = db.Column(db.Integer)
+
+        @property
+        def field(self):
+            return "field is a const value"
+
+    assert len(Model.__table__.columns) == 1
+    assert Model().field == "field is a const value"
