@@ -259,8 +259,12 @@ class Model:
         inspected_args = []
         updates = {}
         column_name_map = InvertDict()
-        for each_cls in sub_cls.__mro__[::-1]:
+        visited = set()
+        for each_cls in sub_cls.__mro__:
             for k, v in getattr(each_cls, "__namespace__", each_cls.__dict__).items():
+                if k in visited:
+                    continue
+                visited.add(k)
                 declared_callable_attr = callable(v) and getattr(
                     v, "__declared_attr__", False
                 )
