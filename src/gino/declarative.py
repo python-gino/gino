@@ -320,11 +320,14 @@ class Model:
         rv = sa.Table(table_name, sub_cls.__metadata__, *args, **table_kw)
         for k, v in updates.items():
             setattr(sub_cls, k, v)
+
+        json_prop_names = set()
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in each_cls.__dict__.items():
                 if isinstance(v, json_support.JSONProperty):
                     if not v.name:
                         v.name = k
+                    json_prop_names.add(v.prop_name)
                     json_col = getattr(
                         sub_cls.__dict__.get(v.prop_name), "column", None
                     )
@@ -337,6 +340,7 @@ class Model:
                                 type(v).__name__, v.name, v.prop_name,
                             )
                         )
+        sub_cls.__json_prop_names__ = json_prop_names
         return rv
 
 

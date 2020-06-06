@@ -49,6 +49,7 @@ async def test_query_ext(bind):
         u.id,
         "test",
         {"age": 18, "birthday": "1970-01-01T00:00:00.000000"},
+        {"height": 170},
         UserType.USER,
         None,
     )
@@ -59,6 +60,7 @@ async def test_query_ext(bind):
         u.id,
         "test",
         {"age": 18, "birthday": "1970-01-01T00:00:00.000000"},
+        {"height": 170},
         UserType.USER,
         None,
     )

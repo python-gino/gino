@@ -39,12 +39,16 @@ class User(db.Model):
     id = db.Column(db.BigInteger(), primary_key=True)
     nickname = db.Column("name", db.Unicode(), default=_random_name)
     profile = db.Column("props", JSONB(), nullable=False, server_default="{}")
+    parameter = db.Column("params", JSONB(), nullable=False, server_default="{}")
     type = db.Column(db.Enum(UserType), nullable=False, default=UserType.USER,)
     realname = db.StringProperty()
     age = db.IntegerProperty(default=18)
     balance = db.IntegerProperty(default=0)
     birthday = db.DateTimeProperty(default=lambda i: datetime.utcfromtimestamp(0))
     team_id = db.Column(db.ForeignKey("gino_teams.id"))
+    weight = db.IntegerProperty(prop_name='parameter')
+    height = db.IntegerProperty(default=170, prop_name='parameter')
+    bio = db.StringProperty(prop_name='parameter')
 
     @balance.after_get
     def balance(self, val):
