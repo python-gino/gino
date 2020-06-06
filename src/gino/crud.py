@@ -213,7 +213,7 @@ class UpdateRequest:
         for key, value in values.items():
             prop = cls.__dict__.get(key)
             if isinstance(prop, json_support.JSONProperty):
-                value_from = "__profile__"
+                value_from = "__profiles__"
                 method = self._set_prop
                 k = prop
             else:
@@ -432,7 +432,7 @@ class CRUDModel(Model):
 
     def __init__(self, **values):
         super().__init__()
-        self.__profile__ = None
+        self.__profiles__ = None
         self._update_request_cls(self).update(**values)
 
     @classmethod
@@ -451,8 +451,8 @@ class CRUDModel(Model):
         cls = type(self)
         # noinspection PyUnresolvedReferences,PyProtectedMember
         cls._check_abstract()
-        if self.__profile__:
-            profile_keys = set([k for v in self.__profile__.values() for k in v.keys()])
+        if self.__profiles__:
+            profile_keys = set([k for v in self.__profiles__.values() for k in v.keys()])
         else:
             profile_keys = []
         for key in profile_keys:
@@ -483,7 +483,7 @@ class CRUDModel(Model):
         row = await bind.first(q)
         for k, v in row.items():
             self.__values__[self._column_name_map.invert_get(k)] = v
-        self.__profile__ = None
+        self.__profiles__ = None
         return self
 
     def _get_sa_values(self, instance_values: dict) -> dict:
