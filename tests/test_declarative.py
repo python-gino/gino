@@ -179,6 +179,34 @@ async def test_mixin():
         assert False, "Should not reach here"
 
 
+async def test_mixin_crud(engine):
+    db = gino.Gino()
+    db.bind = engine
+
+    class Mixin:
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.Text)
+
+    class MixinCrud(db.Model, Mixin):
+        __tablename__ = "mixin_crud"
+
+    await db.gino.create_all()
+    try:
+        mc = await MixinCrud.create(name="mctest")
+        assert mc.name == "mctest"
+
+        await mc.update(name="updated").apply()
+
+        mc = await MixinCrud.query.gino.first()
+        assert mc.name == "updated"
+
+        await mc.delete()
+        mc = await MixinCrud.query.gino.first()
+        assert mc is None
+    finally:
+        await db.gino.drop_all()
+
+
 # noinspection PyUnusedLocal
 async def test_inherit_constraint():
     with pytest.raises(ValueError, match="already attached to another table"):

@@ -285,6 +285,8 @@ class Model:
                     updates[k] = sub_cls.__attr_factory__(k, v)
                 elif isinstance(v, (sa.Index, sa.Constraint)):
                     inspected_args.append(v)
+                elif isinstance(v, json_support.JSONProperty):
+                    updates[k] = v
         if table_name is None:
             return
         sub_cls._column_name_map = column_name_map
@@ -321,6 +323,8 @@ class Model:
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in each_cls.__dict__.items():
                 if isinstance(v, json_support.JSONProperty):
+                    if not v.name:
+                        v.name = k
                     json_col = getattr(
                         sub_cls.__dict__.get(v.prop_name), "column", None
                     )
