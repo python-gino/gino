@@ -452,7 +452,9 @@ class CRUDModel(Model):
         # noinspection PyUnresolvedReferences,PyProtectedMember
         cls._check_abstract()
         if self.__profiles__:
-            profile_keys = set([k for v in self.__profiles__.values() for k in v.keys()])
+            profile_keys = set(
+                [k for v in self.__profiles__.values() for k in v.keys()]
+            )
         else:
             profile_keys = []
         for key in profile_keys:
