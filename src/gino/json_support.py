@@ -51,12 +51,9 @@ class JSONProperty:
         self.get_profile(instance).pop(self.name, None)
 
     def get_profile(self, instance):
-        if instance.__profiles__ is None:
-            instance.__profiles__ = {}
-        if instance.__profiles__.get(self.prop_name, None) is None:
+        if instance.__profile__ is None:
             props = type(instance).__dict__
-            current_profile = {}
-            instance.__profiles__[self.prop_name] = current_profile
+            instance.__profile__ = {}
             for key, value in (getattr(instance, self.prop_name, None) or {}).items():
                 if key not in props:
                     raise UnknownJSONPropertyError(
@@ -73,8 +70,9 @@ class JSONProperty:
                             key, self.prop_name, instance, key
                         )
                     )
-                current_profile[key] = prop.decode(value)
-        return instance.__profiles__.get(self.prop_name)
+                instance.__profile__[key] = prop.decode(value)
+
+        return instance.__profile__
 
     def save(self, instance, value=NONE):
         profile = getattr(instance, self.prop_name, None)
@@ -82,21 +80,21 @@ class JSONProperty:
             profile = {}
             setattr(instance, self.prop_name, profile)
         if value is NONE:
-            value = self.get_profile(instance)[self.name]
+            value = instance.__profile__[self.name]
         if not isinstance(value, sa.sql.ClauseElement):
             value = self.encode(value)
         rv = profile[self.name] = value
         return rv
 
     def reload(self, instance):
-        if instance.__profiles__ is None:
+        if instance.__profile__ is None:
             return
         profile = getattr(instance, self.prop_name, None) or {}
         value = profile.get(self.name, NONE)
         if value is NONE:
-            self.get_profile(instance).pop(self.name, None)
+            instance.__profile__.pop(self.name, None)
         else:
-            self.get_profile(instance)[self.name] = self.decode(value)
+            instance.__profile__[self.name] = self.decode(value)
 
     def make_expression(self, base_exp):
         return base_exp
