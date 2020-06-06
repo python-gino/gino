@@ -351,14 +351,14 @@ class Model:
         for k, v in updates.items():
             setattr(sub_cls, k, v)
 
-        prop_names = []
+        json_prop_names = []
         for each_cls in sub_cls.__mro__[::-1]:
             for k, v in each_cls.__dict__.items():
                 if isinstance(v, json_support.JSONProperty):
                     if not v.name:
                         v.name = k
-                    if v.prop_name not in prop_names:
-                        prop_names.append(v.prop_name)
+                    if v.prop_name not in json_prop_names:
+                        json_prop_names.append(v.prop_name)
                     json_col = getattr(
                         sub_cls.__dict__.get(v.prop_name), "column", None
                     )
@@ -371,7 +371,7 @@ class Model:
                                 type(v).__name__, v.name, v.prop_name,
                             )
                         )
-        sub_cls._prop_names = prop_names
+        sub_cls.__json_prop_names__ = json_prop_names
         return rv
 
 

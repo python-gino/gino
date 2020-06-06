@@ -55,7 +55,7 @@ class JSONProperty:
             props = type(instance).__dict__
             instance.__profile__ = {}
             profiles = {}
-            for prop_name in getattr(instance, "_prop_names", []):
+            for prop_name in getattr(instance, "__json_prop_names__", []):
                 profiles.update(getattr(instance, prop_name, None) or {})
             for key, value in profiles.items():
                 if key not in props:

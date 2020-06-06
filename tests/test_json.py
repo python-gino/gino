@@ -24,7 +24,9 @@ async def test_crud(bind):
 
     now = datetime.utcnow()
     now_str = now.strftime(DATETIME_FORMAT)
-    u = await User.create(nickname="fantix", birthday=now, bio="I code in Python and more.")
+    u = await User.create(
+        nickname="fantix", birthday=now, bio="I code in Python and more."
+    )
     u.age += 1
     assert await u.query.gino.model(None).first() == (
         1,
@@ -69,7 +71,12 @@ async def test_crud(bind):
     # Reload and test updating both JSON and regular property
     u = await User.get(u.id)
     await u.update(
-        age=User.age - 2, balance=200.15, realname="daisy", nickname="daisy.nick", height=185, weight=75
+        age=User.age - 2,
+        balance=200.15,
+        realname="daisy",
+        nickname="daisy.nick",
+        height=185,
+        weight=75,
     ).apply()
     data = await u.query.gino.model(None).first()
     assert await u.query.gino.model(None).first() == (
@@ -91,7 +98,7 @@ async def test_crud(bind):
         team_id=None,
         bio="I code in Python and more.",
         height=185,
-        weight=75
+        weight=75,
     )
 
     # Deleting property doesn't affect database
@@ -168,10 +175,10 @@ async def test_properties(bind):
 
         parameter = db.Column(JSONB(), nullable=False, server_default="{}")
 
-        raw_param = db.JSONProperty(prop_name='parameter')
-        bool_param = db.BooleanProperty(prop_name='parameter')
-        obj_param = db.ObjectProperty(prop_name='parameter')
-        arr_param = db.ArrayProperty(prop_name='parameter')
+        raw_param = db.JSONProperty(prop_name="parameter")
+        bool_param = db.BooleanProperty(prop_name="parameter")
+        obj_param = db.ObjectProperty(prop_name="parameter")
+        arr_param = db.ArrayProperty(prop_name="parameter")
 
     await PropsTest.gino.create()
     try:
@@ -180,7 +187,6 @@ async def test_properties(bind):
             bool=True,
             obj=dict(x=1, y=2),
             arr=[3, 4, 5, 6],
-
             raw_param=dict(a=[3, 4]),
             bool_param=False,
             obj_param=dict(x=3, y=4),
@@ -191,10 +197,22 @@ async def test_properties(bind):
         assert t.arr[-1] == 6
         assert t.arr_param[-1] == 10
         data = await db.select(
-            [PropsTest.profile, PropsTest.parameter, PropsTest.raw, PropsTest.bool, PropsTest.obj_param]
+            [
+                PropsTest.profile,
+                PropsTest.parameter,
+                PropsTest.raw,
+                PropsTest.bool,
+                PropsTest.obj_param,
+            ]
         ).gino.first()
         assert await db.select(
-            [PropsTest.profile, PropsTest.parameter, PropsTest.raw, PropsTest.bool, PropsTest.obj_param]
+            [
+                PropsTest.profile,
+                PropsTest.parameter,
+                PropsTest.raw,
+                PropsTest.bool,
+                PropsTest.obj_param,
+            ]
         ).gino.first() == (
             {
                 "arr": [3, 4, 5, 6],
