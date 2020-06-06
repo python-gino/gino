@@ -52,8 +52,11 @@ class JSONProperty:
 
     def get_profile(self, instance):
         if instance.__profile__ is None:
-            props = type(instance).__dict__
             instance.__profile__ = {}
+        if instance.__profile__.get(self.prop_name, None) is None:
+            props = type(instance).__dict__
+            current_profile = {}
+            instance.__profile__[self.prop_name] = current_profile
             for key, value in (getattr(instance, self.prop_name, None) or {}).items():
                 if key not in props:
                     raise UnknownJSONPropertyError(
@@ -70,9 +73,8 @@ class JSONProperty:
                             key, self.prop_name, instance, key
                         )
                     )
-                instance.__profile__[key] = prop.decode(value)
-
-        return instance.__profile__
+                current_profile[key] = prop.decode(value)
+        return instance.__profile__.get(self.prop_name)
 
     def save(self, instance, value=NONE):
         profile = getattr(instance, self.prop_name, None)
@@ -80,7 +82,7 @@ class JSONProperty:
             profile = {}
             setattr(instance, self.prop_name, profile)
         if value is NONE:
-            value = instance.__profile__[self.name]
+            value = self.get_profile(instance)[self.name]
         if not isinstance(value, sa.sql.ClauseElement):
             value = self.encode(value)
         rv = profile[self.name] = value
@@ -92,9 +94,9 @@ class JSONProperty:
         profile = getattr(instance, self.prop_name, None) or {}
         value = profile.get(self.name, NONE)
         if value is NONE:
-            instance.__profile__.pop(self.name, None)
+            self.get_profile(instance).pop(self.name, None)
         else:
-            instance.__profile__[self.name] = self.decode(value)
+            self.get_profile(instance)[self.name] = self.decode(value)
 
     def make_expression(self, base_exp):
         return base_exp

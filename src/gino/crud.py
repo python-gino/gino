@@ -222,7 +222,10 @@ class UpdateRequest:
                 k = key
             if not isinstance(value, ClauseElement):
                 setattr(self._instance, key, value)
-                value = getattr(self._instance, value_from)[key]
+                if isinstance(prop, json_support.JSONProperty):
+                    value = prop.get_profile(self._instance)[key]
+                else:
+                    value = getattr(self._instance, value_from)[key]
             method(k, value)
         return self
 
@@ -448,7 +451,10 @@ class CRUDModel(Model):
         cls = type(self)
         # noinspection PyUnresolvedReferences,PyProtectedMember
         cls._check_abstract()
-        profile_keys = set(self.__profile__.keys() if self.__profile__ else [])
+        if self.__profile__:
+            profile_keys = set([k for v in self.__profile__.values() for k in v.keys()])
+        else:
+            profile_keys = []
         for key in profile_keys:
             cls.__dict__.get(key).save(self)
         # initialize default values

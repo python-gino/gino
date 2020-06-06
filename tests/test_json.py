@@ -14,6 +14,7 @@ async def test_in_memory():
     u.age += 10
     assert u.age == 28
     assert u.balance == 0
+    assert u.height == 170
     assert isinstance(u.balance, float)
 
 
@@ -23,12 +24,13 @@ async def test_crud(bind):
 
     now = datetime.utcnow()
     now_str = now.strftime(DATETIME_FORMAT)
-    u = await User.create(nickname="fantix", birthday=now)
+    u = await User.create(nickname="fantix", birthday=now, bio="I code in Python and more.")
     u.age += 1
     assert await u.query.gino.model(None).first() == (
         1,
         "fantix",
         {"age": 18, "birthday": now_str},
+        {"bio": "I code in Python and more.", "height": 170},
         UserType.USER,
         None,
     )
@@ -38,6 +40,8 @@ async def test_crud(bind):
     assert u.birthday == now
     assert u.age == 18
     assert u.balance == 0
+    assert u.height == 170
+    assert u.bio == "I code in Python and more."
     assert isinstance(u.balance, float)
     assert await db.select([User.birthday]).where(User.id == u.id).gino.scalar() == now
 
@@ -45,16 +49,18 @@ async def test_crud(bind):
     u.update(birthday=now - timedelta(days=3650))
 
     # Update two JSON fields, one using expression
-    await u.update(age=User.age - 2, balance=100.85).apply()
+    await u.update(age=User.age - 2, balance=100.85, height=180).apply()
 
     assert u.birthday == now - timedelta(days=3650)
     assert u.age == 16
     assert u.balance == 100
+    assert u.height == 180
     assert isinstance(u.balance, float)
     assert await u.query.gino.model(None).first() == (
         1,
         "fantix",
         dict(age=16, balance=100, birthday=now_str),
+        dict(bio="I code in Python and more.", height=180),
         UserType.USER,
         None,
     )
@@ -63,12 +69,14 @@ async def test_crud(bind):
     # Reload and test updating both JSON and regular property
     u = await User.get(u.id)
     await u.update(
-        age=User.age - 2, balance=200.15, realname="daisy", nickname="daisy.nick"
+        age=User.age - 2, balance=200.15, realname="daisy", nickname="daisy.nick", height=185, weight=75
     ).apply()
+    data = await u.query.gino.model(None).first()
     assert await u.query.gino.model(None).first() == (
         1,
         "daisy.nick",
         dict(age=14, balance=200, realname="daisy", birthday=now_str),
+        dict(bio="I code in Python and more.", height=185, weight=75),
         UserType.USER,
         None,
     )
@@ -81,6 +89,9 @@ async def test_crud(bind):
         realname="daisy",
         type=UserType.USER,
         team_id=None,
+        bio="I code in Python and more.",
+        height=185,
+        weight=75
     )
 
     # Deleting property doesn't affect database
@@ -130,12 +141,16 @@ async def test_non_jsonb(bind):
 # noinspection PyUnusedLocal
 async def test_reload(bind):
     u = await User.create()
-    await u.update(realname=db.cast("888", db.Unicode)).apply()
+    await u.update(realname=db.cast("888", db.Unicode), weight=75).apply()
     assert u.realname == "888"
-    await u.update(profile=None).apply()
+    assert u.weight == 75
+    await u.update(profile=None, parameter=None).apply()
     assert u.realname == "888"
+    assert u.weight == 75
     User.__dict__["realname"].reload(u)
+    User.__dict__["weight"].reload(u)
     assert u.realname is None
+    assert u.weight is None
 
 
 # noinspection PyUnusedLocal
@@ -151,15 +166,35 @@ async def test_properties(bind):
         obj = db.ObjectProperty()
         arr = db.ArrayProperty()
 
+        parameter = db.Column(JSONB(), nullable=False, server_default="{}")
+
+        raw_param = db.JSONProperty(prop_name='parameter')
+        bool_param = db.BooleanProperty(prop_name='parameter')
+        obj_param = db.ObjectProperty(prop_name='parameter')
+        arr_param = db.ArrayProperty(prop_name='parameter')
+
     await PropsTest.gino.create()
     try:
         t = await PropsTest.create(
-            raw=dict(a=[1, 2]), bool=True, obj=dict(x=1, y=2), arr=[3, 4, 5, 6],
+            raw=dict(a=[1, 2]),
+            bool=True,
+            obj=dict(x=1, y=2),
+            arr=[3, 4, 5, 6],
+
+            raw_param=dict(a=[3, 4]),
+            bool_param=False,
+            obj_param=dict(x=3, y=4),
+            arr_param=[7, 8, 9, 10],
         )
         assert t.obj["x"] == 1
+        assert t.obj_param["x"] == 3
         assert t.arr[-1] == 6
+        assert t.arr_param[-1] == 10
+        data = await db.select(
+            [PropsTest.profile, PropsTest.parameter, PropsTest.raw, PropsTest.bool, PropsTest.obj_param]
+        ).gino.first()
         assert await db.select(
-            [PropsTest.profile, PropsTest.raw, PropsTest.bool,]
+            [PropsTest.profile, PropsTest.parameter, PropsTest.raw, PropsTest.bool, PropsTest.obj_param]
         ).gino.first() == (
             {
                 "arr": [3, 4, 5, 6],
@@ -167,13 +202,24 @@ async def test_properties(bind):
                 "raw": {"a": [1, 2]},
                 "bool": True,
             },
+            {
+                "arr_param": [7, 8, 9, 10],
+                "obj_param": {"x": 3, "y": 4},
+                "raw_param": {"a": [3, 4]},
+                "bool_param": False,
+            },
             dict(a=[1, 2]),
             True,
+            dict(x=3, y=4),
         )
         t.obj = dict(x=10, y=20)
+        t.obj_param = dict(x=30, y=45)
         assert t.obj["x"] == 10
+        assert t.obj_param["y"] == 45
         t.arr = [4, 5, 6, 7]
+        t.arr_param = [11, 12, 13, 14, 15]
         assert t.arr[-1] == 7
+        assert t.arr_param[-1] == 15
     finally:
         await PropsTest.gino.drop()
 
