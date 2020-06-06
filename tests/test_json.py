@@ -312,3 +312,27 @@ async def test_index(bind):
 
     await IndexTest.gino.create()
     await IndexTest.gino.drop()
+
+
+async def test_mixin(bind):
+    from gino.dialects.asyncpg import JSONB
+
+    class Base:
+        id = db.Column(db.Integer(), primary_key=True)
+        profile = db.Column(JSONB())
+
+    class Mixin(Base):
+        age = db.IntegerProperty()
+
+    class MixinTest(db.Model, Mixin):
+        __tablename__ = "mixin_test"
+
+    await MixinTest.gino.create()
+    try:
+        mt = await MixinTest.create(age=22)
+        await mt.update(age=24).apply()
+        assert (await MixinTest.query.gino.first()).age == 24
+        await mt.update(age=MixinTest.age - 5).apply()
+        assert (await MixinTest.query.gino.first()).age == 19
+    finally:
+        await MixinTest.gino.drop()
