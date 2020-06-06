@@ -357,8 +357,7 @@ class Model:
                 if isinstance(v, json_support.JSONProperty):
                     if not v.name:
                         v.name = k
-                    if v.prop_name not in json_prop_names:
-                        json_prop_names.add(v.prop_name)
+                    json_prop_names.add(v.prop_name)
                     json_col = getattr(
                         sub_cls.__dict__.get(v.prop_name), "column", None
                     )
