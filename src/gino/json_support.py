@@ -54,7 +54,10 @@ class JSONProperty:
         if instance.__profile__ is None:
             props = type(instance).__dict__
             instance.__profile__ = {}
-            for key, value in (getattr(instance, self.prop_name, None) or {}).items():
+            profiles = {}
+            for prop_name in getattr(instance, "_prop_names", []):
+                profiles.update(getattr(instance, prop_name, None) or {})
+            for key, value in profiles.items():
                 if key not in props:
                     raise UnknownJSONPropertyError(
                         "`{}` is found in `{}` of instance {}, "
