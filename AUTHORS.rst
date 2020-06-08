@@ -40,6 +40,7 @@ Contributors
 * Roald Storm <roaldstorm@gmail.com>
 * Tiago Requeijo <tiago.requeijo.dev@gmail.com>
 * Olexiy <alosha969@gmail.com>
+* Galden <wudenggang0@163.com>
 * Iuliia Volkova <xnuinside@gmail.com>
 * Roman Averchenkov <aragentum@gmail.com>
 

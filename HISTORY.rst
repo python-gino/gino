@@ -41,6 +41,15 @@ changes to the GINO development process:
 * The src dist on PyPI does not include tests, docs and some other files due to
   a limitation of Poetry.
 
+1.0.1 (2020-06-08)
+^^^^^^^^^^^^^^^^^^
+
+* Fixed dependency version range (SQLAlchemy >=1.2.16, <1.4)
+* Updated docs (Including contribution by Galden in #660, and Iuliia Volkova in #672)
+* Multiple JSON property fixes (#661 #662 #695)
+* Fixed extension typing issue (#673 #674)
+* Fixed model override behavior (#694)
+* Fixed multiple JSON profiles issue (Contributed by Roman Averchenkov in #693 #696)
 
 1.0.0 (2020-04-26)
 ^^^^^^^^^^^^^^^^^^
