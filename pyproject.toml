@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gino"
-version = "1.0.1"
+version = "1.0.2-dev"
 description = "GINO Is Not ORM - a Python asyncio ORM on SQLAlchemy core."
 license = "BSD-3-Clause"
 authors = ["Fantix King <fantix.king@gmail.com>"]
