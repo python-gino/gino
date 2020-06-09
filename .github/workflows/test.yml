@@ -53,7 +53,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-        $HOME/.poetry/bin/poetry install
+        $HOME/.poetry/bin/poetry install --no-interaction
     - name: Use lowest dependencies versions
       if: matrix.deps-version == 'lowest'
       run: |
@@ -99,6 +99,6 @@ jobs:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       run: |
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-        $HOME/.poetry/bin/poetry install
+        $HOME/.poetry/bin/poetry install --no-interaction --no-dev
         $HOME/.poetry/bin/poetry build
         $HOME/.poetry/bin/poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
