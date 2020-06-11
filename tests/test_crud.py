@@ -100,7 +100,13 @@ async def test_select(engine):
     name = await engine.scalar(User.select("nickname").where(User.id == u.id))
     assert u.nickname == name
 
+    name = await engine.scalar(User.select(User.nickname).where(User.id == u.id))
+    assert u.nickname == name
+
     name = await engine.scalar(u.select("nickname"))
+    assert u.nickname == name
+
+    name = await engine.scalar(u.select(User.nickname))
     assert u.nickname == name
 
 

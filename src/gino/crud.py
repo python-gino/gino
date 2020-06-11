@@ -36,7 +36,9 @@ class _Query:
 class _Select:
     def __get__(self, instance, owner):
         def select(*args):
-            q = sa.select([getattr(owner, x) for x in args])
+            q = sa.select(
+                [getattr(owner, x) if isinstance(x, str) else x for x in args]
+            )
             if instance is not None:
                 q = q.where(instance.lookup())
             return q.execution_options(model=weakref.ref(owner), return_model=False)
