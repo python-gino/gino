@@ -74,10 +74,16 @@ nav .brand-logo {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: scroll;
+    -ms-overflow-style: none;
+}
+
+.breadcrumbs::-webkit-scrollbar {
+  display: none;
 }
 
 .breadcrumbs .breadcrumb,
 .breadcrumbs .breadcrumb::before {
+    content: '>';
     font-size: 16px;
     white-space: nowrap;
 }
@@ -249,9 +255,10 @@ div.search i {
 }
 
 .sidenav li > a {
-    padding-left: 48px;
-    height: 36px;
-    line-height: 36px;
+    font-size: 14px;
+    line-height: 14px;
+    padding: 12px 24px 12px 48px;
+    height: auto;
 }
 
 .sidenav li li > a {
