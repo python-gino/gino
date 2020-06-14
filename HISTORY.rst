@@ -2,6 +2,17 @@
 History
 =======
 
+GINO 1.1
+--------
+
+1.1.0 (pending)
+^^^^^^^^^^^^^^^
+
+* Added baked query feature (#478 #659 #667)
+* Added ``Query.gino.execution_options`` shortcut (#659)
+* Added ``@db.declared_attr(with_table=True)`` (#659)
+
+
 GINO 1.0
 --------
 
