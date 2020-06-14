@@ -116,8 +116,12 @@ class ModelType(type):
         if rv.__table__ is None:
             rv.__table__ = getattr(rv, "_init_table")(rv)
 
-        for each_cls in rv.__mro__[::-1]:
+        visited = set()
+        for each_cls in rv.__mro__:
             for k, v in getattr(each_cls, "__namespace__", each_cls.__dict__).items():
+                if k in visited:
+                    continue
+                visited.add(k)
                 if callable(v) and getattr(v, "__declared_attr_with_table__", False):
                     setattr(rv, k, v(rv))
         return rv

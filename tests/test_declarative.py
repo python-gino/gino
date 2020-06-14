@@ -373,3 +373,28 @@ async def test_override():
 
     assert len(Model.__table__.columns) == 1
     assert Model().field == "field is a const value"
+
+
+async def test_declared_attr_with_table_override():
+    mixin_called = False
+    override_called = False
+
+    class ModelMixin:
+        @db.declared_attr(with_table=True)
+        def some(self):
+            nonlocal mixin_called
+            mixin_called = True
+            return "mixin"
+
+    class Model(db.Model, ModelMixin):
+        __tablename__ = "model8"
+
+        @db.declared_attr(with_table=True)
+        def some(self):
+            nonlocal override_called
+            override_called = True
+            return "override"
+
+    assert Model.some == "override"
+    assert not mixin_called
+    assert override_called
