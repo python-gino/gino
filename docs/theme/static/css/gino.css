@@ -394,6 +394,12 @@ div.search i {
     color: var(--v-info-light);
 }
 
+.version-warning {
+    border: 1px solid #757575;
+    background-color: #ffaaaa;
+    padding: 8px;
+}
+
 h1 {
     font-size: 32px;
     margin: 32px 0 20px 0;

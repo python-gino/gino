@@ -125,6 +125,16 @@
                     {% if pagename != master_doc and toc.count('href') > 1 %}
                         <hr>
                     {% endif %}
+                    {% if "master" in VERSION %}
+                        <div class="version-warning">
+                            {% if language.startswith('zh') %}
+                                您正在浏览 master 分支，该文档可能涉及尚未发布的功能。
+                            {% else %}
+                                You're on the master branch. This documentation may include
+                                functionality that is not released yet.
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="add-your-lang">
                     <a href="https://www.transifex.com/decentfox-studio/gino_1_0/"
