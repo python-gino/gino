@@ -4,7 +4,7 @@ import pytest
 from gino.exceptions import UninitializedError
 from sqlalchemy.engine.url import make_url
 
-from .models import db, PG_URL, User
+from .models import db, DB_ARGS, PG_URL, User
 
 pytestmark = pytest.mark.asyncio
 
@@ -55,9 +55,28 @@ async def test_db_api(bind, random_name):
     assert params[0] == 3
 
 
-async def test_bind_url():
-    url = make_url(PG_URL)
-    assert url.drivername == "postgresql"
-    await db.set_bind(PG_URL)
-    assert url.drivername == "postgresql"
+@pytest.mark.parametrize(
+    "dsn, driver_name",
+    (
+        (
+            "postgresql://{user}:{password}@{host}:{port}/{database}".format(**DB_ARGS),
+            "postgresql",
+        ),
+        (
+            "postgres://{user}:{password}@{host}:{port}/{database}".format(**DB_ARGS),
+            "postgres",
+        ),
+        (
+            "postgres://{user}:{password}@/{database}?host={host}&port={port}".format(
+                **DB_ARGS
+            ),
+            "postgres",
+        ),
+    ),
+)
+async def test_bind_url(dsn, driver_name):
+    url = make_url(dsn)
+    assert url.drivername == driver_name
+    await db.set_bind(dsn)
+    assert url.drivername == driver_name
     await db.pop_bind().close()
