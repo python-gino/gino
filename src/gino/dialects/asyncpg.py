@@ -245,14 +245,9 @@ class Pool(base.Pool):
                 self.baked_queries = {}
 
         args.update(
-            loop=self._loop,
-            host=self._url.host,
-            port=self._url.port,
-            user=self._url.username,
-            database=self._url.database,
-            password=self._url.password,
-            connection_class=Connection,
+            connection_class=Connection, dsn=str(self._url), loop=self._loop,
         )
+
         if self._prebake and self._bakery:
             self._init_hook = args.pop("init", None)
             args["init"] = self._bake
