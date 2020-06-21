@@ -12,11 +12,11 @@ from gino import Gino
 from gino.dialects.aiomysql import JSON
 
 DB_ARGS = dict(
-    host=os.getenv("DB_HOST", "localhost"),
-    port=os.getenv("DB_PORT", 3306),
-    user=os.getenv("DB_USER", "root"),
-    password=os.getenv("DB_PASS", ""),
-    db=os.getenv("DB_NAME", "mysql"),
+    host=os.getenv("MYSQL_DB_HOST", "localhost"),
+    port=os.getenv("MYSQL_DB_PORT", 3306),
+    user=os.getenv("MYSQL_DB_USER", "root"),
+    password=os.getenv("MYSQL_DB_PASS", ""),
+    db=os.getenv("MYSQL_DB_NAME", "mysql"),
 )
 MYSQL_URL = "mysql://{user}:{password}@{host}:{port}/{db}".format(**DB_ARGS)
 db = Gino()
