@@ -199,6 +199,7 @@ async def test_no_profile():
         class Test(db.Model):
             __tablename__ = "tests_no_profile"
 
+            id = db.Column(db.BigInteger(), primary_key=True)
             age = db.IntegerProperty(default=18)
 
 
@@ -213,11 +214,12 @@ async def test_t291_t402(bind):
 
     class PropsTest(db.Model):
         __tablename__ = "props_test_291"
-        profile1 = db.Column(JSON(), nullable=False, default="{}")
-        profile2 = db.Column(CustomJSON(), nullable=False, default="{}")
+        profile = db.Column(JSON(), nullable=False, default={})
+        profile1 = db.Column(JSON(), nullable=False, default={})
+        profile2 = db.Column(CustomJSON(), nullable=False, default={})
 
-        bool = db.BooleanProperty(prop_name="profile1")
-        bool1 = db.BooleanProperty(prop_name="profile2")
+        bool = db.BooleanProperty()
+        bool1 = db.BooleanProperty(prop_name="profile1")
 
     await PropsTest.gino.create()
     try:

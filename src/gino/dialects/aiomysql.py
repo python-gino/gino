@@ -24,7 +24,7 @@ except ImportError:
 JSON_COLTYPE = 245
 
 #: Regular expression for :meth:`Cursor.executemany`.
-#: executemany only suports simple bulk insert.
+#: executemany only supports simple bulk insert.
 #: You can use it to load large dataset.
 _RE_INSERT_VALUES = re.compile(
     r"\s*((?:INSERT|REPLACE)\s.+\sVALUES?\s+)"
@@ -158,6 +158,10 @@ class DBAPICursor(base.DBAPICursor):
             self._async_executemany(conn, query, args), timeout=timeout
         )
 
+    async def execute_baked(self, baked_query, timeout, args, one):
+        # TODO: use prepare when it's supported
+        return await self.async_execute(baked_query.sql, timeout, args)
+
     async def _async_execute(self, conn, query, timeout, args):
         if args is not None:
             query = query % _escape_args(args, conn)
@@ -229,12 +233,14 @@ class DBAPICursor(base.DBAPICursor):
 
 
 class Pool(base.Pool):
-    def __init__(self, url, loop, init=None, **kwargs):
+    def __init__(self, url, loop, init=None, bakery=None, prebake=True, **kwargs):
         self._url = url
         self._loop = loop
         self._kwargs = kwargs
         self._pool = None
         self._conn_init = init
+        self._bakery = bakery
+        self._prebake = prebake
 
     async def _init(self):
         args = self._kwargs.copy()
@@ -366,6 +372,7 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     cursor_cls = DBAPICursor
     init_kwargs = set(
         itertools.chain(
+            ("bakery", "prebake"),
             *[
                 inspect.getfullargspec(f).args
                 for f in [aiomysql.create_pool, aiomysql.connect]
@@ -376,24 +383,30 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     }  # use SQLAlchemy's echo instead
     colspecs = util.update_copy(
         MySQLDialect.colspecs,
-        {ENUM: AsyncEnum, sqltypes.Enum: AsyncEnum, sqltypes.NullType: GinoNullType,},
+        {
+            ENUM: AsyncEnum,
+            sqltypes.Enum: AsyncEnum,
+            sqltypes.NullType: GinoNullType,
+        },
     )
     postfetch_lastrowid = False
     support_returning = False
     support_prepare = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, bakery=None, **kwargs):
         self._pool_kwargs = {}
         for k in self.init_kwargs:
             if k in kwargs:
                 self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._init_mixin()
+        self._init_mixin(bakery)
 
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
+        return await pool_class(
+            url, loop, bakery=self._bakery, init=self.on_connect(), **self._pool_kwargs
+        )
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):

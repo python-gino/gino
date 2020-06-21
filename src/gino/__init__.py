@@ -19,6 +19,8 @@ def create_engine(*args, **kwargs):
        * **Pre-bake** immediately when connected to the database (default).
        * No **pre-bake** but create prepared statements lazily when needed for the first
          time.
+
+       Note: ``prebake`` has no effect in aiomysql
     """
 
     from sqlalchemy import create_engine
