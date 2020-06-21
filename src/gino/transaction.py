@@ -114,7 +114,8 @@ class GinoTransaction:
             assert user.age == 64  # no exception raised before
 
         """
-        assert self._managed, "Illegal in manual mode, use `commit` instead."
+        if not self._managed:
+            raise AssertionError("Illegal in manual mode, use `commit` instead.")
         raise _Break(self, True)
 
     async def commit(self):
@@ -122,9 +123,10 @@ class GinoTransaction:
         Only available in manual mode: manually commit this transaction.
 
         """
-        assert not self._managed, (
-            "Illegal in managed mode, " "use `raise_commit` instead."
-        )
+        if self._managed:
+            raise AssertionError(
+                "Illegal in managed mode, " "use `raise_commit` instead."
+            )
         await self._tx.commit()
 
     def raise_rollback(self):
@@ -143,7 +145,8 @@ class GinoTransaction:
             assert user.age == 64  # no exception raised before
 
         """
-        assert self._managed, "Illegal in manual mode, use `rollback` instead."
+        if not self._managed:
+            raise AssertionError("Illegal in manual mode, use `rollback` instead.")
         raise _Break(self, False)
 
     async def rollback(self):
@@ -151,18 +154,21 @@ class GinoTransaction:
         Only available in manual mode: manually rollback this transaction.
 
         """
-        assert not self._managed, (
-            "Illegal in managed mode, " "use `raise_rollback` instead."
-        )
+        if self._managed:
+            raise AssertionError(
+                "Illegal in managed mode, " "use `raise_rollback` instead."
+            )
         await self._tx.rollback()
 
     def __await__(self):
-        assert self._managed is None, "Cannot start the same transaction twice"
+        if self._managed is not None:
+            raise AssertionError("Cannot start the same transaction twice")
         self._managed = False
         return self._begin().__await__()
 
     async def __aenter__(self):
-        assert self._managed is None, "Cannot start the same transaction twice"
+        if self._managed is not None:
+            raise AssertionError("Cannot start the same transaction twice")
         self._managed = True
         await self._begin()
         return self

@@ -179,6 +179,34 @@ async def test_mixin():
         assert False, "Should not reach here"
 
 
+async def test_mixin_crud(engine):
+    db = gino.Gino()
+    db.bind = engine
+
+    class Mixin:
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.Text)
+
+    class MixinCrud(db.Model, Mixin):
+        __tablename__ = "mixin_crud"
+
+    await db.gino.create_all()
+    try:
+        mc = await MixinCrud.create(name="mctest")
+        assert mc.name == "mctest"
+
+        await mc.update(name="updated").apply()
+
+        mc = await MixinCrud.query.gino.first()
+        assert mc.name == "updated"
+
+        await mc.delete()
+        mc = await MixinCrud.query.gino.first()
+        assert mc is None
+    finally:
+        await db.gino.drop_all()
+
+
 # noinspection PyUnusedLocal
 async def test_inherit_constraint():
     with pytest.raises(ValueError, match="already attached to another table"):
@@ -306,3 +334,67 @@ async def test_multiple_inheritance_overwrite_declared_table_name():
 
     assert MyTableWithoutName.__table__.name == "static_table_name"
     assert MyOtherTableWithoutName.__table__.name == "myothertablewithoutname"
+
+
+async def test_declared_attr_with_table():
+    n_call = 0
+
+    class Model(db.Model):
+        @db.declared_attr()
+        def __tablename__(cls):
+            return "model6"
+
+        @db.declared_attr(with_table=True)
+        def table_name(cls):
+            nonlocal n_call
+            n_call += 1
+            return cls.__table__.name
+
+    assert Model.__table__.name == "model6"
+    assert n_call == 1
+    assert Model.table_name == "model6"
+    assert n_call == 1
+    assert Model.table_name == "model6"
+    assert n_call == 1
+
+
+async def test_override():
+    class ModelMixin:
+        field = db.Column(db.String)
+
+    class Model(db.Model, ModelMixin):
+        __tablename__ = "model7"
+
+        normal = db.Column(db.Integer)
+
+        @property
+        def field(self):
+            return "field is a const value"
+
+    assert len(Model.__table__.columns) == 1
+    assert Model().field == "field is a const value"
+
+
+async def test_declared_attr_with_table_override():
+    mixin_called = False
+    override_called = False
+
+    class ModelMixin:
+        @db.declared_attr(with_table=True)
+        def some(self):
+            nonlocal mixin_called
+            mixin_called = True
+            return "mixin"
+
+    class Model(db.Model, ModelMixin):
+        __tablename__ = "model8"
+
+        @db.declared_attr(with_table=True)
+        def some(self):
+            nonlocal override_called
+            override_called = True
+            return "override"
+
+    assert Model.some == "override"
+    assert not mixin_called
+    assert override_called

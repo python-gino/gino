@@ -27,6 +27,10 @@ code, kbd, samp {
     border-radius: 2px;
 }
 
+strong {
+    font-weight: 700;
+}
+
 :root {
     --v-primary-base: #212B73;
     --v-secondary-base: #AD755C;
@@ -70,10 +74,16 @@ nav .brand-logo {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: scroll;
+    -ms-overflow-style: none;
+}
+
+.breadcrumbs::-webkit-scrollbar {
+  display: none;
 }
 
 .breadcrumbs .breadcrumb,
 .breadcrumbs .breadcrumb::before {
+    content: '>';
     font-size: 16px;
     white-space: nowrap;
 }
@@ -95,6 +105,26 @@ nav .brand-logo {
 .btn-flat:hover {
     color: #f8d230;
     text-shadow: #f8d230 0 0 5px;
+}
+
+a.brackets:before,
+span.brackets:empty,
+span.brackets > a:before{
+    content: "[";
+}
+
+a.brackets:after,
+span.brackets > a:after {
+    content: "]";
+}
+
+a.footnote-reference {
+    vertical-align: super;
+    font-size: 0.8em;
+}
+
+.footnote dt {
+    float: left;
 }
 
 div.search {
@@ -225,9 +255,10 @@ div.search i {
 }
 
 .sidenav li > a {
-    padding-left: 48px;
-    height: 36px;
-    line-height: 36px;
+    font-size: 14px;
+    line-height: 14px;
+    padding: 12px 24px 12px 48px;
+    height: auto;
 }
 
 .sidenav li li > a {
@@ -317,6 +348,56 @@ div.search i {
     color: var(--v-primary-base);
     border-left: 2px solid var(--v-primary-base);
     font-weight: 500;
+}
+
+.table-of-contents #version-selector hr {
+    margin-top: 48px;
+}
+
+.table-of-contents #version-selector div {
+    margin-top: 16px;
+    color: #757575;
+}
+
+.table-of-contents #version-selector a {
+    color: #757575;
+}
+
+.table-of-contents .add-your-lang,
+.table-of-contents .add-your-lang a,
+.table-of-contents .add-your-lang a:active,
+.table-of-contents .add-your-lang a:hover {
+    border-left: none;
+    font-size: 14px;
+    text-decoration: underline;
+    text-align: right;
+    margin-top: 8px;
+    color: #aaa;
+    font-weight: normal;
+}
+
+.table-of-contents #version-selector span,
+.table-of-contents #version-selector a,
+.table-of-contents #version-selector a:active,
+.table-of-contents #version-selector a:hover {
+    border-left: none;
+    padding: 8px;
+    margin-left: 16px;
+}
+
+.table-of-contents #version-selector a:active,
+.table-of-contents #version-selector a:hover {
+    color: var(--v-info-light);
+}
+
+.table-of-contents #version-selector span {
+    color: var(--v-info-light);
+}
+
+.version-warning {
+    border: 1px solid #757575;
+    background-color: #ffaaaa;
+    padding: 8px;
 }
 
 h1 {
@@ -465,46 +546,54 @@ a.headerlink {
 .body .section ul.boxed-nav li {
     border-radius: 4px;
     box-shadow: #D1CECE 0 0 4px;
-    padding: 16px;
+    padding: 10px;
     margin: 25px 0 0;
     width: 340px;
     list-style: none;
     color: #202A73;
     font-weight: 500;
-    position: relative;
     overflow: hidden;
-    height: 100px;
+}
+
+.body .section ul.boxed-nav li div {
+    background-color: #F4F7FC;
+    border-radius: 4px;
+    height: 110px;
+    padding: 30px 30px 0;
+    background-image: url(../images/box-bg-dec.svg);
+    background-repeat: no-repeat;
+    background-position: -15px -10px;
+}
+
+.body .section ul.boxed-nav li:nth-of-type(3n) div {
+    background-image: url(../images/box-bg-dec-2.svg);
+}
+
+.body .section ul.boxed-nav li:nth-of-type(3n+1) div {
+    background-image: url(../images/box-bg-dec-3.svg);
 }
 
 .body .section ul.boxed-nav li a img {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
+    width: 42px;
+    margin: 0 30px 30px 0;
+    float: left;
 }
 
 .body .section ul.boxed-nav li p {
-    position: absolute;
-    left: 150px;
-    right: 16px;
-    top: 16px;
-    font-size: 20px;
+    font-size: 18px;
+    color: #212B73;
+    line-height: 18px;
+    margin-bottom: 8px;
 }
 
 .body .section ul.boxed-nav li p:nth-of-type(2) {
-    top: 46px;
-    font-size: 12px;
-    color: #000000;
+    font-size: 14px;
+    word-break: break-word;
 }
 
-.body .section ul.boxed-nav p:first-of-type a,
-.body .section ul.boxed-nav p:first-of-type a:visited {
-    color: #202A73;
-}
-
-.body .section ul.boxed-nav p:nth-of-type(2) a,
-.body .section ul.boxed-nav p:nth-of-type(2) a:visited {
-    color: #000000;
+.body .section ul.boxed-nav p a,
+.body .section ul.boxed-nav p a:visited {
+    color: #212B73;
 }
 
 p.divio {
@@ -603,6 +692,10 @@ nav a.sidenav-trigger hr {
     border: 0;
     background-color: #fff;
     height: 2px;
+}
+
+.fixed-action-btn {
+    display: none;
 }
 
 @media (min-width: 993px) {
@@ -705,6 +798,10 @@ nav a.sidenav-trigger hr {
 @media (max-width: 600px) {
     .sidenav {
         top: 56px;
+    }
+
+    .fixed-action-btn {
+        display: block;
     }
 }
 

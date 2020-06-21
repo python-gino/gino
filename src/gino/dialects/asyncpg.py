@@ -145,8 +145,7 @@ class DBAPICursor(base.DBAPICursor):
         self._attributes = None
         self._status = None
 
-    async def prepare(self, context, clause=None):
-        timeout = context.timeout
+    async def _acquire(self, timeout):
         if timeout is None:
             conn = await self._conn.acquire(timeout=timeout)
         else:
@@ -154,6 +153,10 @@ class DBAPICursor(base.DBAPICursor):
             conn = await self._conn.acquire(timeout=timeout)
             after = time.monotonic()
             timeout -= after - before
+        return conn, timeout
+
+    async def prepare(self, context, clause=None):
+        conn, timeout = await self._acquire(context.timeout)
         prepared = await conn.prepare(context.statement, timeout=timeout)
         try:
             self._attributes = prepared.get_attributes()
@@ -164,13 +167,7 @@ class DBAPICursor(base.DBAPICursor):
         return rv
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
-        if timeout is None:
-            conn = await self._conn.acquire(timeout=timeout)
-        else:
-            before = time.monotonic()
-            conn = await self._conn.acquire(timeout=timeout)
-            after = time.monotonic()
-            timeout -= after - before
+        conn, timeout = await self._acquire(timeout)
         _protocol = getattr(conn, "_protocol")
         timeout = getattr(_protocol, "_get_timeout")(timeout)
 
@@ -190,6 +187,35 @@ class DBAPICursor(base.DBAPICursor):
                 result, self._status = result[:2]
             return result
 
+    async def execute_baked(self, baked_query, timeout, args, one):
+        conn, timeout = await self._acquire(timeout)
+        stmt = conn.baked_queries.get(baked_query)
+        if stmt:
+            # work around prepared statement limit per connection acquisition
+            # https://github.com/MagicStack/asyncpg/issues/190
+            stmt._con_release_ctr = conn._pool_release_ctr
+        else:
+            if timeout:
+                before = time.monotonic()
+                stmt = await conn.prepare(baked_query.sql, timeout=timeout)
+                after = time.monotonic()
+                timeout -= after - before
+            else:
+                stmt = await conn.prepare(baked_query.sql)
+            conn.baked_queries[baked_query] = stmt
+
+        if one:
+            rv = await stmt.fetchrow(*args, timeout=timeout)
+            if rv is None:
+                rv = []
+            else:
+                rv = [rv]
+        else:
+            rv = await stmt.fetch(*args, timeout=timeout)
+        self._attributes = stmt.get_attributes()
+        self._status = stmt.get_statusmsg()
+        return rv
+
     @property
     def description(self):
         return [((a[0], a[1][0]) + (None,) * 5) for a in self._attributes]
@@ -199,14 +225,25 @@ class DBAPICursor(base.DBAPICursor):
 
 
 class Pool(base.Pool):
-    def __init__(self, url, loop, **kwargs):
+    def __init__(self, url, loop, bakery=None, prebake=True, **kwargs):
         self._url = url
         self._loop = loop
         self._kwargs = kwargs
         self._pool = None
+        self._bakery = bakery
+        self._init_hook = None
+        self._prebake = prebake
 
     async def _init(self):
         args = self._kwargs.copy()
+
+        class Connection(args.pop("connection_class", asyncpg.Connection)):
+            __slots__ = ("baked_queries",)
+
+            def __init__(self, *pargs, **kwargs):
+                super().__init__(*pargs, **kwargs)
+                self.baked_queries = {}
+
         args.update(
             loop=self._loop,
             host=self._url.host,
@@ -214,12 +251,23 @@ class Pool(base.Pool):
             user=self._url.username,
             database=self._url.database,
             password=self._url.password,
+            connection_class=Connection,
         )
+        if self._prebake and self._bakery:
+            self._init_hook = args.pop("init", None)
+            args["init"] = self._bake
         self._pool = await asyncpg.create_pool(**args)
         return self
 
     def __await__(self):
         return self._init().__await__()
+
+    async def _bake(self, conn):
+        if self._bakery:
+            for bq in self._bakery:
+                conn.baked_queries[bq] = await conn.prepare(bq.sql)
+        if self._init_hook:
+            await self._init_hook(conn)
 
     @property
     def raw_pool(self):
@@ -435,10 +483,11 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
     cursor_cls = DBAPICursor
     init_kwargs = set(
         itertools.chain(
+            ("bakery", "prebake"),
             *[
                 inspect.getfullargspec(f).kwonlydefaults.keys()
                 for f in [asyncpg.create_pool, asyncpg.connect]
-            ]
+            ],
         )
     )
     colspecs = util.update_copy(
@@ -451,18 +500,24 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
         },
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, bakery=None, **kwargs):
         self._pool_kwargs = {}
+        self._init_hook = None
         for k in self.init_kwargs:
             if k in kwargs:
-                self._pool_kwargs[k] = kwargs.pop(k)
+                if k == "init":
+                    self._init_hook = kwargs.pop(k)
+                else:
+                    self._pool_kwargs[k] = kwargs.pop(k)
         super().__init__(*args, **kwargs)
-        self._init_mixin()
+        self._init_mixin(bakery)
 
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
+        return await pool_class(
+            url, loop, bakery=self._bakery, init=self.on_connect(), **self._pool_kwargs
+        )
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
@@ -473,10 +528,12 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
 
             async def connect(conn):
                 await self.set_isolation_level(conn, self.isolation_level)
+                if self._init_hook:
+                    await self._init_hook(conn)
 
             return connect
         else:
-            return None
+            return self._init_hook
 
     async def set_isolation_level(self, connection, level):
         """

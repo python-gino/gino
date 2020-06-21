@@ -30,28 +30,24 @@ dialect asyncpg_.
 .. cssclass:: boxed-nav
 
 * .. image:: images/tutorials.svg
-   :target: tutorials.html
 
   :doc:`tutorials`
 
   Lessons for the newcomer to get started
 
 * .. image:: images/how-to.svg
-   :target: how-to.html
 
   :doc:`how-to`
 
   Solve specific problems by steps
 
 * .. image:: images/explanation.svg
-   :target: explanation.html
 
   :doc:`explanation`
 
   Explains the background and context
 
 * .. image:: images/reference.svg
-   :target: reference.html
 
   :doc:`reference`
 
@@ -64,28 +60,24 @@ Useful Links
 .. cssclass:: boxed-nav
 
 * .. image:: images/github.svg
-   :target: https://github.com/python-gino/gino
 
   `Source Code <https://github.com/python-gino/gino>`_
 
   https://github.com/python-gino/gino
 
 * .. image:: images/community.svg
-   :target: https://gitter.im/python-gino/Lobby
 
   `Community <https://gitter.im/python-gino/Lobby>`_
 
   https://gitter.im/python-gino/Lobby
 
 * .. image:: images/open-source.svg
-   :target: https://github.com/python-gino/gino/blob/master/LICENSE
 
   `BSD license <https://github.com/python-gino/gino/blob/master/LICENSE>`_
 
   GINO is free software
 
 * .. image:: images/python.svg
-   :target: https://pypi.org/project/gino/
 
   `Download <https://pypi.org/project/gino/>`_
 
@@ -103,6 +95,7 @@ Sections by `Divio <https://www.divio.com/blog/documentation/>`_.
    :hidden:
 
    tutorials
+   tutorials/announcement.rst
    tutorials/tutorial.rst
    tutorials/*
 

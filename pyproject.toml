@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gino"
-version = "1.0.0-rc.4"
+version = "1.1.0-beta.1"
 description = "GINO Is Not ORM - a Python asyncio ORM on SQLAlchemy core."
 license = "BSD-3-Clause"
 authors = ["Fantix King <fantix.king@gmail.com>"]
@@ -8,10 +8,10 @@ maintainers = ["Tony Wang <wwwjfy@gmail.com>", "Fantix King <fantix.king@gmail.c
 readme = "README.rst"
 homepage = "https://python-gino.org"
 repository = "https://github.com/python-gino/gino"
-documentation = "https://python-gino.readthedocs.io/"
+documentation = "https://python-gino.org/docs/"
 keywords = ["orm", "asyncio", "sqlalchemy", "asyncpg", "python3"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
@@ -25,7 +25,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.5"
 asyncpg = ">=0.18,<1.0"
-SQLAlchemy = "^1.2"
+SQLAlchemy = ">=1.3,<1.4"
 mysqlclient = "^1.4"
 
 # compatibility
@@ -58,13 +58,14 @@ pytest-asyncio = "^0.10.0"
 pytest-mock = "^3.0.0"
 pytest-cov = "^2.8.1"
 black = { version = "^19.10b0", python = ">=3.6" }
+mypy = "^0.770"
 
 # docs
-sphinx = "^3.0.1"
+sphinx = "^3.0.3"
 sphinx-rtd-theme = "^0.4.3"
 sphinxcontrib-apidoc = "^0.3.0"
 sphinx-autobuild = "^0.7.1"
-sphinx-intl = {extras = ["transifex"], version = "^2.0.0"}
+sphinx-intl = {extras = ["transifex"], version = "^2.0.1"}
 
 [tool.poetry.plugins."sqlalchemy.dialects"]
 "postgresql.asyncpg" = "gino.dialects.asyncpg:AsyncpgDialect"

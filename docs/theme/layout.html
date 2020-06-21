@@ -95,6 +95,25 @@
             <div id="main-content" role="main">
                 {% block body %} {% endblock %}
             </div>
+            <p style="text-align: center; font-size: 12px;">
+                <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
+                    <img
+                        alt="{{ "知识共享许可协议" if language.startswith('zh') else "Creative Commons License" }}"
+                        style="border-width:0"
+                        src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png"
+                    />
+                </a>
+                <br/>
+                {{
+                    "本作品采用"
+                    if language.startswith('zh') else
+                    "This work is licensed under a"
+                }}<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">{{
+                        "知识共享署名-相同方式共享 4.0 国际许可协议"
+                        if language.startswith('zh') else
+                        " Creative Commons Attribution-ShareAlike 4.0 International License"
+                }}</a>{{ "进行许可。" if language.startswith('zh') else "." }}
+            </p>
         </div>
 
         <div class="col hide-on-small-only m3 right-nav">
@@ -102,6 +121,25 @@
                 {% if pagename != master_doc %}
                     {{ toc }}
                 {% endif %}
+                <div id="version-selector">
+                    {% if pagename != master_doc and toc.count('href') > 1 %}
+                        <hr>
+                    {% endif %}
+                    {% if "master" in VERSION %}
+                        <div class="version-warning">
+                            {% if language.startswith('zh') %}
+                                您正在浏览 master 分支，该文档可能涉及尚未发布的功能。
+                            {% else %}
+                                You're on the master branch. This documentation may include
+                                functionality that is not released yet.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="add-your-lang">
+                    <a href="https://www.transifex.com/decentfox-studio/gino_1_0/"
+                       target="_blank">Add your language here.</a>
+                </div>
             </div>
         </div>
 
@@ -113,9 +151,7 @@
               {{ (language or "EN")[:2].upper() }}
             </div>
         </a>
-        <ul>
-            <li><a href="/docs/en/{{ VERSION.split('/')[-1] }}/{{ pagename }}.html" class="btn-floating blue">EN</a></li>
-            <li><a href="/docs/zh/{{ VERSION.split('/')[-1] }}/{{ pagename }}.html" class="btn-floating red">ZH</a></li>
+        <ul id="lang-selector">
         </ul>
     </div>
 </main>
@@ -125,6 +161,11 @@
 <script id="documentation_options" data-url_root="{{ pathto('', 1) }}" src="{{ pathto('_static/js/documentation_options.js', 1) }}"></script>
 <script type="text/javascript" src="{{ pathto('_static/js/underscore.js', 1) }}"></script>
 <script type="text/javascript" src="{{ pathto('_static/js/jquery.js', 1) }}"></script>
+<script type="text/javascript">
+    var sver = '{{ '.'.join(VERSION.split('/')[-1].lstrip('v').split('.')[:2]) }}';
+    var language = '{{ language or "en" }}';
+    var pagename = '{{ pagename }}';
+</script>
 <script type="text/javascript" src="{{ pathto('_static/js/gino.js', 1) }}"></script>
 <script type="text/javascript" src="{{ pathto('searchindex.js', 1) }}"></script>
 </body>

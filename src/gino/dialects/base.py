@@ -4,7 +4,8 @@ import weakref
 from sqlalchemy import util
 
 # noinspection PyProtectedMember
-from ..engine import _SAConnection, _SAEngine, _DBAPIConnection
+from ..engine import _SAConnection, _SAEngine, _DBAPIConnection, _bypass_no_param
+from ..exceptions import InitializedError
 from ..loader import Loader
 
 DEFAULT = object()
@@ -35,6 +36,9 @@ class DBAPICursor:
         raise NotImplementedError
 
     async def async_execute(self, query, timeout, args, limit=0, many=False):
+        raise NotImplementedError
+
+    async def execute_baked(self, baked_query, timeout, args, one):
         raise NotImplementedError
 
     def get_statusmsg(self):
@@ -92,9 +96,10 @@ class PreparedStatement:
             raise ValueError(
                 "PreparedStatement does not support multiple parameters."
             )
-        assert (
-            ctx.statement == self.context.statement
-        ), "Prepared statement generated different SQL with parameters"
+        if ctx.statement != self.context.statement:
+            raise AssertionError(
+                "Prepared statement generated different SQL with parameters"
+            )
         params = []
         for val in ctx.parameters[0]:
             params.append(val)
@@ -212,9 +217,14 @@ class _ResultProxy:
             )
         else:
             args = param_groups[0]
-            rows = await cursor.async_execute(
-                context.statement, context.timeout, args, 1 if one else 0
-            )
+            if context.baked_query:
+                rows = await cursor.execute_baked(
+                    context.baked_query, context.timeout, args, one
+                )
+            else:
+                rows = await cursor.async_execute(
+                    context.statement, context.timeout, args, 1 if one else 0
+                )
             if (not self.context.dialect.support_returning and
                     (self.context.isinsert or self.context.isupdate)):
                 if self.context.execution_options.get(
@@ -256,6 +266,8 @@ class Cursor:
 
 
 class ExecutionContextOverride:
+    baked_query = None
+
     def _compiled_first_opt(self, key, default=DEFAULT):
         rv = DEFAULT
         opts = getattr(getattr(self, "compiled", None), "execution_options", None)
@@ -400,17 +412,36 @@ class ExecutionContextOverride:
         self.cursor = self.create_cursor()
         return self
 
+    @classmethod
+    def _init_baked_query(cls, dialect, connection, dbapi_connection, bq, parameters):
+        self = cls._init_compiled(
+            dialect, connection, dbapi_connection, bq.compiled_sql, parameters
+        )
+        self.baked_query = bq
+        return self
+
 
 class AsyncDialectMixin:
     cursor_cls = DBAPICursor
     dbapi_class = BaseDBAPI
     support_returning = True
     support_prepare = True
+    _bakery = None
 
-    def _init_mixin(self):
+    def _init_mixin(self, bakery):
         self._sa_conn = _SAConnection(
             _SAEngine(self), _DBAPIConnection(self.cursor_cls)
         )
+        if bakery:
+            if bakery._closed:
+                raise InitializedError("Cannot reuse a closed bakery!")
+            self._bakery = bakery
+            for bq in bakery:
+                conn = self._sa_conn.execution_options(compiled_cache=bq)
+                context = conn.execute(bq.query, _bypass_no_param).context
+                # noinspection PyProtectedMember
+                bq._set_sql(context.statement)
+            bakery._closed = True
 
     @classmethod
     def dbapi(cls):
