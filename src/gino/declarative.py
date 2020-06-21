@@ -366,8 +366,8 @@ class Model:
                         sub_cls.__dict__.get(v.prop_name), "column", None
                     )
                     if not (
-                        isinstance(json_col, sa.Column) and
-                        isinstance(json_col.type, sa.JSON)
+                        isinstance(json_col, sa.Column)
+                        and isinstance(json_col.type, sa.JSON)
                     ):
                         raise AttributeError(
                             '{} "{}" requires a JSON[B] column "{}" '

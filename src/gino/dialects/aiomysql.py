@@ -358,11 +358,7 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     }  # use SQLAlchemy's echo instead
     colspecs = util.update_copy(
         MySQLDialect.colspecs,
-        {
-            ENUM: AsyncEnum,
-            sqltypes.Enum: AsyncEnum,
-            sqltypes.NullType: GinoNullType,
-        },
+        {ENUM: AsyncEnum, sqltypes.Enum: AsyncEnum, sqltypes.NullType: GinoNullType,},
     )
     postfetch_lastrowid = False
     support_returning = False
