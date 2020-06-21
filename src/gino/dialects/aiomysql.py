@@ -47,31 +47,6 @@ class AiomysqlDBAPI(base.BaseDBAPI):
 
 # noinspection PyAbstractClass
 class AiomysqlExecutionContext(base.ExecutionContextOverride, MySQLExecutionContext):
-    async def _execute_scalar(self, stmt, type_):
-        conn = self.root_connection
-        if (
-            isinstance(stmt, util.text_type)
-            and not self.dialect.supports_unicode_statements
-        ):
-            stmt = self.dialect._encoder(stmt)[0]
-
-        if self.dialect.positional:
-            default_params = self.dialect.execute_sequence_format()
-        else:
-            default_params = {}
-
-        conn._cursor_execute(self.cursor, stmt, default_params, context=self)
-        r = await self.cursor.async_execute(stmt, None, default_params, 1)
-        r = r[0][0]
-        if type_ is not None:
-            # apply type post processors to the result
-            proc = type_._cached_result_processor(
-                self.dialect, self.cursor.description[0][1]
-            )
-            if proc:
-                return proc(r)
-        return r
-
     def get_lastrowid(self):
         return self.cursor.last_row_id
 
