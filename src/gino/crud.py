@@ -152,8 +152,8 @@ class UpdateRequest:
                     )
             elif isinstance(prop.type, mysql_JSON):
                 values[prop_name] = sa.func.json_merge_patch(
-                    prop,
-                    sa.func.json_object(*itertools.chain(*updates.items())))
+                    prop, sa.func.json_object(*itertools.chain(*updates.items()))
+                )
             else:
                 raise TypeError(
                     "{} is not supported to update json "
@@ -171,8 +171,8 @@ class UpdateRequest:
             .execution_options(**opts)
         )
         await _query_and_update(
-            bind, self._instance, clause,
-            [getattr(cls, key) for key in values], opts)
+            bind, self._instance, clause, [getattr(cls, key) for key in values], opts
+        )
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -806,7 +806,8 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
             conn = bind
         try:
             lastrowid, affected_rows = await conn.all(
-                query.execution_options(return_affected_rows=True))
+                query.execution_options(return_affected_rows=True)
+            )
             if not lastrowid and not affected_rows:
                 raise NoSuchRowError()
             # It's insertion and primary key is AUTO_INCREMENT
@@ -815,13 +816,15 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
                 query = (
                     sa.select(cols)
                     .where(pkey.columns.values()[0] == lastrowid)
-                    .execution_options(**execution_opts))
+                    .execution_options(**execution_opts)
+                )
             else:
                 try:
                     query = (
                         sa.select(cols)
                         .where(item.lookup())
-                        .execution_options(**execution_opts))
+                        .execution_options(**execution_opts)
+                    )
                 except LookupError:  # no primary key
                     return None
             row = await conn.first(query)

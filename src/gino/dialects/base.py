@@ -93,9 +93,7 @@ class PreparedStatement:
             self.clause, *multiparams, **params
         ).context
         if ctx.executemany:
-            raise ValueError(
-                "PreparedStatement does not support multiple parameters."
-            )
+            raise ValueError("PreparedStatement does not support multiple parameters.")
         if ctx.statement != self.context.statement:
             raise AssertionError(
                 "Prepared statement generated different SQL with parameters"
@@ -225,11 +223,10 @@ class _ResultProxy:
                 rows = await cursor.async_execute(
                     context.statement, context.timeout, args, 1 if one else 0
                 )
-            if (not self.context.dialect.support_returning and
-                    (self.context.isinsert or self.context.isupdate)):
-                if self.context.execution_options.get(
-                    'return_affected_rows', False
-                ):
+            if not self.context.dialect.support_returning and (
+                self.context.isinsert or self.context.isupdate
+            ):
+                if self.context.execution_options.get("return_affected_rows", False):
                     return context.get_lastrowid(), context.get_affected_rows()
                 return context.get_lastrowid()
             item = context.process_rows(rows, return_model=return_model)

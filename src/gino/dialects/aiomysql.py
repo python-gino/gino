@@ -7,7 +7,7 @@ import warnings
 
 import aiomysql
 from sqlalchemy import util, exc
-from sqlalchemy.dialects.mysql import (JSON, ENUM)
+from sqlalchemy.dialects.mysql import JSON, ENUM
 from sqlalchemy.dialects.mysql.base import (
     MySQLCompiler,
     MySQLDialect,
@@ -27,10 +27,11 @@ JSON_COLTYPE = 245
 #: executemany only suports simple bulk insert.
 #: You can use it to load large dataset.
 _RE_INSERT_VALUES = re.compile(
-    r"\s*((?:INSERT|REPLACE)\s.+\sVALUES?\s+)" +
-    r"(\(\s*(?:%s|%\(.+\)s)\s*(?:,\s*(?:%s|%\(.+\)s)\s*)*\))" +
-    r"(\s*(?:ON DUPLICATE.*)?);?\s*\Z",
-    re.IGNORECASE | re.DOTALL)
+    r"\s*((?:INSERT|REPLACE)\s.+\sVALUES?\s+)"
+    + r"(\(\s*(?:%s|%\(.+\)s)\s*(?:,\s*(?:%s|%\(.+\)s)\s*)*\))"
+    + r"(\s*(?:ON DUPLICATE.*)?);?\s*\Z",
+    re.IGNORECASE | re.DOTALL,
+)
 
 #: Max statement size which :meth:`executemany` generates.
 #:
@@ -45,8 +46,7 @@ class AiomysqlDBAPI(base.BaseDBAPI):
 
 
 # noinspection PyAbstractClass
-class AiomysqlExecutionContext(base.ExecutionContextOverride,
-                               MySQLExecutionContext):
+class AiomysqlExecutionContext(base.ExecutionContextOverride, MySQLExecutionContext):
     async def _execute_scalar(self, stmt, type_):
         conn = self.root_connection
         if (
@@ -104,8 +104,7 @@ class AiomysqlIterator(base.Cursor):
 
     async def __anext__(self):
         await self._init()
-        row = await asyncio.wait_for(
-            self._cursor.fetchone(), self._context.timeout)
+        row = await asyncio.wait_for(self._cursor.fetchone(), self._context.timeout)
         if row is None:
             raise StopAsyncIteration
         return self._context.process_rows([row])[0]
@@ -129,7 +128,7 @@ class AiomysqlIterator(base.Cursor):
         await self._init()
         if timeout is base.DEFAULT:
             timeout = self._context.timeout
-        await asyncio.wait_for(self._cursor.scroll(n, mode='relative'), timeout)
+        await asyncio.wait_for(self._cursor.scroll(n, mode="relative"), timeout)
 
 
 class DBAPICursor(base.DBAPICursor):
@@ -156,7 +155,8 @@ class DBAPICursor(base.DBAPICursor):
             return await self._async_execute(conn, query, timeout, args)
 
         return await asyncio.wait_for(
-            self._async_executemany(conn, query, args), timeout=timeout)
+            self._async_executemany(conn, query, args), timeout=timeout
+        )
 
     async def _async_execute(self, conn, query, timeout, args):
         if args is not None:
@@ -175,9 +175,10 @@ class DBAPICursor(base.DBAPICursor):
         if m:
             q_prefix = m.group(1)
             q_values = m.group(2).rstrip()
-            q_postfix = m.group(3) or ''
-            return (await self._do_execute_many(
-                conn, q_prefix, q_values, q_postfix, args))
+            q_postfix = m.group(3) or ""
+            return await self._do_execute_many(
+                conn, q_prefix, q_values, q_postfix, args
+            )
         else:
             rows = 0
             for arg in args:
@@ -196,19 +197,19 @@ class DBAPICursor(base.DBAPICursor):
         args = iter(args)
         v = values % escape(next(args), conn)
         if isinstance(v, str):
-            v = v.encode(conn.encoding, 'surrogateescape')
+            v = v.encode(conn.encoding, "surrogateescape")
         stmt += v
         rows = 0
         for arg in args:
             v = values % escape(arg, conn)
             if isinstance(v, str):
-                v = v.encode(conn.encoding, 'surrogateescape')
+                v = v.encode(conn.encoding, "surrogateescape")
             if len(stmt) + len(v) + len(postfix) + 1 > _MAX_STMT_LENGTH:
                 await self._async_execute(conn, stmt + postfix, None, None)
                 rows += self.affected_rows
                 stmt = bytearray(prefix)
             else:
-                stmt += b','
+                stmt += b","
             stmt += v
         await self._async_execute(conn, stmt + postfix, None, None)
         rows += self.affected_rows
@@ -224,8 +225,7 @@ class DBAPICursor(base.DBAPICursor):
 
     def iterate(self, context):
         # use SSCursor to get server side cursor
-        return AiomysqlIterator(
-            context, aiomysql.SSCursor(self._conn.raw_connection))
+        return AiomysqlIterator(context, aiomysql.SSCursor(self._conn.raw_connection))
 
 
 class Pool(base.Pool):
@@ -288,7 +288,7 @@ class Pool(base.Pool):
                     + "."
                     + self._pool.__class__.__name__,
                     fg="green",
-                    ),
+                ),
                 max=click.style(repr(self._pool.maxsize), fg="cyan"),
                 min=click.style(repr(self._pool._minsize), fg="cyan"),
                 cur=click.style(repr(self._pool.size), fg="cyan"),
@@ -298,8 +298,8 @@ class Pool(base.Pool):
             # noinspection PyProtectedMember
             return "<{classname} max={max} min={min} cur={cur} use={use}>".format(
                 classname=self._pool.__class__.__module__
-                          + "."
-                          + self._pool.__class__.__name__,
+                + "."
+                + self._pool.__class__.__name__,
                 max=self._pool.maxsize,
                 min=self._pool._minsize,
                 cur=self._pool.size,
@@ -371,14 +371,12 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
                 for f in [aiomysql.create_pool, aiomysql.connect]
             ]
         )
-    ) - {'echo'}  # use SQLAlchemy's echo instead
+    ) - {
+        "echo"
+    }  # use SQLAlchemy's echo instead
     colspecs = util.update_copy(
         MySQLDialect.colspecs,
-        {
-            ENUM: AsyncEnum,
-            sqltypes.Enum: AsyncEnum,
-            sqltypes.NullType: GinoNullType,
-        },
+        {ENUM: AsyncEnum, sqltypes.Enum: AsyncEnum, sqltypes.NullType: GinoNullType,},
     )
     postfetch_lastrowid = False
     support_returning = False
@@ -395,15 +393,16 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     async def init_pool(self, url, loop, pool_class=None):
         if pool_class is None:
             pool_class = Pool
-        return await pool_class(
-            url, loop, init=self.on_connect(), **self._pool_kwargs)
+        return await pool_class(url, loop, init=self.on_connect(), **self._pool_kwargs)
 
     # noinspection PyMethodMayBeStatic
     def transaction(self, raw_conn, args, kwargs):
         _set_isolation = None
-        if 'isolation' in kwargs:
+        if "isolation" in kwargs:
+
             async def _set_isolation(conn):
-                await self.set_isolation_level(conn, kwargs['isolation'])
+                await self.set_isolation_level(conn, kwargs["isolation"])
+
         return Transaction(raw_conn, _set_isolation)
 
     def on_connect(self):
@@ -428,15 +427,13 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
                 % (level, self.name, ", ".join(self._isolation_lookup))
             )
         cursor = await connection.cursor()
-        await cursor.execute(
-            "SET SESSION TRANSACTION ISOLATION LEVEL %s" % level)
+        await cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL %s" % level)
         await cursor.execute("COMMIT")
         await cursor.close()
 
     async def get_isolation_level(self, connection):
         if self.server_version_info is None:
-            self.server_version_info = await self._get_server_version_info(
-                connection)
+            self.server_version_info = await self._get_server_version_info(connection)
         cursor = await connection.cursor()
         if self._is_mysql and self.server_version_info >= (5, 7, 20):
             await cursor.execute("SELECT @@transaction_isolation")
@@ -484,9 +481,7 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
 
     async def has_table(self, connection, table_name, schema=None):
         full_name = ".".join(
-            self.identifier_preparer._quote_free_identifiers(
-                schema, table_name
-            )
+            self.identifier_preparer._quote_free_identifiers(schema, table_name)
         )
 
         st = "DESCRIBE %s" % full_name
@@ -501,6 +496,7 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
         if isinstance(exception.args[0], Exception):
             exception = exception.args[0]
         return exception.args[0]
+
 
 def _escape_args(args, conn):
     if isinstance(args, (tuple, list)):
