@@ -314,13 +314,6 @@ class Gino(sa.MetaData):
 
     """
 
-    no_delegate = {"create_engine", "engine_from_config"}
-    """
-    A set of symbols from :mod:`sqlalchemy` which is not delegated by
-    :class:`Gino`.
-
-    """
-
     def __init__(
         self,
         bind=None,
@@ -364,10 +357,131 @@ class Gino(sa.MetaData):
         from .bakery import Bakery
 
         self._bakery = Bakery()
-        for mod in json_support, sa:
-            for key in mod.__all__:
-                if not hasattr(self, key) and key not in self.no_delegate:
-                    setattr(self, key, getattr(mod, key))
+
+        # json_support attributes
+        self.JSONProperty = json_support.JSONProperty
+        self.StringProperty = json_support.StringProperty
+        self.DateTimeProperty = json_support.DateTimeProperty
+        self.IntegerProperty = json_support.IntegerProperty
+        self.BooleanProperty = json_support.BooleanProperty
+        self.ObjectProperty = json_support.ObjectProperty
+        self.ArrayProperty = json_support.ArrayProperty
+
+        # sqlalchemy public attributes
+        self.inspect = sa.inspection.inspect
+        self.BLANK_SCHEMA = sa.schema.BLANK_SCHEMA
+        self.CheckConstraint = sa.schema.CheckConstraint
+        self.Column = sa.schema.Column
+        self.ColumnDefault = sa.schema.ColumnDefault
+        self.Computed = sa.schema.Computed
+        self.Constraint = sa.schema.Constraint
+        self.DDL = sa.schema.DDL
+        self.DefaultClause = sa.schema.DefaultClause
+        self.FetchedValue = sa.schema.FetchedValue
+        self.ForeignKey = sa.schema.ForeignKey
+        self.ForeignKeyConstraint = sa.schema.ForeignKeyConstraint
+        self.Index = sa.schema.Index
+        self.MetaData = sa.schema.MetaData
+        self.PassiveDefault = sa.schema.PassiveDefault
+        self.PrimaryKeyConstraint = sa.schema.PrimaryKeyConstraint
+        self.Sequence = sa.schema.Sequence
+        self.Table = sa.schema.Table
+        self.ThreadLocalMetaData = sa.schema.ThreadLocalMetaData
+        self.UniqueConstraint = sa.schema.UniqueConstraint
+        self.alias = sa.sql.alias
+        self.all_ = sa.sql.all_
+        self.and_ = sa.sql.and_
+        self.any_ = sa.sql.any_
+        self.asc = sa.sql.asc
+        self.between = sa.sql.between
+        self.bindparam = sa.sql.bindparam
+        self.case = sa.sql.case
+        self.cast = sa.sql.cast
+        self.collate = sa.sql.collate
+        self.column = sa.sql.column
+        self.delete = sa.sql.delete
+        self.desc = sa.sql.desc
+        self.distinct = sa.sql.distinct
+        self.except_ = sa.sql.except_
+        self.except_all = sa.sql.except_all
+        self.exists = sa.sql.exists
+        self.extract = sa.sql.extract
+        self.false = sa.sql.false
+        self.func = sa.sql.func
+        self.funcfilter = sa.sql.funcfilter
+        self.insert = sa.sql.insert
+        self.intersect = sa.sql.intersect
+        self.intersect_all = sa.sql.intersect_all
+        self.join = sa.sql.join
+        self.lateral = sa.sql.lateral
+        self.literal = sa.sql.literal
+        self.literal_column = sa.sql.literal_column
+        self.modifier = sa.sql.modifier
+        self.not_ = sa.sql.not_
+        self.null = sa.sql.null
+        self.nullsfirst = sa.sql.nullsfirst
+        self.nullslast = sa.sql.nullslast
+        self.or_ = sa.sql.or_
+        self.outerjoin = sa.sql.outerjoin
+        self.outparam = sa.sql.outparam
+        self.over = sa.sql.over
+        self.select = sa.sql.select
+        self.subquery = sa.sql.subquery
+        self.table = sa.sql.table
+        self.tablesample = sa.sql.tablesample
+        self.text = sa.sql.text
+        self.true = sa.sql.true
+        self.tuple_ = sa.sql.tuple_
+        self.type_coerce = sa.sql.type_coerce
+        self.union = sa.sql.union
+        self.union_all = sa.sql.union_all
+        self.update = sa.sql.update
+        self.within_group = sa.sql.within_group
+        self.ARRAY = sa.types.ARRAY
+        self.BIGINT = sa.types.BIGINT
+        self.BigInteger = sa.types.BigInteger
+        self.BINARY = sa.types.BINARY
+        self.Binary = sa.types.Binary
+        self.BLOB = sa.types.BLOB
+        self.BOOLEAN = sa.types.BOOLEAN
+        self.Boolean = sa.types.Boolean
+        self.CHAR = sa.types.CHAR
+        self.CLOB = sa.types.CLOB
+        self.DATE = sa.types.DATE
+        self.Date = sa.types.Date
+        self.DATETIME = sa.types.DATETIME
+        self.DateTime = sa.types.DateTime
+        self.DECIMAL = sa.types.DECIMAL
+        self.Enum = sa.types.Enum
+        self.FLOAT = sa.types.FLOAT
+        self.Float = sa.types.Float
+        self.INT = sa.types.INT
+        self.INTEGER = sa.types.INTEGER
+        self.Integer = sa.types.Integer
+        self.Interval = sa.types.Interval
+        self.JSON = sa.types.JSON
+        self.LargeBinary = sa.types.LargeBinary
+        self.NCHAR = sa.types.NCHAR
+        self.NUMERIC = sa.types.NUMERIC
+        self.Numeric = sa.types.Numeric
+        self.NVARCHAR = sa.types.NVARCHAR
+        self.PickleType = sa.types.PickleType
+        self.REAL = sa.types.REAL
+        self.SMALLINT = sa.types.SMALLINT
+        self.SmallInteger = sa.types.SmallInteger
+        self.String = sa.types.String
+        self.TEXT = sa.types.TEXT
+        self.Text = sa.types.Text
+        self.TIME = sa.types.TIME
+        self.Time = sa.types.Time
+        self.TIMESTAMP = sa.types.TIMESTAMP
+        self.TypeDecorator = sa.types.TypeDecorator
+        self.Unicode = sa.types.Unicode
+        self.UnicodeText = sa.types.UnicodeText
+        self.VARBINARY = sa.types.VARBINARY
+        self.VARCHAR = sa.types.VARCHAR
+        self._util = sa._util
+
         if ext:
             if query_ext:
                 Executable.gino = property(self.query_executor)
