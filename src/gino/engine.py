@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from copy import copy
 from typing import Union, Dict, Sequence, Optional, Any, TYPE_CHECKING
 
@@ -71,6 +73,7 @@ class AsyncConnection:
         return self.__async_init__().__await__()
 
     async def __aenter__(self):
+        self._engine.current_connection
         return await self.__async_init__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -203,6 +206,8 @@ class AsyncConnection:
     def begin(self) -> AsyncTransaction:
         return AsyncTransaction(self)
 
+    transaction = begin
+
     async def close(self):
         conn, self._raw_conn = self._raw_conn, None
         if conn is not None:
@@ -224,6 +229,7 @@ class AsyncEngine:
         self._dialect = dialect
         self._url = url
         self._echo = echo
+        self._stack = ContextVar("current_connections_stack")
         self.hide_parameters = hide_parameters
 
     @property
@@ -261,6 +267,98 @@ class AsyncEngine:
         return TransactionContext(self)
 
     transaction = begin
+
+    class _EngineResult:
+        __slots__ = "_engine", "_args", "_conn", "_result", "_ctx"
+        _conn: Optional[AsyncConnection]
+        _result: Optional[AsyncResult]
+
+        def __init__(self, engine: AsyncEngine, *args):
+            self._engine = engine
+            self._args = args
+            self._conn = None
+            self._result = None
+            self._ctx = None
+
+        async def __aenter__(self):
+            if self._ctx is not None:
+                raise InvalidRequestError("")
+            self._ctx = self._contextual_execute()
+            return await self._ctx.__aenter__()
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            ctx, self._ctx = self._ctx, None
+            if ctx is None:
+                raise InvalidRequestError("")
+            await ctx.__aexit__(exc_type, exc_val, exc_tb)
+
+        def __await__(self):
+            return self._execute().__await__()
+
+        @asynccontextmanager
+        async def _contextual_execute(self):
+            async with self._engine.begin() as conn:
+                async with conn.execute(*self._args) as result:
+                    self._conn = conn
+                    self._result = result
+                    try:
+                        yield
+                    finally:
+                        self._conn = None
+                        self._result = None
+
+        async def _execute(self):
+            async with self._engine.begin() as conn:
+                return await conn.execute(*self._args)
+
+        async def _call_on_result(self, method, *args, **kwargs):
+            if self._result is None:
+                async with self._engine.begin() as conn:
+                    return await getattr(conn.execute(*self._args), method)(
+                        *args, **kwargs
+                    )
+            else:
+                return getattr(self._result, method)(*args, **kwargs)
+
+        async def fetchall(self):
+            return await self._call_on_result("fetchall")
+
+        async def fetchone(self):
+            return await self._call_on_result("fetchone")
+
+        async def fetchmany(self, size=None):
+            return await self._call_on_result("fetchmany", size)
+
+        async def all(self):
+            return await self._call_on_result("all")
+
+        async def first(self):
+            return await self._call_on_result("first")
+
+        async def one_or_none(self):
+            return await self._call_on_result("one_or_none")
+
+        async def one(self):
+            return await self._call_on_result("one")
+
+        async def scalar(self):
+            return await self._call_on_result("scalar")
+
+    def execute(
+        self,
+        statement: Executable,
+        parameters: Optional[Union[Dict[str, Any], Sequence[Any]]] = None,
+        execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
+    ) -> _EngineResult:
+        return self._EngineResult(self, statement, parameters, execution_options)
+
+    async def scalar(
+        self,
+        statement: Executable,
+        parameters: Optional[Union[Dict[str, Any], Sequence[Any]]] = None,
+        execution_options: Optional[Dict[str, Any]] = NO_OPTIONS,
+    ) -> Any:
+        return await self.execute(statement, parameters, execution_options).scalar()
 
 
 def create_engine(url: Union[str, URL], **kwargs) -> AsyncEngine:

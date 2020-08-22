@@ -9,7 +9,15 @@ if TYPE_CHECKING:
     from .engine import AsyncConnection
 
 
+class _Break(BaseException):
+    def __init__(self, tx, commit):
+        super().__init__()
+        self.tx = tx
+        self.commit = commit
+
+
 class AsyncTransaction:
+    __slots__ = "_dialect", "_raw_conn", "_tx", "_managed"
     _managed: Optional[bool]
 
     def __init__(self, conn: AsyncConnection):
@@ -19,7 +27,7 @@ class AsyncTransaction:
         self._managed = None
 
     async def __async_init__(self) -> AsyncTransaction:
-        self._ensure_not_started()
+        self._ensure_started(False)
         self._managed = False
         await self._begin()
         return self
@@ -28,19 +36,41 @@ class AsyncTransaction:
         return self.__async_init__().__await__()
 
     async def __aenter__(self):
-        self._ensure_not_started()
+        self._ensure_started(False)
         self._managed = True
         return await self._begin()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            await self._commit()
+        self._ensure_managed()
+        is_break = exc_type is _Break
+        if exc_val.commit if is_break else exc_type is None:
+            # noinspection PyBroadException
+            try:
+                await self._commit()
+            except BaseException:
+                with safe_reraise():
+                    await self._rollback()
         else:
             await self._rollback()
+        if is_break and exc_val.tx is self:
+            return True
 
-    def _ensure_not_started(self):
-        if self._managed is not None:
-            raise InvalidRequestError("Transaction already started")
+    def _ensure_started(self, expect=True):
+        started = self._managed is not None
+        if started != expect:
+            if started:
+                raise InvalidRequestError("Transaction already started")
+            else:
+                raise InvalidRequestError("Transaction is not started")
+
+    def _ensure_managed(self, managed=True):
+        self._ensure_started()
+
+        if self._managed != managed:
+            if self._managed:
+                raise InvalidRequestError("Transaction is managed")
+            else:
+                raise InvalidRequestError("Transaction is not managed")
 
     async def _begin(self):
         self._tx = await self._dialect.do_begin(self._raw_conn)
@@ -52,20 +82,21 @@ class AsyncTransaction:
     async def _rollback(self):
         await self._dialect.do_rollback(self._tx)
 
-    def _ensure_not_managed(self):
-        if self._managed is None:
-            raise InvalidRequestError("Transaction is not started")
-
-        if self._managed:
-            raise InvalidRequestError("Transaction is managed")
-
     async def commit(self) -> None:
-        self._ensure_not_managed()
+        self._ensure_managed(False)
         await self._commit()
 
     async def rollback(self) -> None:
-        self._ensure_not_managed()
+        self._ensure_managed(False)
         await self._rollback()
+
+    def raise_commit(self):
+        self._ensure_managed()
+        raise _Break(self, True)
+
+    def raise_rollback(self):
+        self._ensure_managed()
+        raise _Break(self, False)
 
 
 class TransactionContext:

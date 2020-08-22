@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy.engine.cursor import CursorResult
 from sqlalchemy.engine.result import _NO_ROW
 from sqlalchemy.exc import InvalidRequestError, NoResultFound, MultipleResultsFound
-from sqlalchemy.sql.base import _generative
 from sqlalchemy.util import HasMemoized
 
 if TYPE_CHECKING:

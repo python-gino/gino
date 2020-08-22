@@ -126,15 +126,13 @@ def add_db_val_sql():
 async def db_val(add_db_val_sql, engine: AsyncEngine):
     value = random.randint(1024, 65536)
 
-    async with engine.begin() as conn:
-        try:
-            await conn.execute(sqlalchemy.text("CREATE TABLE db_val (value integer)"))
-            await conn.execute(add_db_val_sql.bindparams(value=value))
-        except Exception:
-            await conn.execute(sqlalchemy.text("DROP TABLE db_val"))
-            raise
+    try:
+        await engine.execute(sqlalchemy.text("CREATE TABLE db_val (value integer)"))
+        await engine.execute(add_db_val_sql.bindparams(value=value))
+    except Exception:
+        await engine.execute(sqlalchemy.text("DROP TABLE db_val"))
+        raise
 
     yield value
 
-    async with engine.begin() as conn:
-        await conn.execute(sqlalchemy.text("DROP TABLE db_val"))
+    await engine.execute(sqlalchemy.text("DROP TABLE db_val"))
