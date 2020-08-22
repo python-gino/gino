@@ -196,7 +196,8 @@ class _ResultProxy:
     def context(self):
         return self._context
 
-    async def execute(self, one=False, return_model=True, status=False):
+    async def execute(self, one=False, return_model=True, status=False,
+                      return_context=False):
         context = self._context
 
         param_groups = []
@@ -213,31 +214,26 @@ class _ResultProxy:
             return await cursor.async_execute(
                 context.statement, context.timeout, param_groups, many=True
             )
+        args = param_groups[0]
+        if context.baked_query:
+            rows = await cursor.execute_baked(
+                context.baked_query, context.timeout, args, one
+            )
         else:
-            args = param_groups[0]
-            if context.baked_query:
-                rows = await cursor.execute_baked(
-                    context.baked_query, context.timeout, args, one
-                )
+            rows = await cursor.async_execute(
+                context.statement, context.timeout, args, 1 if one else 0
+            )
+        item = context.process_rows(rows, return_model=return_model)
+        if one:
+            if item:
+                item = item[0]
             else:
-                rows = await cursor.async_execute(
-                    context.statement, context.timeout, args, 1 if one else 0
-                )
-            if not self.context.dialect.support_returning and (
-                self.context.isinsert or self.context.isupdate
-            ):
-                if self.context.execution_options.get("return_affected_rows", False):
-                    return context.get_lastrowid(), context.get_affected_rows()
-                return context.get_lastrowid()
-            item = context.process_rows(rows, return_model=return_model)
-            if one:
-                if item:
-                    item = item[0]
-                else:
-                    item = None
-            if status:
-                item = cursor.get_statusmsg(), item
-            return item
+                item = None
+        if status:
+            return cursor.get_statusmsg(), item
+        if return_context:
+            return context, item
+        return item
 
     def iterate(self):
         if self._context.executemany:
@@ -295,10 +291,6 @@ class ExecutionContextOverride:
     @util.memoized_property
     def loader(self):
         return self._compiled_first_opt("loader", None)
-
-    @util.memoized_property
-    def return_affected_rows(self):
-        return self._compiled_first_opt("return_affected_rows", False)
 
     def process_rows(self, rows, return_model=True):
         if not rows:
@@ -416,6 +408,12 @@ class ExecutionContextOverride:
         )
         self.baked_query = bq
         return self
+
+    def get_lastrowid(self):
+        raise NotImplementedError
+
+    def get_affected_rows(self):
+        raise NotImplementedError
 
 
 class AsyncDialectMixin:

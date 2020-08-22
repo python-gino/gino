@@ -130,7 +130,7 @@ async def test_properties(bind):
         assert t.obj["x"] == 1
         assert t.arr[-1] == 6
         assert await db.select(
-            [PropsTest.profile, PropsTest.raw, PropsTest.bool,]
+            [PropsTest.profile, PropsTest.raw, PropsTest.bool]
         ).gino.first() == (
             {
                 "arr": [3, 4, 5, 6],

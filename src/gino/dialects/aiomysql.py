@@ -48,7 +48,8 @@ class AiomysqlDBAPI(base.BaseDBAPI):
 # noinspection PyAbstractClass
 class AiomysqlExecutionContext(base.ExecutionContextOverride, MySQLExecutionContext):
     def get_lastrowid(self):
-        return self.cursor.last_row_id
+        lastrowid = self.cursor.last_row_id
+        return None if lastrowid == 0 else lastrowid
 
     def get_affected_rows(self):
         return self.cursor.affected_rows

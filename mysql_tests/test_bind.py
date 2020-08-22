@@ -40,11 +40,9 @@ async def test_unbind(aiomysql_pool):
 
 
 async def test_db_api(bind, random_name):
-    lastrowid = await db.all(
-        User.insert().values(name=random_name).execution_options(
-            return_lastrowid=True)
-    )
-    r = await db.scalar(User.select('nickname').where(User.id == lastrowid))
+    result = await db.first(User.insert().values(name=random_name))
+    assert result is None
+    r = await db.scalar(User.select('nickname').where(User.nickname == random_name))
     assert r == random_name
     assert (
         await db.first(User.query.where(User.nickname == random_name))

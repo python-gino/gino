@@ -789,49 +789,69 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
     if bind._dialect.support_returning:
         # noinspection PyArgumentList
         query = query.returning(*cols)
-        row = await bind.first(query)
-    else:
-        # CAVEAT: MySQL doesn't support RETURNING. The workaround here is
-        # to get lastrowid and load it after insertion.
-        # Note that this only works for tables with AUTO_INCREMENT column
-        # For update queries, update using its primary key
 
-        # make insertion and select in one transaction to get the might-be
-        # "dirty" row
-        release_conn = False
-        if not isinstance(bind, GinoConnection):
-            conn = await bind.acquire(reuse=True)
-            release_conn = True
-        else:
-            conn = bind
-        try:
-            lastrowid, affected_rows = await conn.all(
-                query.execution_options(return_affected_rows=True)
-            )
-            if not lastrowid and not affected_rows:
-                raise NoSuchRowError()
-            # It's insertion and primary key is AUTO_INCREMENT
-            if lastrowid:
-                pkey = cls.__table__.primary_key
-                query = (
-                    sa.select(cols)
-                    .where(pkey.columns.values()[0] == lastrowid)
-                    .execution_options(**execution_opts)
-                )
-            else:
-                try:
-                    query = (
-                        sa.select(cols)
-                        .where(item.lookup())
-                        .execution_options(**execution_opts)
-                    )
-                except LookupError:  # no primary key
-                    return None
-            row = await conn.first(query)
-        finally:
-            if release_conn:
-                await conn.release()
+    async def _execute_and_fetch(conn, query):
+        context, row = await conn._first_with_context(query)
+        if not bind._dialect.support_returning:
+            if context.isinsert:
+                table = context.compiled.statement.table
+                key_getter = context.compiled._key_getters_for_crud_column[2]
+                compiled_params = context.compiled_parameters[0]
+                last_row_id = context.get_lastrowid()
+                if last_row_id is not None:
+                    lookup_conds = [
+                        c == last_row_id
+                        if c is table._autoincrement_column
+                        else c == _cast_json(
+                            c, compiled_params.get(key_getter(c), None))
+                        for c in table.primary_key
+                    ]
+                else:
+                    lookup_conds = [
+                        c == _cast_json(
+                            c, compiled_params.get(key_getter(c), None))
+                        for c in table.columns
+                    ]
+                query = sa.select(table.columns).where(
+                    sa.and_(*lookup_conds)).execution_options(**execution_opts)
+                row = await conn.first(query)
+            elif context.isupdate:
+                if context.get_affected_rows() == 0:
+                    raise NoSuchRowError()
+                table = context.compiled.statement.table
+                if len(table.primary_key) > 0:
+                    lookup_conds = [
+                        c == _cast_json(
+                            c, item.__values__[
+                                item._column_name_map.invert_get(c.name)])
+                        for c in table.primary_key
+                    ]
+                else:
+                    lookup_conds = [
+                        c == _cast_json(
+                            c, item.__values__[
+                                item._column_name_map.invert_get(c.name)])
+                        for c in table.columns
+                    ]
+                query = sa.select(table.columns).where(
+                    sa.and_(*lookup_conds)).execution_options(**execution_opts)
+                row = await conn.first(query)
+        return row
+
+    if isinstance(bind, GinoConnection):
+        row = await _execute_and_fetch(bind, query)
+    else:
+        async with bind.acquire(reuse=True) as conn:
+            row = await _execute_and_fetch(conn, query)
     if not row:
         raise NoSuchRowError()
     for k, v in row.items():
         item.__values__[item._column_name_map.invert_get(k)] = v
+
+
+def _cast_json(column, value):
+    # FIXME: for MySQL, json string in WHERE clause needs to be cast to JSON type
+    if (isinstance(column.type, sa.JSON) or
+            isinstance(getattr(column.type, 'impl', None), sa.JSON)):
+        return sa.cast(value, sa.JSON)
+    return value
