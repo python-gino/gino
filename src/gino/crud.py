@@ -802,18 +802,20 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
                     lookup_conds = [
                         c == last_row_id
                         if c is table._autoincrement_column
-                        else c == _cast_json(
-                            c, compiled_params.get(key_getter(c), None))
+                        else c
+                        == _cast_json(c, compiled_params.get(key_getter(c), None))
                         for c in table.primary_key
                     ]
                 else:
                     lookup_conds = [
-                        c == _cast_json(
-                            c, compiled_params.get(key_getter(c), None))
+                        c == _cast_json(c, compiled_params.get(key_getter(c), None))
                         for c in table.columns
                     ]
-                query = sa.select(table.columns).where(
-                    sa.and_(*lookup_conds)).execution_options(**execution_opts)
+                query = (
+                    sa.select(table.columns)
+                    .where(sa.and_(*lookup_conds))
+                    .execution_options(**execution_opts)
+                )
                 row = await conn.first(query)
             elif context.isupdate:
                 if context.get_affected_rows() == 0:
@@ -821,20 +823,25 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
                 table = context.compiled.statement.table
                 if len(table.primary_key) > 0:
                     lookup_conds = [
-                        c == _cast_json(
-                            c, item.__values__[
-                                item._column_name_map.invert_get(c.name)])
+                        c
+                        == _cast_json(
+                            c, item.__values__[item._column_name_map.invert_get(c.name)]
+                        )
                         for c in table.primary_key
                     ]
                 else:
                     lookup_conds = [
-                        c == _cast_json(
-                            c, item.__values__[
-                                item._column_name_map.invert_get(c.name)])
+                        c
+                        == _cast_json(
+                            c, item.__values__[item._column_name_map.invert_get(c.name)]
+                        )
                         for c in table.columns
                     ]
-                query = sa.select(table.columns).where(
-                    sa.and_(*lookup_conds)).execution_options(**execution_opts)
+                query = (
+                    sa.select(table.columns)
+                    .where(sa.and_(*lookup_conds))
+                    .execution_options(**execution_opts)
+                )
                 row = await conn.first(query)
         return row
 
@@ -851,7 +858,8 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
 
 def _cast_json(column, value):
     # FIXME: for MySQL, json string in WHERE clause needs to be cast to JSON type
-    if (isinstance(column.type, sa.JSON) or
-            isinstance(getattr(column.type, 'impl', None), sa.JSON)):
+    if isinstance(column.type, sa.JSON) or isinstance(
+        getattr(column.type, "impl", None), sa.JSON
+    ):
         return sa.cast(value, sa.JSON)
     return value

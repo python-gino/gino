@@ -196,8 +196,9 @@ class _ResultProxy:
     def context(self):
         return self._context
 
-    async def execute(self, one=False, return_model=True, status=False,
-                      return_context=False):
+    async def execute(
+        self, one=False, return_model=True, status=False, return_context=False
+    ):
         context = self._context
 
         param_groups = []
