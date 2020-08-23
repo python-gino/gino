@@ -1,6 +1,37 @@
 Frequently Asked Questions
 ==========================
 
+SQLAlchemy 1.4 supports asyncio, what will GINO be?
+---------------------------------------------------
+
+Starting from 1.4, SQLAlchemy will `support asyncio
+<https://docs.sqlalchemy.org/en/14/changelog/migration_14.html#asynchronous-io-support-for-core-and-orm>`__.
+This is a great news to the SQLAlchemy-based ORMs including GINO, because the users will
+have one more option, and many GINO hacks can be eventually cleaned up. SQLAlchemy
+achieved both sync and async API with the same code base by encapsulating the use of
+`greenlet <https://greenlet.readthedocs.io/en/latest/>`__. As an "async" user, you don't
+need to worry about its internals in most cases, it's fine to just use its async APIs.
+Both SQLAlchemy Core and ORM will be async-compatible, but some ORM features that
+involve implicit database accesses are disallowed.
+
+Given such news, GINO no longer has to maintain its own asyncpg dialect for SQLAlchemy
+in future versions (yay!). Still, GINO will focus on the differences and keep a
+compatible API. To list some of the different/future features:
+
+* Contextual Connections (see :doc:`../explanation/engine`)
+* SQLAlchemy Core-based CRUD models
+* The GINO Loader system
+* Async MySQL support
+* Typing support :sup:`NEW`
+* `Trio <https://trio.readthedocs.io/en/stable/>`__ support :sup:`NEW`
+* Execution performance :sup:`NEW`
+
+As SQLAlchemy async support is considered in Alpha level, GINO will include SQLAlchemy
+1.4 support in GINO 2.0.0-alpha.x releases, while the current GINO 1.0.x and 1.1.x will
+remain on SQLAlchemy 1.3. GINO 1.x will receive bug fixes and security updates until
+both SQLAlchemy async support and GINO 2.x are stabilized.
+
+
 ORM or not ORM?
 ---------------
 
