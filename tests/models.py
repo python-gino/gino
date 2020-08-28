@@ -2,12 +2,15 @@ import os
 import enum
 import random
 import string
+import uuid
 from datetime import datetime
 
 import pytest
 
 from gino import Gino
 from gino.dialects.asyncpg import JSONB
+from sqlalchemy.dialects.postgresql import UUID
+
 
 DB_ARGS = dict(
     host=os.getenv("DB_HOST", "localhost"),
@@ -134,7 +137,7 @@ class CompanyWithoutTeamsSetter(Company):
 class UserSetting(db.Model):
     __tablename__ = "gino_user_settings"
 
-    # No constraints defined on columns
+    # No constraints defined on these columns
     id = db.Column(db.BigInteger())
     user_id = db.Column(db.BigInteger())
     setting = db.Column(db.Text())
@@ -142,11 +145,15 @@ class UserSetting(db.Model):
     col1 = db.Column(db.Integer, default=1)
     col2 = db.Column(db.Integer, default=2)
 
+    # Some constraints defined on these columns
+    col3 = db.Column(UUID, default=uuid.uuid4, unique=True)
+    col4 = db.Column(db.Integer, default=4, nullable=False)
+
     # Define indexes and constraints inline
     id_pkey = db.PrimaryKeyConstraint("id")
     user_id_fk = db.ForeignKeyConstraint(["user_id"], ["gino_users.id"])
     user_id_setting_unique = db.UniqueConstraint("user_id", "setting")
-    col1_check = db.CheckConstraint("col1 >= 1 AND col1 <= 5")
+    col1_check = db.CheckConstraint("col1 >= 1 AND col1 <= 5", "check_col1")
     col2_idx = db.Index("col2_idx", "col2")
 
 

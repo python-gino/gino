@@ -210,6 +210,15 @@ class _BindContext:
         await self._args[0].pop_bind().close()
 
 
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+
 class Gino(sa.MetaData):
     """
     All-in-one API class of GINO, providing several shortcuts.
@@ -355,7 +364,7 @@ class Gino(sa.MetaData):
                        :class:`~sqlalchemy.schema.MetaData`.
 
         """
-        super().__init__(bind=bind, **kwargs)
+        super().__init__(bind=bind, naming_convention=NAMING_CONVENTION, **kwargs)
         if model_classes is None:
             model_classes = self.model_base_classes
         self._model = declarative_base(self, model_classes)

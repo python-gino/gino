@@ -59,6 +59,12 @@ docs/_build/
 # PyBuilder
 target/
 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+
 # pyenv python configuration file
 .python-version
 
@@ -73,3 +79,6 @@ target/
 
 # extension stub files
 src/gino/ext/*.pyi
+
+# virtual env
+venv/
