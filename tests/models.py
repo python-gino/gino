@@ -49,9 +49,9 @@ class User(db.Model):
     balance = db.IntegerProperty(default=0)
     birthday = db.DateTimeProperty(default=lambda i: datetime.utcfromtimestamp(0))
     team_id = db.Column(db.ForeignKey("gino_teams.id"))
-    weight = db.IntegerProperty(prop_name='parameter')
-    height = db.IntegerProperty(default=170, prop_name='parameter')
-    bio = db.StringProperty(prop_name='parameter')
+    weight = db.IntegerProperty(prop_name="parameter")
+    height = db.IntegerProperty(default=170, prop_name="parameter")
+    bio = db.StringProperty(prop_name="parameter")
 
     @balance.after_get
     def balance(self, val):
