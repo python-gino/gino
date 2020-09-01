@@ -364,7 +364,10 @@ class Gino(sa.MetaData):
                        :class:`~sqlalchemy.schema.MetaData`.
 
         """
-        super().__init__(bind=bind, naming_convention=NAMING_CONVENTION, **kwargs)
+        preset_kwargs = dict(naming_convention=NAMING_CONVENTION, bind=bind)
+        preset_kwargs.update(kwargs)
+        super().__init__(**preset_kwargs)
+
         if model_classes is None:
             model_classes = self.model_base_classes
         self._model = declarative_base(self, model_classes)
