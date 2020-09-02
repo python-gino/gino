@@ -1,6 +1,5 @@
 import pytest
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy.engine.result import RowProxy
 
 from .models import PG_URL
 
@@ -10,6 +9,7 @@ pytestmark = pytest.mark.asyncio
 async def test_engine_only():
     import gino
     from gino.schema import GinoSchemaVisitor
+    from sqlalchemy.engine.result import RowProxy
 
     metadata = MetaData()
 

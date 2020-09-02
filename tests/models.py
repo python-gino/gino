@@ -5,9 +5,9 @@ import string
 from datetime import datetime
 
 import pytest
+from sqlalchemy.dialects.postgresql import JSONB
 
 from gino import Gino
-from gino.dialects.asyncpg import JSONB
 
 DB_ARGS = dict(
     host=os.getenv("DB_HOST", "localhost"),
@@ -152,4 +152,4 @@ class UserSetting(db.Model):
 
 def qsize(engine):
     # noinspection PyProtectedMember
-    return engine.raw_pool._queue.qsize()
+    return engine.sync_engine.pool.checkedin()

@@ -4,7 +4,6 @@ import pytest
 from asyncpg import UndefinedTableError
 
 import gino
-from gino.dialects.asyncpg import AsyncEnum
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,6 +14,7 @@ class MyEnum(Enum):
 
 
 async def test(engine, define=True):
+    from gino.dialects.asyncpg import AsyncEnum
     db = gino.Gino()
 
     class Blog(db.Model):

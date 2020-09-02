@@ -3,13 +3,12 @@ import weakref
 import sqlalchemy as sa
 from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.sql.base import Executable
-from sqlalchemy.sql.schema import SchemaItem
 
 from . import json_support
+from .engine import create_engine
 from .crud import CRUDModel
 from .declarative import declarative_base, declared_attr
 from .exceptions import UninitializedError
-from .schema import GinoSchemaVisitor, patch_schema
 
 
 class GinoExecutor:
@@ -302,7 +301,7 @@ class Gino(sa.MetaData):
 
     """
 
-    schema_visitor = GinoSchemaVisitor
+    # schema_visitor = GinoSchemaVisitor
     """
     The overridable ``gino`` extension class on
     :class:`~sqlalchemy.schema.SchemaItem`.
@@ -320,6 +319,11 @@ class Gino(sa.MetaData):
     :class:`Gino`.
 
     """
+
+    Column = sa.Column
+    Integer = sa.Integer
+    String = sa.String
+    DateTime = sa.DateTime
 
     def __init__(
         self,
@@ -371,9 +375,9 @@ class Gino(sa.MetaData):
         if ext:
             if query_ext:
                 Executable.gino = property(self.query_executor)
-            if schema_ext:
-                SchemaItem.gino = property(self.schema_visitor)
-                patch_schema(self)
+            # if schema_ext:
+            # SchemaItem.gino = property(self.schema_visitor)
+            # patch_schema(self)
 
     # noinspection PyPep8Naming
     @property
@@ -422,9 +426,7 @@ class Gino(sa.MetaData):
         if isinstance(bind, str):
             bind = make_url(bind)
         if isinstance(bind, URL):
-            from . import create_engine
-
-            bind = await create_engine(bind, loop=loop, bakery=self._bakery, **kwargs)
+            bind = await create_engine(bind, **kwargs)
         self.bind = bind
         return bind
 
