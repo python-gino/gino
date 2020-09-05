@@ -2,6 +2,7 @@ import types
 import warnings
 
 from sqlalchemy import select
+from sqlalchemy.engine.result import FilterResult
 from sqlalchemy.schema import Column
 from sqlalchemy.sql.elements import Label
 
@@ -213,12 +214,13 @@ class ModelLoader(Loader):
         self.on_clause = None
 
     def _do_load(self, row):
-        values = dict((c.name, row[c]) for c in self.columns if c in row)
+        columns = row.keys()
+        values = dict((c.name, row[c]) for c in self.columns if c in columns)
         if all((v is None) for v in values.values()):
             return None
         rv = self.model()
         for c in self.columns:
-            if c in row:
+            if c in columns:
                 # noinspection PyProtectedMember
                 instance_key = self.model._column_name_map.invert_get(c.name)
                 rv.__values__[instance_key] = row[c]
@@ -424,3 +426,97 @@ class ValueLoader(Loader):
         """
 
         return self.value, True
+
+
+class LoaderResult(FilterResult):
+    def __init__(self, result, loader):
+        self._real_result = result
+        self._loader = loader
+        self._ctx = {}
+        self._metadata = result._metadata
+        if result._source_supports_scalars:
+            self._metadata = self._metadata._reduce([0])
+
+    def _post_creational_filter(self, row):
+        obj, distinct = self._loader.do_load(row, self._ctx)
+        return obj
+
+    def fetchall(self):
+        # type: () -> List[Mapping]
+        """A synonym for the :meth:`_engine.MappingResult.all` method."""
+
+        return self._allrows()
+
+    def fetchone(self):
+        # type: () -> Mapping
+        """Fetch one object.
+
+        Equivalent to :meth:`_result.Result.fetchone` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+        """
+
+        row = self._onerow_getter(self)
+        if row is _NO_ROW:
+            return None
+        else:
+            return row
+
+    def fetchmany(self, size=None):
+        # type: (Optional[Int]) -> List[Mapping]
+        """Fetch many objects.
+
+        Equivalent to :meth:`_result.Result.fetchmany` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+        """
+
+        return self._manyrow_getter(self, size)
+
+    def all(self):
+        # type: () -> List[Mapping]
+        """Return all scalar values in a list.
+
+        Equivalent to :meth:`_result.Result.all` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+        """
+
+        return self._allrows()
+
+    def first(self):
+        # type: () -> Optional[Mapping]
+        """Fetch the first object or None if no object is present.
+
+        Equivalent to :meth:`_result.Result.first` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+
+        """
+        return self._only_one_row(False, False, False)
+
+    def one_or_none(self):
+        # type: () -> Optional[Mapping]
+        """Return at most one object or raise an exception.
+
+        Equivalent to :meth:`_result.Result.one_or_none` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+        """
+        return self._only_one_row(True, False, False)
+
+    def one(self):
+        # type: () -> Mapping
+        """Return exactly one object or raise an exception.
+
+        Equivalent to :meth:`_result.Result.one` except that
+        mapping values, rather than :class:`_result.Row` objects,
+        are returned.
+
+        """
+        return self._only_one_row(True, True, False)

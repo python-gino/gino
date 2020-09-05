@@ -48,9 +48,8 @@ async def test_db_api(bind, random_name):
         await db.first(User.query.where(User.nickname == random_name))
     ).nickname == random_name
     assert len(await db.all(User.query.where(User.nickname == random_name))) == 1
-    assert (await db.status(User.delete.where(User.nickname == random_name)))[
-        0
-    ] == "DELETE 1"
+    ctx = await db.status(User.delete.where(User.nickname == random_name))
+    assert ctx.rowcount == 1
     stmt, params = db.compile(User.query.where(User.id == 3))
     assert params[0] == 3
 

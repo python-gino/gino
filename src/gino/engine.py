@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import warnings
+import weakref
 from contextvars import ContextVar
-from typing import Optional
+from typing import Optional, Callable, Any
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -22,6 +23,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.sql import ClauseElement, WARN_LINTING
 from sqlalchemy.util.concurrency import greenlet_spawn
+
+from .loader import Loader, LoaderResult
 
 
 async def create_engine(
@@ -212,6 +215,18 @@ class GinoConnection(AsyncConnection, _DequeNode):
                 return await asyncio.wait_for(coro, timeout)
         return await coro
 
+    def _load_result(self, result):
+        options = result.context.execution_options
+        loader = options.get("loader")
+        model = options.get("model")
+        if loader is None and model is not None:
+            if isinstance(model, weakref.ref):
+                model = model()
+            loader = Loader.get(model)
+        if loader is not None and options.get("return_model", True):
+            result = LoaderResult(result, loader)
+        return result
+
     async def _execute(self, object_, params_20style):
         if isinstance(object_, str):
             return await self.exec_driver_sql(object_, params_20style)
@@ -281,6 +296,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
         """
         result = await self._execute_sa10(clause, multiparams, params)
+        result = self._load_result(result)
         return result.all()
 
     async def first(self, clause, *multiparams, **params):
@@ -293,6 +309,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
         """
         result = await self._execute_sa10(clause, multiparams, params)
+        result = self._load_result(result)
         try:
             return result.first()
         except ResourceClosedError as e:
@@ -313,6 +330,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
         """
         result = await self._execute_sa10(clause, multiparams, params)
+        result = self._load_result(result)
         return result.one_or_none()
 
     async def one(self, clause, *multiparams, **params):
@@ -328,6 +346,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
         """
         result = await self._execute_sa10(clause, multiparams, params)
+        result = self._load_result(result)
         return result.one()
 
     async def scalar(self, clause, *multiparams, **params):
@@ -352,7 +371,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
         """
         result = await self._execute_sa10(clause, multiparams, params)
-        return f"SELECT {result.rowcount}", result.all()
+        return result.context
 
     class _IterateResult(StartableContext):
         def __init__(self, conn, *args):
@@ -633,6 +652,10 @@ class GinoEngine(AsyncEngine):
         async with self.acquire(reuse=True) as conn:
             return await conn.status(clause, *multiparams, **params)
 
+    async def run_sync(self, fn: Callable, *arg, **kw) -> Any:
+        async with self.acquire(reuse=True) as conn:
+            return await conn.run_sync(fn, *arg, **kw)
+
     class _CompileConnection:
         def __init__(self, dialect):
             self.dialect = dialect
@@ -737,7 +760,7 @@ class GinoEngine(AsyncEngine):
         return repr(self)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}<{self.sync_engine.pool.status()}>'
+        return f"{self.__class__.__name__}<{self.sync_engine.pool.status()}>"
 
 
 class AsyncOptionEngine(OptionEngineMixin, GinoEngine):

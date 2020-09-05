@@ -8,8 +8,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_engine_only():
     import gino
-    from gino.schema import GinoSchemaVisitor
-    from sqlalchemy.engine.result import RowProxy
+    from sqlalchemy.engine import Row
 
     metadata = MetaData()
 
@@ -30,18 +29,19 @@ async def test_engine_only():
     )
 
     engine = await gino.create_engine(PG_URL)
-    await GinoSchemaVisitor(metadata).create_all(engine)
+    await engine.run_sync(metadata.create_all)
     try:
         ins = users.insert().values(name="jack", fullname="Jack Jones")
         await engine.status(ins)
         res = await engine.all(users.select())
-        assert isinstance(res[0], RowProxy)
+        assert isinstance(res[0], Row)
     finally:
-        await GinoSchemaVisitor(metadata).drop_all(engine)
+        await engine.run_sync(metadata.drop_all)
 
 
 async def test_core():
     from gino import Gino
+    from sqlalchemy.engine import Row
 
     db = Gino()
 
@@ -68,7 +68,7 @@ async def test_core():
                 name="jack", fullname="Jack Jones",
             ).gino.status()
             res = await users.select().gino.all()
-            assert isinstance(res[0], RowProxy)
+            assert isinstance(res[0], Row)
         finally:
             await db.gino.drop_all()
 

@@ -2,12 +2,13 @@ import weakref
 
 import sqlalchemy as sa
 from sqlalchemy.engine.url import make_url, URL
-from sqlalchemy.sql.base import Executable
+from sqlalchemy.sql.base import Executable, _bind_or_error
+from sqlalchemy.sql.schema import SchemaItem
 
 from . import json_support
-from .engine import create_engine
 from .crud import CRUDModel
 from .declarative import declarative_base, declared_attr
+from .engine import create_engine
 from .exceptions import UninitializedError
 
 
@@ -209,6 +210,23 @@ class _BindContext:
         await self._args[0].pop_bind().close()
 
 
+class GinoSchemaVisitor:
+    __slots__ = ("_item",)
+
+    def __init__(self, item):
+        self._item = item
+
+    def __getattr__(self, item):
+        sync_func = getattr(self._item, item)
+
+        async def _wrapper(bind=None, *args, **kwargs):
+            if bind is None:
+                bind = _bind_or_error(self._item)
+            return await bind.run_sync(sync_func, *args, **kwargs)
+
+        return _wrapper
+
+
 class Gino(sa.MetaData):
     """
     All-in-one API class of GINO, providing several shortcuts.
@@ -301,7 +319,7 @@ class Gino(sa.MetaData):
 
     """
 
-    # schema_visitor = GinoSchemaVisitor
+    schema_visitor = GinoSchemaVisitor
     """
     The overridable ``gino`` extension class on
     :class:`~sqlalchemy.schema.SchemaItem`.
@@ -375,9 +393,8 @@ class Gino(sa.MetaData):
         if ext:
             if query_ext:
                 Executable.gino = property(self.query_executor)
-            # if schema_ext:
-            # SchemaItem.gino = property(self.schema_visitor)
-            # patch_schema(self)
+            if schema_ext:
+                SchemaItem.gino = property(self.schema_visitor)
 
     # noinspection PyPep8Naming
     @property

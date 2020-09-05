@@ -170,8 +170,10 @@ class UpdateRequest:
         row = await bind.first(clause)
         if not row:
             raise NoSuchRowError()
-        for k, v in row.items():
-            self._instance.__values__[self._instance._column_name_map.invert_get(k)] = v
+        for k in row.keys():
+            self._instance.__values__[
+                self._instance._column_name_map.invert_get(k)
+            ] = row[k]
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -475,8 +477,8 @@ class CRUDModel(Model):
         if bind is None:
             bind = cls.__metadata__.bind
         row = await bind.first(q)
-        for k, v in row.items():
-            self.__values__[self._column_name_map.invert_get(k)] = v
+        for k in row.keys():
+            self.__values__[self._column_name_map.invert_get(k)] = row[k]
         self.__profile__ = None
         return self
 

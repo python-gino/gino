@@ -48,9 +48,8 @@ async def test_basic(engine):
     assert isinstance((await engine.all("select now()"))[0][0], datetime)
     assert isinstance((await engine.one("select now()"))[0], datetime)
     assert isinstance((await engine.one_or_none("select now()"))[0], datetime)
-    status, result = await engine.status("select now()")
-    assert status == "SELECT 1"
-    assert isinstance(result[0][0], datetime)
+    ctx = await engine.status("select now()")
+    assert ctx.rowcount == 1
     with pytest.raises(ObjectNotExecutableError):
         await engine.all(object())
 
