@@ -23,8 +23,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.7"
 asyncpg = "^0.21.0,<1.0"
-sqlalchemy = {path = "../sqlalchemy"}
-#SQLAlchemy = {git = "https://github.com/sqlalchemy/sqlalchemy.git"}
+sqlalchemy = {path = "./sqlalchemy"}
 
 # compatibility
 importlib_metadata = {version = "^1.7.0", python = "<3.8"}

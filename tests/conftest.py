@@ -1,14 +1,14 @@
 import ssl
+import os
 
 import asyncpg
 import pytest
 import sqlalchemy
-from async_generator import yield_, async_generator
 
 import gino
 from .models import db, DB_ARGS, PG_URL, random_name
 
-ECHO = False
+ECHO = os.environ.get("DB_ECHO", "").lower() in ("1", "yes", "true")
 
 
 @pytest.fixture(scope="module")
@@ -21,10 +21,9 @@ def sa_engine():
 
 
 @pytest.fixture
-@async_generator
 async def engine(sa_engine):
     e = await gino.create_engine(PG_URL, echo=ECHO, min_size=5)
-    await yield_(e)
+    yield e
     await e.close()
     sa_engine.execute("DELETE FROM gino_user_settings")
     sa_engine.execute("DELETE FROM gino_users")
@@ -32,20 +31,18 @@ async def engine(sa_engine):
 
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-@async_generator
 async def bind(sa_engine):
     async with db.with_bind(PG_URL, echo=ECHO) as e:
-        await yield_(e)
+        yield e
     sa_engine.execute("DELETE FROM gino_user_settings")
     sa_engine.execute("DELETE FROM gino_users")
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
 @pytest.fixture
-@async_generator
 async def asyncpg_pool(sa_engine):
     async with asyncpg.create_pool(**DB_ARGS) as rv:
-        await yield_(rv)
+        yield rv
         await rv.execute("DELETE FROM gino_user_settings")
         await rv.execute("DELETE FROM gino_users")
 

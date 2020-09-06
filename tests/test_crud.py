@@ -318,12 +318,12 @@ async def test_lookup_custom_name(bind):
             await ModelWithCustomColumnNames.delete.where(
                 ModelWithCustomColumnNames.id == 3
             ).gino.status()
-        )[0][-1] == "0"
+        ).rowcount == 0
         assert (
             await ModelWithCustomColumnNames.delete.where(
                 ModelWithCustomColumnNames.id == 2
             ).gino.status()
-        )[0][-1] == "1"
+        ).rowcount == 1
         assert set(
             tuple(x) for x in await ModelWithCustomColumnNames.select("id").gino.all()
         ) == {(1,)}

@@ -3,7 +3,7 @@ import pytest
 
 from .models import db, User
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 @pytest.fixture

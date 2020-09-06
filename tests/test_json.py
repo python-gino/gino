@@ -5,7 +5,7 @@ from gino.exceptions import UnknownJSONPropertyError
 
 from .models import db, User, UserType
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 async def test_in_memory():

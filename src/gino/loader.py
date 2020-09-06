@@ -80,7 +80,7 @@ class Loader:
 
         :return: A query instance with the ``loader`` execution option set to self.
         """
-        rv = select(self.get_columns())
+        rv = select(*self.get_columns())
         from_clause = self.get_from()
         if from_clause is not None:
             rv = rv.select_from(from_clause)
@@ -436,10 +436,19 @@ class LoaderResult(FilterResult):
         self._metadata = result._metadata
         if result._source_supports_scalars:
             self._metadata = self._metadata._reduce([0])
+        self._rowcount = 0
+        if loader._distinct:
+            self._unique_filter_state = set(), lambda row: row[1]
+
+    def _row_getter(self, raw_row):
+        row = super()._row_getter(raw_row)
+        obj, distinct = self._loader.do_load(row, self._ctx)
+        if distinct:
+            self._rowcount += 1
+        return obj, self._rowcount
 
     def _post_creational_filter(self, row):
-        obj, distinct = self._loader.do_load(row, self._ctx)
-        return obj
+        return row[0]
 
     def fetchall(self):
         # type: () -> List[Mapping]

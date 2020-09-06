@@ -5,7 +5,7 @@ from asyncpg import UndefinedTableError
 
 import gino
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 class MyEnum(Enum):

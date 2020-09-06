@@ -4,7 +4,7 @@ import pytest
 
 from .models import db, User, UserType
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 async def test(bind):

@@ -1,0 +1,3 @@
+[submodule "sqlalchemy"]
+	path = sqlalchemy
+	url = https://github.com/python-gino/sqlalchemy.git

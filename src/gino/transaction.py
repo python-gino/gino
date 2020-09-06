@@ -1,3 +1,7 @@
+from sqlalchemy.ext.asyncio import AsyncTransaction
+from sqlalchemy.util import greenlet_spawn
+
+
 class _Break(BaseException):
     def __init__(self, tx, commit):
         super().__init__()
@@ -5,7 +9,7 @@ class _Break(BaseException):
         self.commit = commit
 
 
-class GinoTransaction:
+class GinoTransaction(AsyncTransaction):
     """
     Represents an underlying database transaction and its connection, offering
     methods to manage this transaction.
@@ -67,38 +71,27 @@ class GinoTransaction:
 
     """
 
-    def __init__(self, conn, args, kwargs):
-        self._conn = conn
-        self._args = args
-        self._kwargs = kwargs
-        self._tx = None
+    def __init__(self, conn):
+        super().__init__(conn)
         self._managed = None
 
-    async def _begin(self):
-        raw_conn = await self._conn.get_raw_connection()
-        self._tx = self._conn.dialect.transaction(raw_conn, self._args, self._kwargs)
-        await self._tx.begin()
+    async def start(self):
+        conn = await self.connection._sync_connection()
+        in_trans = conn.in_transaction()
+        if not in_trans:
+            conn = conn.execution_options(
+                isolation_level=conn.get_execution_options()["tx_isolation_level"]
+            )
+        elif not self.nested:
+            self.nested = True
+
+        self.sync_transaction = await greenlet_spawn(
+            conn.begin_nested if self.nested else conn.begin
+        )
+        if not in_trans:
+            if conn.dialect.driver == "asyncpg":
+                await conn.connection.connection._start_transaction()
         return self
-
-    @property
-    def connection(self):
-        """
-        Accesses to the :class:`~gino.engine.GinoConnection` of this
-        transaction. This is useful if when the transaction is started from
-        ``db`` or ``engine`` where the connection is implicitly acquired for
-        you together with the transaction.
-
-        """
-        return self._conn
-
-    @property
-    def raw_transaction(self):
-        """
-        Accesses to the underlying transaction object, whose type depends on
-        the dialect in use.
-
-        """
-        return self._tx.raw_transaction
 
     def raise_commit(self):
         """
@@ -127,7 +120,7 @@ class GinoTransaction:
             raise AssertionError(
                 "Illegal in managed mode, " "use `raise_commit` instead."
             )
-        await self._tx.commit()
+        await super().commit()
 
     def raise_rollback(self):
         """
@@ -158,26 +151,25 @@ class GinoTransaction:
             raise AssertionError(
                 "Illegal in managed mode, " "use `raise_rollback` instead."
             )
-        await self._tx.rollback()
+        await super().rollback()
 
     def __await__(self):
         if self._managed is not None:
             raise AssertionError("Cannot start the same transaction twice")
         self._managed = False
-        return self._begin().__await__()
+        return super().__await__()
 
     async def __aenter__(self):
         if self._managed is not None:
             raise AssertionError("Cannot start the same transaction twice")
         self._managed = True
-        await self._begin()
-        return self
+        return await super().__aenter__()
 
     async def __aexit__(self, ex_type, ex, ex_tb):
         is_break = ex_type is _Break
         if is_break and ex.commit or ex_type is None:
-            await self._tx.commit()
+            await super().commit()
         else:
-            await self._tx.rollback()
+            await super().rollback()
         if is_break and ex.tx is self:
             return True

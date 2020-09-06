@@ -1,4 +1,6 @@
 import pytest
+from sqlalchemy.exc import IntegrityError
+
 import gino
 from gino.declarative import InvertDict
 from asyncpg.exceptions import (
@@ -69,28 +71,32 @@ async def test_inline_constraints_and_indexes(bind, engine):
     us1 = await UserSetting.create(user_id=u.id, setting="skin", value="blue")
 
     # PrimaryKeyConstraint
-    with pytest.raises(UniqueViolationError):
+    with pytest.raises(IntegrityError) as ei:
         await UserSetting.create(id=us1.id, user_id=u.id, setting="key1", value="val1")
+    assert isinstance(ei.value.orig.__cause__, UniqueViolationError)
 
     # ForeignKeyConstraint
-    with pytest.raises(ForeignKeyViolationError):
+    with pytest.raises(IntegrityError) as ei:
         await UserSetting.create(user_id=42, setting="key2", value="val2")
+    assert isinstance(ei.value.orig.__cause__, ForeignKeyViolationError)
 
     # UniqueConstraint
-    with pytest.raises(UniqueViolationError):
+    with pytest.raises(IntegrityError) as ei:
         await UserSetting.create(
             user_id=u.id, setting="skin", value="duplicate-setting"
         )
+    assert isinstance(ei.value.orig.__cause__, UniqueViolationError)
 
     # CheckConstraint
-    with pytest.raises(CheckViolationError):
+    with pytest.raises(IntegrityError) as ei:
         await UserSetting.create(user_id=u.id, setting="key3", value="val3", col1=42)
+    assert isinstance(ei.value.orig.__cause__, CheckViolationError)
 
     # Index
-    status, result = await engine.status(
+    ctx = await engine.status(
         "SELECT * FROM pg_indexes WHERE indexname = 'col2_idx'"
     )
-    assert status == "SELECT 1"
+    assert ctx.rowcount == 1
 
 
 async def test_join_t112(engine):

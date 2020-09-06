@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from .models import db, User
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 async def test_compiled_and_bindparam(bind):

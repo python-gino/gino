@@ -5,7 +5,7 @@ from gino import UninitializedError, create_engine, InitializedError
 from gino.bakery import Bakery, BakedQuery
 from .models import db, User, PG_URL
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
 
 
 @pytest.mark.parametrize(

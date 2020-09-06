@@ -235,6 +235,8 @@ class Alias:
 
     """
 
+    is_clause_element = False
+
     def __init__(self, model, *args, **kwargs):
         # noinspection PyProtectedMember
         model._check_abstract()
@@ -257,6 +259,9 @@ class Alias:
     def __call__(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
+    def __clause_element__(self):
+        return self.alias
+
     def load(self, *column_names, **relationships):
         return AliasLoader(self, *column_names, **relationships)
 
@@ -265,12 +270,6 @@ class Alias:
 
     def distinct(self, *columns):
         return self.load().distinct(*columns)
-
-
-# noinspection PyProtectedMember
-@sa.inspection._inspects(Alias)
-def _inspect_alias(target):
-    return sa.inspection.inspect(target.alias)
 
 
 class CRUDModel(Model):
@@ -598,7 +597,7 @@ class CRUDModel(Model):
             clause = clause.execution_options(timeout=timeout)
         if bind is None:
             bind = self.__metadata__.bind
-        return (await bind.status(clause))[0]
+        return await bind.status(clause)
 
     def to_dict(self):
         """

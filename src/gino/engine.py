@@ -18,13 +18,13 @@ from sqlalchemy.ext.asyncio import (
     exc as async_exc,
     AsyncConnection,
     AsyncEngine,
-    AsyncTransaction,
 )
 from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.sql import ClauseElement, WARN_LINTING
 from sqlalchemy.util.concurrency import greenlet_spawn
 
 from .loader import Loader, LoaderResult
+from .transaction import GinoTransaction
 
 
 async def create_engine(
@@ -140,6 +140,8 @@ class GinoConnection(AsyncConnection, _DequeNode):
     def begin_nested(self) -> GinoTransaction:
         return GinoTransaction(self, nested=True)
 
+    transaction = begin
+
     async def start(self):
         if not self._lazy:
             try:
@@ -171,6 +173,13 @@ class GinoConnection(AsyncConnection, _DequeNode):
 
     async def close(self):
         await self.release()
+
+    def get_execution_options(self):
+        return (
+            self.sync_connection.get_execution_options()
+            if self.sync_connection
+            else None
+        )
 
     @property
     def dbapi_connection(self):
@@ -219,10 +228,13 @@ class GinoConnection(AsyncConnection, _DequeNode):
         options = result.context.execution_options
         loader = options.get("loader")
         model = options.get("model")
-        if loader is None and model is not None:
-            if isinstance(model, weakref.ref):
-                model = model()
-            loader = Loader.get(model)
+        if loader is None:
+            if model is not None:
+                if isinstance(model, weakref.ref):
+                    model = model()
+                loader = Loader.get(model)
+        else:
+            loader = Loader.get(loader)
         if loader is not None and options.get("return_model", True):
             result = LoaderResult(result, loader)
         return result
@@ -514,14 +526,21 @@ class GinoEngine(AsyncEngine):
             self._kwargs = kwargs
 
         async def start(self):
-            await super().start()
+            try:
+                await super().start()
+                if self.conn.sync_connection:
+                    await self._set_transaction()
+                return self.transaction
+            except Exception:
+                await self.conn.close()
+                raise
+
+        async def _set_transaction(self):
             # TODO: different dialects?
 
             query = ""
             isolation = self._kwargs.get("isolation")
-            current_isolation = self.conn.sync_connection.get_execution_options()[
-                "tx_isolation_level"
-            ]
+            current_isolation = self.conn.get_execution_options()["tx_isolation_level"]
             if isolation:
                 isolation = ASYNCPG_ISOLATION_MAPPING.get(isolation)
                 if isolation:
@@ -535,7 +554,11 @@ class GinoEngine(AsyncEngine):
             if query:
                 await self.conn.exec_driver_sql(f"SET TRANSACTION {query};")
 
-            return self.transaction
+        async def __aexit__(self, type_, value, traceback):
+            try:
+                return await self.transaction.__aexit__(type_, value, traceback)
+            finally:
+                await self.conn.close()
 
     def __init__(self, sync_engine: Engine):
         super().__init__(sync_engine)
@@ -768,23 +791,3 @@ class AsyncOptionEngine(OptionEngineMixin, GinoEngine):
 
 
 GinoEngine._option_cls = AsyncOptionEngine
-
-
-class GinoTransaction(AsyncTransaction):
-    async def start(self):
-        conn = await self.connection._sync_connection()
-        in_trans = conn.in_transaction()
-        if not in_trans:
-            conn = conn.execution_options(
-                isolation_level=conn.get_execution_options()["tx_isolation_level"]
-            )
-        elif not self.nested:
-            self.nested = True
-
-        self.sync_transaction = await greenlet_spawn(
-            conn.begin_nested if self.nested else conn.begin
-        )
-        if not in_trans:
-            if conn.dialect.driver == "asyncpg":
-                await conn.connection.connection._start_transaction()
-        return self

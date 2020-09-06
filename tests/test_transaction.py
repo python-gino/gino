@@ -45,7 +45,9 @@ async def test_connection_ctx(bind, mocker):
             await tx.__aexit__(None, None, None)
         # clean up, and to simulate commit failed
         mocker.stopall()
-        await tx._tx.rollback()
+        await conn.raw_connection.execute("ROLLBACK")
+        # SQLAlchemy needs this no-op rollback() to restore its own state
+        await conn.rollback()
         assert await get_name() == "commit"
     assert await get_name() == "commit"
 
@@ -127,13 +129,15 @@ async def test_commit_failed(bind, mocker):
 
 
 async def test_reuse(bind):
-    from asyncpg.transaction import Transaction
+    async with db.acquire():
+        async with db.acquire():
+            async with db.acquire():
+                pass
 
     init_size = qsize(bind)
     async with db.acquire() as conn:
         async with db.transaction() as tx:
             assert tx.connection.raw_connection is conn.raw_connection
-            assert isinstance(tx.raw_transaction, Transaction)
             async with db.transaction() as tx2:
                 assert tx2.connection.raw_connection is conn.raw_connection
             async with db.transaction(reuse=False) as tx2:
@@ -259,7 +263,7 @@ async def test_no_rollback_on_commit_fail(engine, mocker):
     mocker.patch("asyncpg.transaction.Transaction.commit").side_effect = IndexError
     async with engine.acquire() as conn:
         tx = await conn.transaction().__aenter__()
-        rollback = mocker.patch.object(tx._tx, "rollback")
+        rollback = mocker.patch("asyncpg.transaction.Transaction.rollback")
         with pytest.raises(IndexError):
             await tx.__aexit__(None, None, None)
         assert not rollback.called

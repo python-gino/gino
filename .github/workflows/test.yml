@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.5', '3.6', '3.7', '3.8' ]
+        python-version: [ '3.7', '3.8' ]
         postgres-version: [ '9.6', '12.1' ]
-        deps-version: [ 'lowest', 'highest' ]
+        deps-version: [ 'highest' ]
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
@@ -32,6 +32,8 @@ jobs:
     steps:
     - name: Checkout source code
       uses: actions/checkout@v1
+      with:
+        submodules: recursive
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
@@ -54,10 +56,6 @@ jobs:
       run: |
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
         $HOME/.poetry/bin/poetry install --no-interaction
-    - name: Use lowest dependencies versions
-      if: matrix.deps-version == 'lowest'
-      run: |
-          $HOME/.poetry/bin/poetry run pip install asyncpg==0.18 SQLAlchemy==1.3
     - name: List installed packages
       run: |
           $HOME/.poetry/bin/poetry run pip list
@@ -66,7 +64,7 @@ jobs:
         DB_HOST: localhost
         DB_USER: gino
       run: |
-        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=95 --cov-report xml
+        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=85 --cov-report xml
     - name: Check code format with black
       if: matrix.python-version >= '3.6'
       run: |

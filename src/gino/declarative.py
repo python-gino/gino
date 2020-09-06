@@ -90,6 +90,10 @@ class ModelType(type):
                 "defined.".format(self.__name__)
             )
 
+    def __clause_element__(self):
+        self._check_abstract()
+        return self.__table__
+
     def __iter__(self):
         self._check_abstract()
         # noinspection PyUnresolvedReferences
@@ -390,13 +394,6 @@ def declarative_base(metadata, model_classes=(Model,), name="Model"):
     :return: A new base model class.
     """
     return ModelType(name, model_classes, {"__metadata__": metadata})
-
-
-# noinspection PyProtectedMember
-@sa.inspection._inspects(ModelType)
-def inspect_model_type(target):
-    target._check_abstract()
-    return sa.inspection.inspect(target.__table__)
 
 
 __all__ = [
