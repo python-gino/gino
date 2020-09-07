@@ -100,20 +100,26 @@ async def test_compile(engine):
 
 
 async def test_logging(mocker):
-    mocker.patch("logging.Logger._log")
-    sql = "SELECT NOW() AS test_logging"
+    orig_level = logging.root.level
+    # #710: the level of logger "gino" should not be NOTSET, thus not affected by root
+    logging.root.setLevel(logging.DEBUG)
+    try:
+        mocker.patch("logging.Logger._log")
+        sql = "SELECT NOW() AS test_logging"
 
-    e = await create_engine(PG_URL, echo=False)
-    await e.scalar(sql)
-    await e.close()
-    # noinspection PyProtectedMember,PyUnresolvedReferences
-    logging.Logger._log.assert_not_called()
+        e = await create_engine(PG_URL, echo=False)
+        await e.scalar(sql)
+        await e.close()
+        # noinspection PyProtectedMember,PyUnresolvedReferences
+        logging.Logger._log.assert_not_called()
 
-    e = await create_engine(PG_URL, echo=True)
-    await e.scalar(sql)
-    await e.close()
-    # noinspection PyProtectedMember,PyUnresolvedReferences
-    logging.Logger._log.assert_any_call(logging.INFO, sql, ())
+        e = await create_engine(PG_URL, echo=True)
+        await e.scalar(sql)
+        await e.close()
+        # noinspection PyProtectedMember,PyUnresolvedReferences
+        logging.Logger._log.assert_any_call(logging.INFO, sql, ())
+    finally:
+        logging.root.setLevel(orig_level)
 
 
 async def test_set_isolation_level():
