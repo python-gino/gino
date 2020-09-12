@@ -5,7 +5,7 @@ from asyncpg import UndefinedTableError
 
 import gino
 
-pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
+pytestmark = pytest.mark.asyncio
 
 
 class MyEnum(Enum):
@@ -14,7 +14,6 @@ class MyEnum(Enum):
 
 
 async def test(engine, define=True):
-    from gino.dialects.asyncpg import AsyncEnum
     db = gino.Gino()
 
     class Blog(db.Model):
@@ -25,7 +24,6 @@ async def test(engine, define=True):
         visits = db.Column(db.BigInteger(), default=0)
         comment_id = db.Column(db.ForeignKey("s_comment.id"))
         number = db.Column(db.Enum(MyEnum), nullable=False, default=MyEnum.TWO)
-        number2 = db.Column(AsyncEnum(MyEnum), nullable=False, default=MyEnum.TWO)
 
     class Comment(db.Model):
         __tablename__ = "s_comment"
@@ -36,22 +34,20 @@ async def test(engine, define=True):
     blog_seq = db.Sequence("blog_seq", metadata=db, schema="schema_test")
 
     try:
-        async with engine.acquire() as conn:
-            assert not await engine.dialect.has_schema(conn, "schema_test")
-            assert not await engine.dialect.has_table(conn, "non_exist")
-            assert not await engine.dialect.has_sequence(conn, "non_exist")
-            assert not await engine.dialect.has_type(conn, "non_exist")
-            assert not await engine.dialect.has_type(
-                conn, "non_exist", schema="schema_test"
-            )
+        assert not await engine.run_sync(engine.dialect.has_schema, "schema_test")
+        assert not await engine.run_sync(engine.dialect.has_table, "non_exist")
+        assert not await engine.run_sync(engine.dialect.has_sequence, "non_exist")
+        assert not await engine.run_sync(engine.dialect.has_type, "non_exist")
+        assert not await engine.run_sync(
+            engine.dialect.has_type, "non_exist", schema="schema_test"
+        )
         await engine.status("create schema schema_test")
         Blog.__table__.schema = "schema_test"
         Blog.__table__.comment = "Blog Comment"
         Comment.__table__.schema = "schema_test"
         db.bind = engine
         await db.gino.create_all()
-        await Blog.number.type.create_async(engine, checkfirst=True)
-        await Blog.number2.type.create_async(engine, checkfirst=True)
+        await engine.run_sync(Blog.number.type.create, checkfirst=True)
         await db.gino.create_all(tables=[Blog.__table__], checkfirst=True)
         await blog_seq.gino.create(checkfirst=True)
         await Blog.__table__.gino.create(checkfirst=True)
@@ -75,7 +71,8 @@ async def test(engine, define=True):
         await engine.status("drop schema schema_test cascade")
 
 
-async def test_no_alter(engine, mocker):
-    engine.dialect.supports_alter = False
+@pytest.mark.skip
+async def test_no_alter(engine, monkeypatch):
+    monkeypatch.setattr(engine.dialect, 'supports_alter', False)
     with pytest.raises(UndefinedTableError):
         await test(engine, define=False)
