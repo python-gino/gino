@@ -3,7 +3,7 @@ import pytest
 
 from .models import db, User
 
-pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -49,7 +49,9 @@ async def test_bind(bind, names):
         assert names == result
         assert await cursor.next() is None
 
-    with pytest.raises(ValueError, match="too many multiparams"):
+    with pytest.raises(
+        NotImplementedError, match="server side cursor doesn't support executemany yet"
+    ):
         async with bind.transaction():
             await db.iterate(
                 User.insert().returning(User.nickname),

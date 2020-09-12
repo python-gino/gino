@@ -2,7 +2,8 @@ import types
 import warnings
 
 from sqlalchemy import select
-from sqlalchemy.engine.result import FilterResult
+from sqlalchemy.engine.result import FilterResult, _NO_ROW
+from sqlalchemy.ext.asyncio import AsyncResult
 from sqlalchemy.schema import Column
 from sqlalchemy.sql.elements import Label
 
@@ -529,3 +530,40 @@ class LoaderResult(FilterResult):
 
         """
         return self._only_one_row(True, True, False)
+
+    def __getattr__(self, item):
+        return getattr(self._real_result, item)
+
+
+class AsyncLoaderResult(AsyncResult):
+    def __init__(self, initializer):
+        self._initializer = initializer
+        self._real_result = None
+
+    async def _ensure_init(self):
+        if self._real_result is None:
+            real_result = await self._initializer()
+            super().__init__(real_result)
+            self._set_memoized_attribute("_row_getter", real_result._row_getter)
+            self._set_memoized_attribute(
+                "_post_creational_filter", real_result._post_creational_filter
+            )
+        return self
+
+    async def __anext__(self):
+        await self._ensure_init()
+        return await super().__anext__()
+
+    def __await__(self):
+        return self._ensure_init().__await__()
+
+    # TODO: implement timeout and native forward
+
+    async def many(self, n, *, timeout=...):
+        return await self.fetchmany(n)
+
+    async def next(self, *, timeout=...):
+        return await self.fetchone()
+
+    async def forward(self, n, *, timeout=...):
+        await self.fetchmany(n)

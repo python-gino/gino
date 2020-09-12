@@ -7,7 +7,6 @@ import weakref
 from contextvars import ContextVar
 from typing import Optional, Callable, Any
 
-from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine import create_engine as _create_engine
 from sqlalchemy.engine.base import OptionEngineMixin
@@ -19,11 +18,10 @@ from sqlalchemy.ext.asyncio import (
     AsyncConnection,
     AsyncEngine,
 )
-from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.sql import ClauseElement, WARN_LINTING
 from sqlalchemy.util.concurrency import greenlet_spawn
 
-from .loader import Loader, LoaderResult
+from .loader import Loader, LoaderResult, AsyncLoaderResult
 from .transaction import GinoTransaction
 
 
@@ -216,17 +214,17 @@ class GinoConnection(AsyncConnection, _DequeNode):
         await self._sync_connection()
         return self.raw_connection
 
-    async def _execute_sa10(self, object_, multiparams, params):
-        params_20style = _distill_params(self, multiparams, params)
-        coro = self._execute(object_, params_20style)
+    def _with_timeout(self, coro):
         if self._execution_options is not None:
             timeout = self._execution_options.get("timeout")
             if timeout:
-                return await asyncio.wait_for(coro, timeout)
-        return await coro
+                coro = asyncio.wait_for(coro, timeout)
+        return coro
 
     def _load_result(self, result):
         options = result.context.execution_options
+        if not options.get("return_model", True):
+            return result
         loader = options.get("loader")
         model = options.get("model")
         if loader is None:
@@ -236,15 +234,17 @@ class GinoConnection(AsyncConnection, _DequeNode):
                 loader = Loader.get(model)
         else:
             loader = Loader.get(loader)
-        if loader is not None and options.get("return_model", True):
+        if loader:
             result = LoaderResult(result, loader)
         return result
 
-    async def _execute(self, object_, params_20style):
+    async def _execute_sa10(self, object_, multiparams, params):
+        params_20style = _distill_params(self, multiparams, params)
         if isinstance(object_, str):
-            return await self.exec_driver_sql(object_, params_20style)
+            coro = self.exec_driver_sql(object_, params_20style)
         else:
-            return await self.execute(object_, params_20style)
+            coro = self.execute(object_, params_20style)
+        return await self._with_timeout(coro)
 
     async def release(self, *, permanent=True):
         """
@@ -386,39 +386,6 @@ class GinoConnection(AsyncConnection, _DequeNode):
         result = await self._execute_sa10(clause, multiparams, params)
         return result.context
 
-    class _IterateResult(StartableContext):
-        def __init__(self, conn, *args):
-            self._conn = conn
-            self._result = None
-            self._args = args
-
-        async def start(self) -> "StartableContext":
-            if not self._result:
-                self._result = await self._conn.stream(*self._args)
-            return self
-
-        async def next(self):
-            try:
-                return await self._result.fetchone()
-            except ResourceClosedError as e:
-                warnings.warn(
-                    "GINO 2.0 will raise ResourceClosedError: " + str(e),
-                    DeprecationWarning,
-                )
-
-        async def __aexit__(self, type_, value, traceback):
-            pass
-
-        def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            await self.start()
-            return await self._result.__anext__()
-
-        def __getattr__(self, item):
-            return getattr(self._result, item)
-
     def iterate(self, clause, *multiparams, **params):
         """
         Creates a server-side cursor in database for large query results.
@@ -441,10 +408,22 @@ class GinoConnection(AsyncConnection, _DequeNode):
         Similarly, this method takes the same parameters as :meth:`all`.
 
         """
-        params_20style = _distill_params(self, multiparams, params)
-        if isinstance(clause, str):
-            clause = text(clause)
-        return self._IterateResult(self, clause, params_20style)
+
+        async def stream():
+            conn = await self._sync_connection()
+
+            result = await greenlet_spawn(
+                conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
+                clause,
+                _distill_params(self, multiparams, params),
+                {"stream_results": True},
+            )
+            if not result.context._is_server_side:
+                # TODO: real exception here
+                assert False, "server side result expected"
+            return self._load_result(result)
+
+        return AsyncLoaderResult(lambda: self._with_timeout(stream()))
 
     def execution_options(self, **opt):
         """
