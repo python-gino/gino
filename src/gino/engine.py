@@ -140,7 +140,8 @@ class GinoConnection(AsyncConnection, _DequeNode):
     def begin_nested(self) -> GinoTransaction:
         return GinoTransaction(self, nested=True)
 
-    transaction = begin
+    def transaction(self, **kwargs):
+        return GinoTransaction(self, **kwargs)
 
     async def start(self):
         if not self._lazy:
@@ -506,13 +507,6 @@ class GinoConnection(AsyncConnection, _DequeNode):
         return rv
 
 
-ASYNCPG_ISOLATION_MAPPING = dict(
-    read_committed="READ COMMITTED",
-    repeatable_read="REPEATABLE READ",
-    serializable="SERIALIZABLE",
-)
-
-
 class GinoEngine(AsyncEngine):
     __slots__ = ("_hat",)
 
@@ -527,32 +521,13 @@ class GinoEngine(AsyncEngine):
 
         async def start(self):
             try:
-                await super().start()
-                if self.conn.sync_connection:
-                    await self._set_transaction()
+                await self.conn.start()
+                self.transaction = self.conn.transaction(**self._kwargs)
+                await self.transaction.__aenter__()
                 return self.transaction
             except Exception:
                 await self.conn.close()
                 raise
-
-        async def _set_transaction(self):
-            # TODO: different dialects?
-
-            query = ""
-            isolation = self._kwargs.get("isolation")
-            current_isolation = self.conn.get_execution_options()["tx_isolation_level"]
-            if isolation:
-                isolation = ASYNCPG_ISOLATION_MAPPING.get(isolation)
-                if isolation:
-                    if isolation != current_isolation:
-                        query += "ISOLATION LEVEL " + isolation
-            if current_isolation == "SERIALIZABLE":
-                if self._kwargs.get("readonly"):
-                    query += " READ ONLY"
-                if self._kwargs.get("deferrable"):
-                    query += " DEFERRABLE"
-            if query:
-                await self.conn.exec_driver_sql(f"SET TRANSACTION {query};")
 
         async def __aexit__(self, type_, value, traceback):
             try:

@@ -2,6 +2,13 @@ from sqlalchemy.ext.asyncio import AsyncTransaction
 from sqlalchemy.util import greenlet_spawn
 
 
+ASYNCPG_ISOLATION_MAPPING = dict(
+    read_committed="READ COMMITTED",
+    repeatable_read="REPEATABLE READ",
+    serializable="SERIALIZABLE",
+)
+
+
 class _Break(BaseException):
     def __init__(self, tx, commit):
         super().__init__()
@@ -71,17 +78,29 @@ class GinoTransaction(AsyncTransaction):
 
     """
 
-    def __init__(self, conn):
-        super().__init__(conn)
+    def __init__(self, conn, nested=False, **kwargs):
+        super().__init__(conn, nested=nested)
         self._managed = None
+        self._kwargs = kwargs
 
     async def start(self):
         conn = await self.connection._sync_connection()
         in_trans = conn.in_transaction()
         if not in_trans:
-            conn = conn.execution_options(
-                isolation_level=conn.get_execution_options()["tx_isolation_level"]
-            )
+            options = {}
+            isolation = self._kwargs.get("isolation")
+            if isolation:
+                options["isolation_level"] = ASYNCPG_ISOLATION_MAPPING.get(isolation)
+            else:
+                options["isolation_level"] = conn.get_execution_options()[
+                    "tx_isolation_level"
+                ]
+            if isolation == "SERIALIZABLE":
+                if self._kwargs.get("readonly"):
+                    options["postgresql_readonly"] = True
+                if self._kwargs.get("deferrable"):
+                    options["postgresql_deferrable"] = True
+            conn = conn.execution_options(**options)
         elif not self.nested:
             self.nested = True
 
