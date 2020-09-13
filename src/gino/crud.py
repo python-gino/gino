@@ -792,6 +792,12 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
 
     async def _execute_and_fetch(conn, query):
         context, row = await conn._first_with_context(query)
+        # For DBMS like MySQL that doesn't support returning inserted or modified
+        # rows, a workaround is applied to infer necessary data to query from the
+        # database. This is not able to cover all cases, especially for those
+        # statements that the end results are not exactly the same as in the queries.
+        # One example is the DATETIME type in MySQL. By default, inserted date are
+        # rounded to seconds. This is not visible to the engine.
         if not bind._dialect.support_returning:
             if context.isinsert:
                 table = context.compiled.statement.table

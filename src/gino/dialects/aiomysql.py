@@ -192,9 +192,7 @@ class DBAPICursor(base.DBAPICursor):
                 stmt += b","
             stmt += v
         await self._async_execute(conn, stmt + postfix, None, None)
-        rows += self.affected_rows
-        self.affected_rows = rows
-        return None
+        self.affected_rows += rows
 
     @property
     def description(self):
