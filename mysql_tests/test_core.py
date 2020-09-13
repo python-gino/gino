@@ -29,7 +29,7 @@ async def test_engine_only():
         Column("email_address", String(255), nullable=False),
     )
 
-    engine = await gino.create_engine(MYSQL_URL, autocommit=True)
+    engine = await gino.create_engine(MYSQL_URL)
     await GinoSchemaVisitor(metadata).create_all(engine)
     try:
         ins = users.insert().values(name="jack", fullname="Jack Jones")
@@ -62,7 +62,7 @@ async def test_core():
         db.Column("email_address", db.String(255), nullable=False),
     )
 
-    async with db.with_bind(MYSQL_URL, autocommit=True):
+    async with db.with_bind(MYSQL_URL):
         await db.gino.create_all()
         try:
             await users.insert().values(
@@ -93,7 +93,7 @@ async def test_orm():
         user_id = db.Column(None, db.ForeignKey("users.id"))
         email_address = db.Column(db.String(255), nullable=False)
 
-    async with db.with_bind(MYSQL_URL, autocommit=True):
+    async with db.with_bind(MYSQL_URL):
         await db.gino.create_all()
         try:
             await User.create(name="jack", fullname="Jack Jones")

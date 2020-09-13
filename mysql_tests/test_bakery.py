@@ -152,7 +152,7 @@ async def test_class_level_bake():
         def getter(cls):
             return cls.query.where(cls.name == db.bindparam("name"))
 
-    async with db.with_bind(MYSQL_URL, prebake=False, autocommit=True):
+    async with db.with_bind(MYSQL_URL, prebake=False):
         await db.gino.create_all()
         try:
             await BakeOnClass.create(name="exist")

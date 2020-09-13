@@ -122,7 +122,7 @@ async def test_multiple_primary_key_order():
     import gino
 
     db1 = gino.Gino()
-    await db1.set_bind(MYSQL_URL, autocommit=True)
+    await db1.set_bind(MYSQL_URL)
 
     class NameCard(db1.Model):
         __tablename__ = "name_cards"
@@ -152,7 +152,7 @@ async def test_multiple_primary_key_order():
         await db1.pop_bind().close()
 
     db2 = gino.Gino(MYSQL_URL)
-    await db2.set_bind(MYSQL_URL, autocommit=True)
+    await db2.set_bind(MYSQL_URL)
 
     class NameCard(db2.Model):
         __tablename__ = "name_cards"

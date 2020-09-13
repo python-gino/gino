@@ -228,6 +228,9 @@ class Pool(base.Pool):
             db=self._url.database,
             password=self._url.password,
         )
+        # aiomysql sets autocommit as False by default, which opposes the MySQL
+        # default, therefore it's set to None to respect the MySQL configuration
+        args.setdefault("autocommit", None)
         self._pool = await aiomysql.create_pool(**args)
         return self
 
