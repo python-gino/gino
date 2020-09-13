@@ -798,7 +798,7 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
                 key_getter = context.compiled._key_getters_for_crud_column[2]
                 compiled_params = context.compiled_parameters[0]
                 last_row_id = context.get_lastrowid()
-                if last_row_id is not None:
+                if last_row_id is not None or table.primary_key:
                     lookup_conds = [
                         c == last_row_id
                         if c is table._autoincrement_column
