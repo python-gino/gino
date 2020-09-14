@@ -414,6 +414,8 @@ class ExecutionContextOverride:
         raise NotImplementedError
 
     def get_affected_rows(self):
+        # Note: in MySQL result, affected rows means the number of rows that get
+        # updated, but not the number of matched rows.
         raise NotImplementedError
 
 

@@ -824,8 +824,6 @@ async def _query_and_update(bind, item, query, cols, execution_opts):
                 )
                 row = await conn.first(query)
             elif context.isupdate:
-                if context.get_affected_rows() == 0:
-                    raise NoSuchRowError()
                 table = context.compiled.statement.table
                 if len(table.primary_key) > 0:
                     lookup_conds = [
