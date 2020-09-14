@@ -144,13 +144,13 @@ async def test_set_isolation_level():
     e = await create_engine(PG_URL, isolation_level="REPEATABLE_READ")
     async with e.acquire() as conn:
         assert (
-            await greenlet_spawn(e.dialect.get_isolation_level, conn.dbapi_connection)
+            await greenlet_spawn(e.dialect.get_isolation_level, conn._dbapi_conn)
             == "REPEATABLE READ"
         )
     async with e.transaction(isolation="serializable") as tx:
         assert (
             await greenlet_spawn(
-                e.dialect.get_isolation_level, tx.connection.dbapi_connection
+                e.dialect.get_isolation_level, tx.connection._dbapi_conn
             )
             == "SERIALIZABLE"
         )

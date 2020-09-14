@@ -354,7 +354,6 @@ async def test_distinct_none(bind):
     assert not hasattr(u, "team")
 
 
-@pytest.mark.skip
 async def test_tuple_loader_279(user):
     from gino.loader import TupleLoader
 

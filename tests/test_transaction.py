@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.exc import InvalidRequestError
 
 from .models import db, User, qsize
 
@@ -43,11 +44,12 @@ async def test_connection_ctx(bind, mocker):
         mocker.patch("asyncpg.transaction.Transaction.commit").side_effect = IndexError
         with pytest.raises(IndexError):
             await tx.__aexit__(None, None, None)
-        # clean up, and to simulate commit failed
-        mocker.stopall()
-        await conn.raw_connection.execute("ROLLBACK")
-        # SQLAlchemy needs this no-op rollback() to restore its own state
-        await conn.rollback()
+        with pytest.raises(
+            InvalidRequestError,
+            match="a transaction is already begun for this connection",
+        ):
+            await get_name()
+        await conn.release(permanent=False)
         assert await get_name() == "commit"
     assert await get_name() == "commit"
 

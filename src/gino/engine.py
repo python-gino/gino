@@ -7,19 +7,18 @@ import weakref
 from contextvars import ContextVar
 from typing import Optional, Callable, Any
 
-from sqlalchemy.engine import Engine
+from sqlalchemy import event
+from sqlalchemy.dialects.postgresql.base import PGDialect
+from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.engine import create_engine as _create_engine
-from sqlalchemy.engine.base import OptionEngineMixin
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.engine.util import _distill_params
 from sqlalchemy.exc import ResourceClosedError
-from sqlalchemy.ext.asyncio import (
-    exc as async_exc,
-    AsyncConnection,
-    AsyncEngine,
-)
+from sqlalchemy.ext.asyncio import exc as async_exc
+from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.sql import ClauseElement, WARN_LINTING
 from sqlalchemy.util.concurrency import greenlet_spawn
+from sqlalchemy.util import EMPTY_DICT
 
 from .loader import Loader, LoaderResult, AsyncLoaderResult
 from .transaction import GinoTransaction
@@ -35,7 +34,12 @@ async def create_engine(
             "streaming result set"
         )
     kw["future"] = True
-    kw["isolation_level"] = "AUTOCOMMIT"
+    opts = kw.get("execution_options", {})
+    isolation_level = opts.get("isolation_level", isolation_level)
+    opts = EMPTY_DICT.merge_with(opts, dict(isolation_level="AUTOCOMMIT"))
+    if isolation_level:
+        opts = opts.merge_with(dict(tx_isolation_level=isolation_level))
+    kw["execution_options"] = opts
 
     u = make_url(url)
     if u.drivername in {"postgresql", "postgres"}:
@@ -72,28 +76,38 @@ async def create_engine(
 
     sync_engine = _create_engine(u, *arg, **kw)
 
-    if min_size > 0:
-        fs = [greenlet_spawn(sync_engine.connect) for i in range(min_size)]
-        fs = (await asyncio.wait(fs))[0]
-        if isolation_level:
+    if isolation_level and u.drivername == "postgresql+asyncpg":
+        # TODO: Move to dialect
+
+        async def on_connect(dbapi_conn, record):
             await greenlet_spawn(
-                sync_engine.dialect.set_isolation_level,
-                (await list(fs)[0]).connection,
+                PGDialect.set_isolation_level,
+                sync_engine.dialect,
+                dbapi_conn,
                 isolation_level,
             )
-        fs = [greenlet_spawn((await fut).close) for fut in fs]
-        await asyncio.wait(fs)
 
-    if isolation_level is None:
-        isolation_level = getattr(
-            sync_engine.dialect, "default_isolation_level", "READ COMMITTED"
+        event.listen(sync_engine, "connect", on_connect)
+
+    if min_size > 0:
+        # TODO: acquire initial connections concurrently when upstream bug is fixed:
+        # https://github.com/sqlalchemy/sqlalchemy/issues/5581
+        conns = []
+        for i in range(min_size):
+            conns.append(await greenlet_spawn(sync_engine.connect))
+        conns[0].execution_options(
+            isolation_level=isolation_level
+            or sync_engine.dialect.default_isolation_level
         )
-    sync_engine = sync_engine.execution_options(tx_isolation_level=isolation_level)
+        for conn in conns:
+            await greenlet_spawn(conn.close)
 
     return GinoEngine(sync_engine)
 
 
 class _DequeNode:
+    __slots__ = ("_prev", "_next", "_resetter")
+
     def __init__(self):
         self._prev = self._next = None  # type: Optional[_DequeNode]
         self._resetter = None
@@ -109,34 +123,29 @@ class _DequeNode:
             self._resetter()
 
 
-class GinoConnection(AsyncConnection, _DequeNode):
+class GinoConnection(StartableContext, _DequeNode):
     __slots__ = (
+        "sync_engine",
+        "_sync_connection",
         "_started",
         "_connect_timeout",
-        "_prev",
-        "_next",
-        "_resetter",
         "_lazy",
         "_lock",
         "_execution_options",
     )
     _prev: Optional[GinoConnection]
     _next: Optional[GinoConnection]
+    _sync_connection: Optional[Connection]
 
     def __init__(
         self, sync_engine: Engine, connect_timeout, lazy,
     ):
         _DequeNode.__init__(self)
-        AsyncConnection.__init__(self, sync_engine)
+        self.sync_engine = sync_engine
+        self._sync_connection = None
         self._connect_timeout = connect_timeout
         self._lazy = lazy
         self._lock = self._execution_options = None
-
-    def begin(self) -> GinoTransaction:
-        return GinoTransaction(self)
-
-    def begin_nested(self) -> GinoTransaction:
-        return GinoTransaction(self, nested=True)
 
     def transaction(self, **kwargs):
         return GinoTransaction(self, **kwargs)
@@ -144,53 +153,51 @@ class GinoConnection(AsyncConnection, _DequeNode):
     async def start(self):
         if not self._lazy:
             try:
-                await self._sync_connection()
+                await self.acquire(self._connect_timeout)
             except Exception:
                 await self.release()
                 raise
         return self
 
-    async def _sync_connection(self):
+    async def __aexit__(self, type_, value, traceback):
+        await self.release()
+
+    async def acquire(self, timeout=None):
         if not self.sync_engine:
             raise ValueError("This connection is already released permanently.")
         if self._prev and not self._next:
-            rv = await self._prev._sync_connection()
+            rv = await self._prev.acquire(timeout)
             if self._execution_options is not None:
                 rv = rv.execution_options(**self._execution_options)
             return rv
         if self._lock is None:
             self._lock = asyncio.Lock()
-        return await asyncio.wait_for(
-            self._get_sync_connection(), self._connect_timeout
-        )
-
-    async def _get_sync_connection(self):
         async with self._lock:
-            if not self.sync_connection:
-                self.sync_connection = await greenlet_spawn(self.sync_engine.connect)
-            return self.sync_connection
-
-    async def close(self):
-        await self.release()
+            if not self._sync_connection:
+                coro = greenlet_spawn(self.sync_engine.connect)
+                if timeout:
+                    coro = asyncio.wait_for(coro, timeout)
+                self._sync_connection = await coro
+            return self._sync_connection
 
     def get_execution_options(self):
         return (
-            self.sync_connection.get_execution_options()
-            if self.sync_connection
-            else None
+            self._sync_connection.get_execution_options()
+            if self._sync_connection
+            else self.sync_engine.get_execution_options()
         )
 
     @property
-    def dbapi_connection(self):
+    def _dbapi_conn(self):
         """
         The current underlying database connection instance, type depends on
         the dialect in use. May be ``None`` if self is a lazy connection.
 
         """
-        if self.sync_connection:
-            return self.sync_connection.connection.connection
+        if self._sync_connection:
+            return self._sync_connection.connection.connection
         elif self._prev:
-            return self._prev.dbapi_connection
+            return self._prev._dbapi_conn
 
     @property
     def raw_connection(self):
@@ -199,7 +206,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         the dialect in use. May be ``None`` if self is a lazy connection.
 
         """
-        return self.dbapi_connection._connection
+        return self._dbapi_conn._connection
 
     async def get_raw_connection(self, *, timeout=None):
         """
@@ -211,7 +218,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         :raises: :class:`~asyncio.TimeoutError` if the acquiring timed out
 
         """
-        await self._sync_connection()
+        await self.acquire(timeout)
         return self.raw_connection
 
     def _with_timeout(self, coro):
@@ -238,13 +245,35 @@ class GinoConnection(AsyncConnection, _DequeNode):
             result = LoaderResult(result, loader)
         return result
 
-    async def _execute_sa10(self, object_, multiparams, params):
-        params_20style = _distill_params(self, multiparams, params)
-        if isinstance(object_, str):
-            coro = self.exec_driver_sql(object_, params_20style)
+    async def _execute(self, clause, multiparams, params):
+        conn = await self.acquire()
+        if conn.in_transaction():
+            tx = None
         else:
-            coro = self.execute(object_, params_20style)
-        return await self._with_timeout(coro)
+            tx = await greenlet_spawn(conn.begin)
+        try:
+            result = await greenlet_spawn(
+                conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
+                clause,
+                _distill_params(self, multiparams, params),
+            )
+        finally:
+            if tx is not None:
+                await greenlet_spawn(tx.commit)
+        if result.context._is_server_side:
+            raise async_exc.AsyncMethodRequired(
+                "Can't use the connection.execute() method with a "
+                "server-side cursor."
+                "Use the connection.stream() method for an async "
+                "streaming result set."
+            )
+        return result
+
+    async def execute(self, clause, *multiparams, _do_load=True, **params):
+        result = await self._with_timeout(self._execute(clause, multiparams, params))
+        if _do_load:
+            result = self._load_result(result)
+        return result
 
     async def release(self, *, permanent=True):
         """
@@ -284,9 +313,9 @@ class GinoConnection(AsyncConnection, _DequeNode):
             self.sync_engine = None
             self._deque_remove()
 
-        if self.sync_connection:
+        if self._sync_connection:
             async with self._lock:
-                conn, self.sync_connection = self.sync_connection, None
+                conn, self._sync_connection = self._sync_connection, None
                 if conn:
                     await greenlet_spawn(conn.close)
 
@@ -308,8 +337,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         database will be discarded and this method will return ``None``.
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
-        result = self._load_result(result)
+        result = await self.execute(clause, *multiparams, **params)
         return result.all()
 
     async def first(self, clause, *multiparams, **params):
@@ -321,8 +349,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
-        result = self._load_result(result)
+        result = await self.execute(clause, *multiparams, **params)
         try:
             return result.first()
         except ResourceClosedError as e:
@@ -342,8 +369,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
-        result = self._load_result(result)
+        result = await self.execute(clause, *multiparams, **params)
         return result.one_or_none()
 
     async def one(self, clause, *multiparams, **params):
@@ -358,8 +384,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
-        result = self._load_result(result)
+        result = await self.execute(clause, *multiparams, **params)
         return result.one()
 
     async def scalar(self, clause, *multiparams, **params):
@@ -371,7 +396,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
+        result = await self.execute(clause, *multiparams, _do_load=False, **params)
         return result.scalar()
 
     async def status(self, clause, *multiparams, **params):
@@ -383,7 +408,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         https://git.io/v7oze
 
         """
-        result = await self._execute_sa10(clause, multiparams, params)
+        result = await self.execute(clause, *multiparams, _do_load=False, **params)
         return result.context
 
     def iterate(self, clause, *multiparams, **params):
@@ -410,7 +435,7 @@ class GinoConnection(AsyncConnection, _DequeNode):
         """
 
         async def stream():
-            conn = await self._sync_connection()
+            conn = await self.acquire()
 
             result = await greenlet_spawn(
                 conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
@@ -485,17 +510,37 @@ class GinoConnection(AsyncConnection, _DequeNode):
         rv._execution_options = opt
         return rv
 
+    async def run_sync(self, fn: Callable, *arg, **kw) -> Any:
+        """"Invoke the given sync callable passing self as the first argument.
 
-class GinoEngine(AsyncEngine):
-    __slots__ = ("_hat",)
+        This method maintains the asyncio event loop all the way through
+        to the database connection by running the given callable in a
+        specially instrumented greenlet.
+
+        E.g.::
+
+            with async_engine.begin() as conn:
+                await conn.run_sync(metadata.create_all)
+
+        """
+
+        conn = await self.acquire()
+        return await greenlet_spawn(fn, conn, *arg, **kw)
+
+
+class GinoEngine:
+    __slots__ = ("_hat", "sync_engine")
 
     _connection_cls = GinoConnection
-
     _option_cls: type
+    _hat: ContextVar[Optional[_DequeNode]]
 
-    class _gino_trans_ctx(AsyncEngine._trans_ctx):
+    class _trans_ctx(StartableContext):
+        __slots__ = ("conn", "transaction", "_kwargs")
+
         def __init__(self, conn, kwargs):
-            super().__init__(conn)
+            self.conn = conn
+            self.transaction = None
             self._kwargs = kwargs
 
         async def start(self):
@@ -505,18 +550,18 @@ class GinoEngine(AsyncEngine):
                 await self.transaction.__aenter__()
                 return self.transaction
             except Exception:
-                await self.conn.close()
+                await self.conn.release()
                 raise
 
         async def __aexit__(self, type_, value, traceback):
             try:
                 return await self.transaction.__aexit__(type_, value, traceback)
             finally:
-                await self.conn.close()
+                await self.conn.release()
 
     def __init__(self, sync_engine: Engine):
-        super().__init__(sync_engine)
-        self._hat: ContextVar[Optional[_DequeNode]] = ContextVar("hat", default=None)
+        self.sync_engine = sync_engine
+        self._hat = ContextVar("hat", default=None)
 
     @property
     def dialect(self):
@@ -526,9 +571,6 @@ class GinoEngine(AsyncEngine):
 
         """
         return self.sync_engine.dialect
-
-    def connect(self) -> GinoConnection:
-        return self.acquire(timeout=None, reuse=False, lazy=False, reusable=False)
 
     def acquire(self, *, timeout=None, reuse=False, lazy=False, reusable=True):
         """
@@ -717,7 +759,7 @@ class GinoEngine(AsyncEngine):
 
         """
         conn = self.acquire(timeout=timeout, reuse=reuse, reusable=reusable)
-        return self._gino_trans_ctx(conn, kwargs)
+        return self._trans_ctx(conn, kwargs)
 
     def iterate(self, clause, *multiparams, **params):
         """
@@ -738,10 +780,3 @@ class GinoEngine(AsyncEngine):
 
     def __repr__(self):
         return f"{self.__class__.__name__}<{self.sync_engine.pool.status()}>"
-
-
-class AsyncOptionEngine(OptionEngineMixin, GinoEngine):
-    pass
-
-
-GinoEngine._option_cls = AsyncOptionEngine

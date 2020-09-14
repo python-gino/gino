@@ -1,6 +1,13 @@
+from __future__ import annotations
+import typing
+
+from sqlalchemy.engine import Transaction
 from sqlalchemy.ext.asyncio import AsyncTransaction
+from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.util import greenlet_spawn
 
+if typing.TYPE_CHECKING:
+    from .engine import GinoConnection
 
 ASYNCPG_ISOLATION_MAPPING = dict(
     read_committed="READ COMMITTED",
@@ -16,7 +23,7 @@ class _Break(BaseException):
         self.commit = commit
 
 
-class GinoTransaction(AsyncTransaction):
+class GinoTransaction(StartableContext):
     """
     Represents an underlying database transaction and its connection, offering
     methods to manage this transaction.
@@ -78,13 +85,21 @@ class GinoTransaction(AsyncTransaction):
 
     """
 
-    def __init__(self, conn, nested=False, **kwargs):
-        super().__init__(conn, nested=nested)
+    __slots__ = ("_connection", "_sync_transaction", "_nested", "_managed", "_kwargs")
+
+    def __init__(self, connection: GinoConnection, **kwargs):
+        self._connection = connection
+        self._sync_transaction: typing.Optional[Transaction] = None
         self._managed = None
         self._kwargs = kwargs
 
+    @property
+    def connection(self):
+        return self._connection
+
     async def start(self):
-        conn = await self.connection._sync_connection()
+        assert self._sync_transaction is None, "cannot start the same transaction twice"
+        conn = await self._connection.acquire()
         in_trans = conn.in_transaction()
         if not in_trans:
             options = {}
@@ -92,25 +107,49 @@ class GinoTransaction(AsyncTransaction):
             if isolation:
                 options["isolation_level"] = ASYNCPG_ISOLATION_MAPPING.get(isolation)
             else:
-                options["isolation_level"] = conn.get_execution_options()[
-                    "tx_isolation_level"
-                ]
+                options["isolation_level"] = conn.get_execution_options().get(
+                    "tx_isolation_level", conn.dialect.default_isolation_level
+                )
             if isolation == "SERIALIZABLE":
                 if self._kwargs.get("readonly"):
                     options["postgresql_readonly"] = True
                 if self._kwargs.get("deferrable"):
                     options["postgresql_deferrable"] = True
             conn = conn.execution_options(**options)
-        elif not self.nested:
-            self.nested = True
 
-        self.sync_transaction = await greenlet_spawn(
-            conn.begin_nested if self.nested else conn.begin
+        self._sync_transaction = await greenlet_spawn(
+            conn.begin_nested if in_trans else conn.begin
         )
         if not in_trans:
             if conn.dialect.driver == "asyncpg":
                 await conn.connection.connection._start_transaction()
         return self
+
+    async def _commit(self):
+        if self._sync_transaction is None:
+            self._raise_for_not_started()
+        await greenlet_spawn(self._sync_transaction.commit)
+        await self._reset()
+
+    async def _rollback(self):
+        if self._sync_transaction is None:
+            self._raise_for_not_started()
+        await greenlet_spawn(self._sync_transaction.rollback)
+        await self._reset()
+
+    async def _reset(self):
+        conn = self._sync_transaction.connection
+        if (
+            not conn.in_transaction()
+            and conn.get_execution_options().get("isolation_level", "AUTOCOMMIT")
+            != "AUTOCOMMIT"
+        ):
+            await greenlet_spawn(
+                conn.execution_options,
+                isolation_level="AUTOCOMMIT",
+                postgresql_readonly=False,
+                postgresql_deferrable=False,
+            )
 
     def raise_commit(self):
         """
@@ -139,7 +178,7 @@ class GinoTransaction(AsyncTransaction):
             raise AssertionError(
                 "Illegal in managed mode, " "use `raise_commit` instead."
             )
-        await super().commit()
+        await self._commit()
 
     def raise_rollback(self):
         """
@@ -170,7 +209,7 @@ class GinoTransaction(AsyncTransaction):
             raise AssertionError(
                 "Illegal in managed mode, " "use `raise_rollback` instead."
             )
-        await super().rollback()
+        await self._rollback()
 
     def __await__(self):
         if self._managed is not None:
@@ -187,8 +226,8 @@ class GinoTransaction(AsyncTransaction):
     async def __aexit__(self, ex_type, ex, ex_tb):
         is_break = ex_type is _Break
         if is_break and ex.commit or ex_type is None:
-            await super().commit()
+            await self._commit()
         else:
-            await super().rollback()
+            await self._rollback()
         if is_break and ex.tx is self:
             return True
