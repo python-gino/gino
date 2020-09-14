@@ -399,7 +399,9 @@ class AsyncSchemaTypeMixin:
 
 
 async def _call_portable_instancemethod(fn, args, kw):
-    m = getattr(fn.target, fn.name + "_async", None)
+    m = None
+    if hasattr(fn, "target"):
+        m = getattr(fn.target, fn.name + "_async", None)
     if m is None:
         return fn(*args, **kw)
     else:
