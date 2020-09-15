@@ -27,6 +27,10 @@ code, kbd, samp {
     border-radius: 2px;
 }
 
+.highlight .hll {
+    display: block;
+}
+
 strong {
     font-weight: 700;
 }
@@ -483,8 +487,11 @@ a.headerlink {
 
 .admonition {
     border-radius: 4px;
-    padding: 1px 1rem;
+    padding: 1px 1rem 40px;
     box-shadow: #D1CECE 0 0 4px;
+    background-repeat: no-repeat;
+    background-position: 100% calc(100% + 20px);
+    background-size: 128px;
 }
 
 .admonition-title {
@@ -507,6 +514,7 @@ a.headerlink {
 .admonition.note,
 .admonition.seealso {
     background-color: #F5FAFD;
+    background-image: url(../images/hmm.png);
 }
 
 .admonition.note .admonition-title:before,
@@ -517,6 +525,11 @@ a.headerlink {
 .admonition.tip,
 .admonition.hint {
     background-color: #F5FDF6;
+    background-image: url(../images/aha.png);
+}
+
+.admonition.tip {
+    background-image: url(../images/OK.png);
 }
 
 .admonition.hint .admonition-title:before {
@@ -525,6 +538,7 @@ a.headerlink {
 
 .admonition.warning {
     background-color: #FDF5F5;
+    background-image: url(../images/fighting.png);
 }
 
 .admonition.warning .admonition-title:before {
@@ -711,7 +725,7 @@ nav a.sidenav-trigger hr {
 
     .admonition {
         margin: 1.5rem 2rem;
-        padding: 1px 3rem;
+        padding: 1px 3rem 40px;
     }
 
     img.align-center {
