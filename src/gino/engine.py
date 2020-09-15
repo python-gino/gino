@@ -79,28 +79,22 @@ async def create_engine(
     if isolation_level and u.drivername == "postgresql+asyncpg":
         # TODO: Move to dialect
 
-        async def on_connect(dbapi_conn, record):
-            await greenlet_spawn(
-                PGDialect.set_isolation_level,
-                sync_engine.dialect,
-                dbapi_conn,
-                isolation_level,
+        def on_connect(dbapi_conn, record):
+            PGDialect.set_isolation_level(
+                sync_engine.dialect, dbapi_conn, isolation_level,
             )
 
         event.listen(sync_engine, "connect", on_connect)
 
     if min_size > 0:
-        # TODO: acquire initial connections concurrently when upstream bug is fixed:
-        # https://github.com/sqlalchemy/sqlalchemy/issues/5581
-        conns = []
-        for i in range(min_size):
-            conns.append(await greenlet_spawn(sync_engine.connect))
-        conns[0].execution_options(
+        fs = [greenlet_spawn(sync_engine.connect) for i in range(min_size)]
+        fs = (await asyncio.wait(fs))[0]
+        (await list(fs)[0]).execution_options(
             isolation_level=isolation_level
             or sync_engine.dialect.default_isolation_level
         )
-        for conn in conns:
-            await greenlet_spawn(conn.close)
+        fs = [greenlet_spawn((await fut).close) for fut in fs]
+        await asyncio.wait(fs)
 
     return GinoEngine(sync_engine)
 
