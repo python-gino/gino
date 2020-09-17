@@ -93,9 +93,7 @@ class PreparedStatement:
             self.clause, *multiparams, **params
         ).context
         if ctx.executemany:
-            raise ValueError(
-                "PreparedStatement does not support multiple " "parameters."
-            )
+            raise ValueError("PreparedStatement does not support multiple parameters.")
         if ctx.statement != self.context.statement:
             raise AssertionError(
                 "Prepared statement generated different SQL with parameters"
@@ -160,10 +158,12 @@ class _IterableCursor:
         self._context = context
 
     async def _iterate(self):
-        prepared = await self._context.cursor.prepare(self._context)
-        return prepared.iterate(
-            *self._context.parameters[0], timeout=self._context.timeout
-        )
+        if self._context.dialect.support_prepare:
+            prepared = await self._context.cursor.prepare(self._context)
+            return prepared.iterate(
+                *self._context.parameters[0], timeout=self._context.timeout
+            )
+        return self._context.cursor.iterate(self._context)
 
     async def _get_cursor(self):
         return await (await self._iterate())
@@ -196,7 +196,9 @@ class _ResultProxy:
     def context(self):
         return self._context
 
-    async def execute(self, one=False, return_model=True, status=False):
+    async def execute(
+        self, one=False, return_model=True, status=False, return_context=False
+    ):
         context = self._context
 
         param_groups = []
@@ -213,25 +215,26 @@ class _ResultProxy:
             return await cursor.async_execute(
                 context.statement, context.timeout, param_groups, many=True
             )
+        args = param_groups[0]
+        if context.baked_query:
+            rows = await cursor.execute_baked(
+                context.baked_query, context.timeout, args, one
+            )
         else:
-            args = param_groups[0]
-            if context.baked_query:
-                rows = await cursor.execute_baked(
-                    context.baked_query, context.timeout, args, one
-                )
+            rows = await cursor.async_execute(
+                context.statement, context.timeout, args, 1 if one else 0
+            )
+        item = context.process_rows(rows, return_model=return_model)
+        if one:
+            if item:
+                item = item[0]
             else:
-                rows = await cursor.async_execute(
-                    context.statement, context.timeout, args, 1 if one else 0
-                )
-            item = context.process_rows(rows, return_model=return_model)
-            if one:
-                if item:
-                    item = item[0]
-                else:
-                    item = None
-            if status:
-                item = cursor.get_statusmsg(), item
-            return item
+                item = None
+        if status:
+            return cursor.get_statusmsg(), item
+        if return_context:
+            return context, item
+        return item
 
     def iterate(self):
         if self._context.executemany:
@@ -291,6 +294,8 @@ class ExecutionContextOverride:
         return self._compiled_first_opt("loader", None)
 
     def process_rows(self, rows, return_model=True):
+        if not rows:
+            return []
         # noinspection PyUnresolvedReferences
         rv = rows = super().get_result_proxy().process_rows(rows)
         loader = self.loader
@@ -405,10 +410,20 @@ class ExecutionContextOverride:
         self.baked_query = bq
         return self
 
+    def get_lastrowid(self):
+        raise NotImplementedError
+
+    def get_affected_rows(self):
+        # Note: in MySQL result, affected rows means the number of rows that get
+        # updated, but not the number of matched rows.
+        raise NotImplementedError
+
 
 class AsyncDialectMixin:
     cursor_cls = DBAPICursor
     dbapi_class = BaseDBAPI
+    support_returning = True
+    support_prepare = True
     _bakery = None
 
     def _init_mixin(self, bakery):
@@ -437,7 +452,7 @@ class AsyncDialectMixin:
         else:
             return context.statement, context.parameters[0]
 
-    async def init_pool(self, url, loop):
+    async def init_pool(self, url, loop, pool_class=None):
         raise NotImplementedError
 
     def transaction(self, raw_conn, args, kwargs):

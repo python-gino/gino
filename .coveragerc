@@ -1,6 +1,8 @@
 [run]
 source =
     ./src
+omit =
+    ./src/gino/aiocontextvars.py
 [report]
 exclude_lines =
     pragma: no cover

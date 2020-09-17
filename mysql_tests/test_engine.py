@@ -2,14 +2,14 @@ import asyncio
 import logging
 from datetime import datetime
 
-import asyncpg
-from asyncpg.exceptions import InvalidCatalogNameError
+import pymysql
+import aiomysql
 from gino import create_engine, UninitializedError
 import pytest
 from sqlalchemy.exc import ObjectNotExecutableError
 import sqlalchemy as sa
 
-from .models import db, User, PG_URL, qsize
+from .models import db, User, MYSQL_URL, qsize
 
 pytestmark = pytest.mark.asyncio
 
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.asyncio
 async def test_basic(engine):
     init_size = qsize(engine)
     async with engine.acquire() as conn:
-        assert isinstance(conn.raw_connection, asyncpg.Connection)
+        assert isinstance(conn.raw_connection, aiomysql.Connection)
     assert init_size == qsize(engine)
     assert isinstance(await engine.scalar("select now()"), datetime)
     assert isinstance(await engine.scalar(sa.text("select now()")), datetime)
@@ -26,15 +26,15 @@ async def test_basic(engine):
     assert isinstance((await engine.one("select now()"))[0], datetime)
     assert isinstance((await engine.one_or_none("select now()"))[0], datetime)
     status, result = await engine.status("select now()")
-    assert status == "SELECT 1"
+    assert status == 1
     assert isinstance(result[0][0], datetime)
     with pytest.raises(ObjectNotExecutableError):
         await engine.all(object())
 
 
 async def test_issue_79():
-    e = await create_engine(PG_URL + "_non_exist", min_size=0)
-    with pytest.raises(InvalidCatalogNameError):
+    e = await create_engine(MYSQL_URL + "_non_exist", minsize=0)
+    with pytest.raises(pymysql.err.OperationalError):
         async with e.acquire():
             pass  # pragma: no cover
     # noinspection PyProtectedMember
@@ -100,47 +100,44 @@ async def test_compile(engine):
 
 
 async def test_logging(mocker):
-    orig_level = logging.root.level
-    # #710: the level of logger "gino" should not be NOTSET, thus not affected by root
-    logging.root.setLevel(logging.DEBUG)
-    try:
-        mocker.patch("logging.Logger._log")
-        sql = "SELECT NOW() AS test_logging"
+    mocker.patch("logging.Logger._log")
+    sql = "SELECT NOW() AS test_logging"
 
-        e = await create_engine(PG_URL, echo=False)
-        await e.scalar(sql)
-        await e.close()
-        # noinspection PyProtectedMember,PyUnresolvedReferences
-        logging.Logger._log.assert_not_called()
+    e = await create_engine(MYSQL_URL, echo=False)
+    await e.scalar(sql)
+    await e.close()
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    logging.Logger._log.assert_not_called()
 
-        e = await create_engine(PG_URL, echo=True)
-        await e.scalar(sql)
-        await e.close()
-        # noinspection PyProtectedMember,PyUnresolvedReferences
-        logging.Logger._log.assert_any_call(logging.INFO, sql, ())
-    finally:
-        logging.root.setLevel(orig_level)
+    e = await create_engine(MYSQL_URL, echo=True)
+    await e.scalar(sql)
+    await e.close()
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    logging.Logger._log.assert_any_call(logging.INFO, sql, ())
 
 
 async def test_set_isolation_level():
+    e = await create_engine(MYSQL_URL, isolation_level="non")
     with pytest.raises(sa.exc.ArgumentError):
-        await create_engine(PG_URL, isolation_level="non")
-    e = await create_engine(PG_URL, isolation_level="READ_UNCOMMITTED")
+        await e.acquire()
+    await e.close()
+    e = await create_engine(MYSQL_URL, isolation_level="READ_UNCOMMITTED")
     async with e.acquire() as conn:
         assert (
             await e.dialect.get_isolation_level(conn.raw_connection)
             == "READ UNCOMMITTED"
         )
-    async with e.transaction(isolation="serializable") as tx:
+    async with e.transaction(isolation="SERIALIZABLE") as tx:
         assert (
             await e.dialect.get_isolation_level(tx.connection.raw_connection)
             == "SERIALIZABLE"
         )
+    await e.close()
 
 
 async def test_too_many_engine_args():
     with pytest.raises(TypeError):
-        await create_engine(PG_URL, non_exist=None)
+        await create_engine(MYSQL_URL, non_exist=None)
 
 
 # noinspection PyUnusedLocal
@@ -148,46 +145,10 @@ async def test_scalar_return_none(bind):
     assert await User.query.where(User.nickname == "nonexist").gino.scalar() is None
 
 
-async def test_asyncpg_0120(bind, mocker):
-    # for asyncpg 0.12.0
-    assert await bind.first("rollback") is None
-
-    orig = getattr(asyncpg.Connection, "_do_execute")
-
-    class Stmt:
-        def __init__(self, stmt):
-            self._stmt = stmt
-
-        def _get_attributes(self):
-            raise TypeError
-
-    async def new(*args, **kwargs):
-        result, stmt = await orig(*args, **kwargs)
-        return result, Stmt(stmt)
-
-    mocker.patch("asyncpg.Connection._do_execute", new=new)
-
-    assert await bind.first("rollback") is None
-
-
-async def test_asyncpg_0120_iterate(bind, mocker):
-    async with bind.transaction():
-        gen = await db.iterate("rollback")
-        assert await gen.next() is None
-
-    mocker.patch(
-        "asyncpg.prepared_stmt." "PreparedStatement.get_attributes"
-    ).side_effect = TypeError
-
-    async with bind.transaction():
-        gen = await db.iterate("rollback")
-        assert await gen.next() is None
-
-
 async def test_async_metadata():
     import gino
 
-    db_ = await gino.Gino(PG_URL)
+    db_ = await gino.Gino(MYSQL_URL)
     assert isinstance((await db_.scalar("select now()")), datetime)
     await db_.pop_bind().close()
     with pytest.raises(UninitializedError):
@@ -196,10 +157,10 @@ async def test_async_metadata():
 
 # noinspection PyUnreachableCode
 async def test_acquire_timeout():
-    e = await create_engine(PG_URL, min_size=1, max_size=1)
-    async with e.acquire():
+    e = await create_engine(MYSQL_URL, minsize=1, maxsize=1)
+    async with e.acquire() as x:
         with pytest.raises(asyncio.TimeoutError):
-            async with e.acquire(timeout=0.1):
+            async with e.acquire(timeout=0.1) as y:
                 assert False, "Should not reach here"
 
     loop = asyncio.get_event_loop()
@@ -210,7 +171,7 @@ async def test_acquire_timeout():
             f1.set_result(None)
             await asyncio.sleep(0.2)
             # noinspection PyProtectedMember
-            return conn.raw_connection._con
+            return conn.raw_connection
 
     async def second():
         async with e.acquire(lazy=True) as conn:
@@ -221,18 +182,19 @@ async def test_acquire_timeout():
     async def third():
         async with e.acquire(reuse=True, timeout=0.4) as conn:
             # noinspection PyProtectedMember
-            return conn.raw_connection._con
+            return conn.raw_connection
 
     t1 = loop.create_task(first())
     await f1
     loop.create_task(second())
     t3 = loop.create_task(third())
     assert await t1 is await t3
+    await e.close()
 
 
 # noinspection PyProtectedMember
 async def test_lazy(mocker):
-    engine = await create_engine(PG_URL, min_size=1, max_size=1)
+    engine = await create_engine(MYSQL_URL, minsize=1, maxsize=1)
     init_size = qsize(engine)
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
@@ -279,7 +241,7 @@ async def test_lazy(mocker):
         await asyncio.sleep(0.1)
         raise ValueError()
 
-    mocker.patch("asyncpg.pool.Pool.acquire", new=acquire_failed)
+    mocker.patch("aiomysql.pool.Pool.acquire", new=acquire_failed)
     ctx = engine.acquire(lazy=True)
     conn = await ctx.__aenter__()
     t1 = loop.create_task(conn.scalar("select 1"))
@@ -370,7 +332,7 @@ async def test_ssl():
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
-    e = await create_engine(PG_URL, ssl=ctx)
+    e = await create_engine(MYSQL_URL, ssl=ctx)
     await e.close()
 
 
@@ -399,15 +361,16 @@ async def test_issue_313(bind):
     assert bind._ctx.get() is None
 
 
-async def test_null_pool():
+# TODO: abstract NullPool implementation
+async def _test_null_pool():
     from gino.dialects.asyncpg import NullPool
 
-    e = await create_engine(PG_URL, pool_class=NullPool)
+    e = await create_engine(MYSQL_URL, pool_class=NullPool)
     async with e.acquire() as conn:
         raw_conn = conn.raw_connection
     assert raw_conn.is_closed()
 
-    e = await create_engine(PG_URL)
+    e = await create_engine(MYSQL_URL)
     async with e.acquire() as conn:
         # noinspection PyProtectedMember
         raw_conn = conn.raw_connection._con
@@ -415,24 +378,26 @@ async def test_null_pool():
 
 
 async def test_repr():
-    from gino.dialects.asyncpg import NullPool
+    # FIXME
+    # from gino.dialects.asyncpg import NullPool
+    #
+    # e = await create_engine(MYSQL_URL, pool_class=NullPool)
+    # assert 'cur=0' in repr(e)
+    # async with e.acquire():
+    #     assert 'cur=1' in repr(e)
+    #     async with e.acquire():
+    #         assert 'cur=2' in repr(e)
+    #     assert 'cur=1' in repr(e)
+    # assert 'cur=0' in repr(e)
+    # assert 'NullPool' in e.repr(color=True)
 
-    e = await create_engine(PG_URL, pool_class=NullPool)
-    assert 'cur=0' in repr(e)
+    e = await create_engine(MYSQL_URL)
+    assert 'cur=1 use=0' in repr(e)
     async with e.acquire():
-        assert 'cur=1' in repr(e)
+        assert 'cur=1 use=1' in repr(e)
         async with e.acquire():
-            assert 'cur=2' in repr(e)
-        assert 'cur=1' in repr(e)
-    assert 'cur=0' in repr(e)
-    assert 'NullPool' in e.repr(color=True)
-
-    e = await create_engine(PG_URL)
-    assert 'cur=10 use=0' in repr(e)
-    async with e.acquire():
-        assert 'cur=10 use=1' in repr(e)
-        async with e.acquire():
-            assert 'cur=10 use=2' in repr(e)
-        assert 'cur=10 use=1' in repr(e)
-    assert 'cur=10 use=0' in repr(e)
-    assert 'asyncpg.pool.Pool' in e.repr(color=True)
+            assert 'cur=2 use=2' in repr(e)
+        assert 'cur=2 use=1' in repr(e)
+    assert 'cur=2 use=0' in repr(e)
+    assert 'aiomysql.pool.Pool' in e.repr(color=True)
+    await e.close()

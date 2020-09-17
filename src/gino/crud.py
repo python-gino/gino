@@ -7,6 +7,7 @@ from sqlalchemy.sql import ClauseElement
 
 from . import json_support
 from .declarative import Model, InvertDict
+from .engine import GinoConnection
 from .exceptions import NoSuchRowError
 from .loader import AliasLoader, ModelLoader
 
@@ -139,15 +140,20 @@ class UpdateRequest:
                 updates[sa.cast(prop.name, sa.Unicode)] = value
         for prop_name, updates in json_updates.items():
             prop = getattr(cls, prop_name)
-            from .dialects.asyncpg import JSONB
+            from .dialects.asyncpg import JSONB as psql_JSONB
+            from .dialects.aiomysql import JSON as mysql_JSON
 
-            if isinstance(prop.type, JSONB):
+            if isinstance(prop.type, psql_JSONB):
                 if self._literal:
                     values[prop_name] = prop.concat(updates)
                 else:
                     values[prop_name] = prop.concat(
                         sa.func.jsonb_build_object(*itertools.chain(*updates.items()))
                     )
+            elif isinstance(prop.type, mysql_JSON):
+                values[prop_name] = sa.func.json_merge_patch(
+                    prop, sa.func.json_object(*itertools.chain(*updates.items()))
+                )
             else:
                 raise TypeError(
                     "{} is not supported to update json "
@@ -162,16 +168,11 @@ class UpdateRequest:
             type(self._instance)
             .update.where(self._locator,)
             .values(**self._instance._get_sa_values(values),)
-            .returning(*[getattr(cls, key) for key in values],)
             .execution_options(**opts)
         )
-        if bind is None:
-            bind = cls.__metadata__.bind
-        row = await bind.first(clause)
-        if not row:
-            raise NoSuchRowError()
-        for k, v in row.items():
-            self._instance.__values__[self._instance._column_name_map.invert_get(k)] = v
+        await _query_and_update(
+            bind, self._instance, clause, [getattr(cls, key) for key in values], opts
+        )
         for prop in self._props:
             prop.reload(self._instance)
         return self
@@ -465,18 +466,12 @@ class CRUDModel(Model):
         opts = dict(return_model=False, model=cls)
         if timeout is not DEFAULT:
             opts["timeout"] = timeout
-        # noinspection PyArgumentList
         q = (
             cls.__table__.insert()
             .values(**self._get_sa_values(self.__values__))
-            .returning(*cls)
             .execution_options(**opts)
         )
-        if bind is None:
-            bind = cls.__metadata__.bind
-        row = await bind.first(q)
-        for k, v in row.items():
-            self.__values__[self._column_name_map.invert_get(k)] = v
+        await _query_and_update(bind, self, q, list(iter(cls)), opts)
         self.__profile__ = None
         return self
 
@@ -784,3 +779,91 @@ class QueryModel(type):
 
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
+
+
+async def _query_and_update(bind, item, query, cols, execution_opts):
+    cls = type(item)
+    if bind is None:
+        bind = cls.__metadata__.bind
+    # noinspection PyProtectedMember
+    if bind._dialect.support_returning:
+        # noinspection PyArgumentList
+        query = query.returning(*cols)
+
+    async def _execute_and_fetch(conn, query):
+        context, row = await conn._first_with_context(query)
+        # For DBMS like MySQL that doesn't support returning inserted or modified
+        # rows, a workaround is applied to infer necessary data to query from the
+        # database. This is not able to cover all cases, especially for those
+        # statements that the end results are not exactly the same as in the queries.
+        # One example is the DATETIME type in MySQL. By default, inserted date are
+        # rounded to seconds. This is not visible to the engine.
+        if not bind._dialect.support_returning:
+            if context.isinsert:
+                table = context.compiled.statement.table
+                key_getter = context.compiled._key_getters_for_crud_column[2]
+                compiled_params = context.compiled_parameters[0]
+                last_row_id = context.get_lastrowid()
+                if last_row_id is not None or table.primary_key:
+                    lookup_conds = [
+                        c == last_row_id
+                        if c is table._autoincrement_column
+                        else c
+                        == _cast_json(c, compiled_params.get(key_getter(c), None))
+                        for c in table.primary_key
+                    ]
+                else:
+                    lookup_conds = [
+                        c == _cast_json(c, compiled_params.get(key_getter(c), None))
+                        for c in table.columns
+                    ]
+                query = (
+                    sa.select(table.columns)
+                    .where(sa.and_(*lookup_conds))
+                    .execution_options(**execution_opts)
+                )
+                row = await conn.first(query)
+            elif context.isupdate:
+                table = context.compiled.statement.table
+                if len(table.primary_key) > 0:
+                    lookup_conds = [
+                        c
+                        == _cast_json(
+                            c, item.__values__[item._column_name_map.invert_get(c.name)]
+                        )
+                        for c in table.primary_key
+                    ]
+                else:
+                    lookup_conds = [
+                        c
+                        == _cast_json(
+                            c, item.__values__[item._column_name_map.invert_get(c.name)]
+                        )
+                        for c in table.columns
+                    ]
+                query = (
+                    sa.select(table.columns)
+                    .where(sa.and_(*lookup_conds))
+                    .execution_options(**execution_opts)
+                )
+                row = await conn.first(query)
+        return row
+
+    if isinstance(bind, GinoConnection):
+        row = await _execute_and_fetch(bind, query)
+    else:
+        async with bind.acquire(reuse=True) as conn:
+            row = await _execute_and_fetch(conn, query)
+    if not row:
+        raise NoSuchRowError()
+    for k, v in row.items():
+        item.__values__[item._column_name_map.invert_get(k)] = v
+
+
+def _cast_json(column, value):
+    # FIXME: for MySQL, json string in WHERE clause needs to be cast to JSON type
+    if isinstance(column.type, sa.JSON) or isinstance(
+        getattr(column.type, "impl", None), sa.JSON
+    ):
+        return sa.cast(value, sa.JSON)
+    return value

@@ -66,21 +66,127 @@ jobs:
         DB_HOST: localhost
         DB_USER: gino
       run: |
-        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=95 --cov-report xml
+        $HOME/.poetry/bin/poetry run pytest tests/
+  test-mysql:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.5', '3.6', '3.7', '3.8' ]
+        deps-version: [ 'lowest', 'highest' ]
+    services:
+      mysql:
+        image: mysql:5
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: virtualenv cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv-${{ hashFiles(format('{0}{1}', github.workspace, '/poetry.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.deps-version }}-venv-
+    - name: Poetry cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.poetry
+        key: ${{ runner.os }}-${{ matrix.python-version }}-dotpoetry
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-dotpoetry-
+    - name: Install Python dependencies
+      run: |
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+        $HOME/.poetry/bin/poetry install --no-interaction
+    - name: Use lowest dependencies versions
+      if: matrix.deps-version == 'lowest'
+      run: |
+          $HOME/.poetry/bin/poetry run pip install asyncpg==0.18 SQLAlchemy==1.3
+    - name: List installed packages
+      run: |
+          $HOME/.poetry/bin/poetry run pip list
+    - name: Test with pytest
+      env:
+        MYSQL_DB_HOST: 127.0.0.1
+        MYSQL_DB_USER: root
+      run: |
+        $HOME/.poetry/bin/poetry run pytest mysql_tests/
+  summary:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: fantix/postgres-ssl:12.1
+        env:
+          POSTGRES_USER: gino
+        ports:
+        - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mysql:
+        image: mysql:5
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: virtualenv cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-3.8-highest-venv-${{ hashFiles(format('{0}{1}', github.workspace, '/poetry.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-3.8-highest-venv-
+    - name: Poetry cache
+      uses: actions/cache@preview
+      with:
+        path: ~/.poetry
+        key: ${{ runner.os }}-3.8-dotpoetry
+        restore-keys: |
+          ${{ runner.os }}-3.8-dotpoetry-
+    - name: Install Python dependencies
+      run: |
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+        $HOME/.poetry/bin/poetry install --no-interaction
+    - name: List installed packages
+      run: |
+          $HOME/.poetry/bin/poetry run pip list
+    - name: Test with pytest
+      env:
+        DB_HOST: localhost
+        DB_USER: gino
+        MYSQL_DB_HOST: 127.0.0.1
+        MYSQL_DB_USER: root
+      run: |
+        $HOME/.poetry/bin/poetry run pytest --cov=src --cov-fail-under=95 --cov-report xml tests/ mysql_tests/
     - name: Check code format with black
-      if: matrix.python-version >= '3.6'
       run: |
           $HOME/.poetry/bin/poetry run black --check src
     - name: Submit coverage report
-      if: matrix.python-version == '3.8' && matrix.postgres-version == '12.1' && matrix.deps-version == 'highest' && github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       env:
         CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_TOKEN }}
       run: |
         pip install codacy-coverage
         python-codacy-coverage -r coverage.xml
+
   release:
     runs-on: ubuntu-latest
-    needs: test
+    needs: summary
     strategy:
       matrix:
         python-version: [ '3.8' ]

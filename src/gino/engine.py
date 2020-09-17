@@ -348,6 +348,10 @@ class GinoConnection:
         result = self._execute(clause, multiparams, params)
         return await result.execute(one=True)
 
+    async def _first_with_context(self, clause, *multiparams, **params):
+        result = self._execute(clause, multiparams, params)
+        return await result.execute(one=True, return_context=True)
+
     async def one_or_none(self, clause, *multiparams, **params):
         """
         Runs the given query in database, returns at most one result.

@@ -14,7 +14,6 @@ async def test_in_memory():
     u.age += 10
     assert u.age == 28
     assert u.balance == 0
-    assert u.height == 170
     assert isinstance(u.balance, float)
 
 
@@ -24,15 +23,12 @@ async def test_crud(bind):
 
     now = datetime.utcnow()
     now_str = now.strftime(DATETIME_FORMAT)
-    u = await User.create(
-        nickname="fantix", birthday=now, bio="I code in Python and more."
-    )
+    u = await User.create(nickname="fantix", birthday=now)
     u.age += 1
     assert await u.query.gino.model(None).first() == (
         1,
         "fantix",
         {"age": 18, "birthday": now_str},
-        {"bio": "I code in Python and more.", "height": 170},
         UserType.USER,
         None,
     )
@@ -42,8 +38,6 @@ async def test_crud(bind):
     assert u.birthday == now
     assert u.age == 18
     assert u.balance == 0
-    assert u.height == 170
-    assert u.bio == "I code in Python and more."
     assert isinstance(u.balance, float)
     assert await db.select([User.birthday]).where(User.id == u.id).gino.scalar() == now
 
@@ -51,18 +45,16 @@ async def test_crud(bind):
     u.update(birthday=now - timedelta(days=3650))
 
     # Update two JSON fields, one using expression
-    await u.update(age=User.age - 2, balance=100.85, height=180).apply()
+    await u.update(age=User.age - 2, balance=100.85).apply()
 
     assert u.birthday == now - timedelta(days=3650)
     assert u.age == 16
     assert u.balance == 100
-    assert u.height == 180
     assert isinstance(u.balance, float)
     assert await u.query.gino.model(None).first() == (
         1,
         "fantix",
         dict(age=16, balance=100, birthday=now_str),
-        dict(bio="I code in Python and more.", height=180),
         UserType.USER,
         None,
     )
@@ -71,19 +63,12 @@ async def test_crud(bind):
     # Reload and test updating both JSON and regular property
     u = await User.get(u.id)
     await u.update(
-        age=User.age - 2,
-        balance=200.15,
-        realname="daisy",
-        nickname="daisy.nick",
-        height=185,
-        weight=75,
+        age=User.age - 2, balance=200.15, realname="daisy", nickname="daisy.nick"
     ).apply()
-    data = await u.query.gino.model(None).first()
     assert await u.query.gino.model(None).first() == (
         1,
         "daisy.nick",
         dict(age=14, balance=200, realname="daisy", birthday=now_str),
-        dict(bio="I code in Python and more.", height=185, weight=75),
         UserType.USER,
         None,
     )
@@ -96,9 +81,6 @@ async def test_crud(bind):
         realname="daisy",
         type=UserType.USER,
         team_id=None,
-        bio="I code in Python and more.",
-        height=185,
-        weight=75,
     )
 
     # Deleting property doesn't affect database
@@ -117,102 +99,38 @@ async def test_crud(bind):
 
 
 # noinspection PyUnusedLocal
-async def test_non_jsonb(bind):
-    from gino.dialects.asyncpg import JSON
-
-    class News(db.Model):
-        __tablename__ = "news"
-
-        id = db.Column(db.Integer(), primary_key=True)
-        profile = db.Column(JSON(), nullable=False, server_default="{}")
-        visits = db.IntegerProperty(default=0)
-
-    await News.gino.create()
-    try:
-        news = await News.create()
-        assert news.visits == 0
-        with pytest.raises(TypeError, match="JSON is not supported"):
-            await news.update(visits=News.visits + 10).apply()
-        assert news.visits == 0
-        with pytest.raises(TypeError, match="JSON is not supported"):
-            await news.update(visits=10).apply()
-        assert news.visits == 10
-        assert await news.select("visits").gino.scalar() == 0
-        await news.update(profile=dict(visits=20)).apply()
-        assert news.visits == 10
-        assert await news.select("visits").gino.scalar() == 20
-    finally:
-        await News.gino.drop()
-
-
-# noinspection PyUnusedLocal
 async def test_reload(bind):
     u = await User.create()
-    await u.update(realname=db.cast("888", db.Unicode), weight=75).apply()
+    await u.update(realname=db.cast("888", db.Unicode)).apply()
     assert u.realname == "888"
-    assert u.weight == 75
-    await u.update(profile=None, parameter=None).apply()
+    await u.update(profile=None).apply()
     assert u.realname == "888"
-    assert u.weight == 75
     User.__dict__["realname"].reload(u)
-    User.__dict__["weight"].reload(u)
     assert u.realname is None
-    assert u.weight is None
 
 
 # noinspection PyUnusedLocal
 async def test_properties(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest(db.Model):
         __tablename__ = "props_test"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
 
         raw = db.JSONProperty()
         bool = db.BooleanProperty()
         obj = db.ObjectProperty()
         arr = db.ArrayProperty()
 
-        parameter = db.Column(JSONB(), nullable=False, server_default="{}")
-
-        raw_param = db.JSONProperty(prop_name="parameter")
-        bool_param = db.BooleanProperty(prop_name="parameter")
-        obj_param = db.ObjectProperty(prop_name="parameter")
-        arr_param = db.ArrayProperty(prop_name="parameter")
-
     await PropsTest.gino.create()
     try:
         t = await PropsTest.create(
-            raw=dict(a=[1, 2]),
-            bool=True,
-            obj=dict(x=1, y=2),
-            arr=[3, 4, 5, 6],
-            raw_param=dict(a=[3, 4]),
-            bool_param=False,
-            obj_param=dict(x=3, y=4),
-            arr_param=[7, 8, 9, 10],
+            raw=dict(a=[1, 2]), bool=True, obj=dict(x=1, y=2), arr=[3, 4, 5, 6],
         )
         assert t.obj["x"] == 1
-        assert t.obj_param["x"] == 3
         assert t.arr[-1] == 6
-        assert t.arr_param[-1] == 10
-        data = await db.select(
-            [
-                PropsTest.profile,
-                PropsTest.parameter,
-                PropsTest.raw,
-                PropsTest.bool,
-                PropsTest.obj_param,
-            ]
-        ).gino.first()
         assert await db.select(
-            [
-                PropsTest.profile,
-                PropsTest.parameter,
-                PropsTest.raw,
-                PropsTest.bool,
-                PropsTest.obj_param,
-            ]
+            [PropsTest.profile, PropsTest.raw, PropsTest.bool]
         ).gino.first() == (
             {
                 "arr": [3, 4, 5, 6],
@@ -220,35 +138,24 @@ async def test_properties(bind):
                 "raw": {"a": [1, 2]},
                 "bool": True,
             },
-            {
-                "arr_param": [7, 8, 9, 10],
-                "obj_param": {"x": 3, "y": 4},
-                "raw_param": {"a": [3, 4]},
-                "bool_param": False,
-            },
             dict(a=[1, 2]),
             True,
-            dict(x=3, y=4),
         )
         t.obj = dict(x=10, y=20)
-        t.obj_param = dict(x=30, y=45)
         assert t.obj["x"] == 10
-        assert t.obj_param["y"] == 45
         t.arr = [4, 5, 6, 7]
-        t.arr_param = [11, 12, 13, 14, 15]
         assert t.arr[-1] == 7
-        assert t.arr_param[-1] == 15
     finally:
         await PropsTest.gino.drop()
 
 
 # noinspection PyUnusedLocal
 async def test_unknown_properties(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest1(db.Model):
         __tablename__ = "props_test1"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
         bool = db.BooleanProperty()
 
     await PropsTest1.gino.create()
@@ -262,11 +169,11 @@ async def test_unknown_properties(bind):
 
 
 async def test_property_in_profile_and_attribute_collide(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PropsTest2(db.Model):
         __tablename__ = "props_test2"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default="{}")
         bool_profile = db.BooleanProperty()
         bool_attr = db.Column(db.Boolean)
 
@@ -292,47 +199,31 @@ async def test_no_profile():
         class Test(db.Model):
             __tablename__ = "tests_no_profile"
 
+            id = db.Column(db.BigInteger(), primary_key=True)
             age = db.IntegerProperty(default=18)
-
-    with pytest.raises(AttributeError, match=r"JSON\[B\] column"):
-        # noinspection PyUnusedLocal,PyRedeclaration
-        class Test(db.Model):
-            __tablename__ = "tests_no_profile"
-
-            profile = db.StringProperty()
-
-    with pytest.raises(AttributeError, match=r"JSON\[B\] column"):
-        # noinspection PyUnusedLocal,PyRedeclaration
-        class Test(db.Model):
-            __tablename__ = "tests_no_profile"
-
-            profile1 = db.StringProperty(prop_name="profile2")
-            profile2 = db.IntegerProperty(prop_name="profile1")
 
 
 async def test_t291_t402(bind):
-    from gino.dialects.asyncpg import JSON, JSONB
+    from gino.dialects.aiomysql import JSON
 
-    class CustomJSONB(db.TypeDecorator):
-        impl = JSONB
+    class CustomJSON(db.TypeDecorator):
+        impl = JSON
 
         def process_result_value(self, *_):
             return 123
 
     class PropsTest(db.Model):
         __tablename__ = "props_test_291"
-        profile = db.Column(JSONB(), nullable=False, server_default="{}")
-        profile1 = db.Column(JSON(), nullable=False, server_default="{}")
-        profile2 = db.Column(CustomJSONB(), nullable=False, server_default="{}")
+        profile = db.Column(JSON(), nullable=False, default={})
+        profile1 = db.Column(JSON(), nullable=False, default={})
+        profile2 = db.Column(CustomJSON(), nullable=False, default={})
 
         bool = db.BooleanProperty()
         bool1 = db.BooleanProperty(prop_name="profile1")
 
     await PropsTest.gino.create()
     try:
-        await PropsTest.create(bool=True, bool1=True,)
-        profile = await bind.scalar("SELECT profile FROM props_test_291")
-        assert isinstance(profile, dict)
+        await PropsTest.create(bool=True, bool1=True)
         profile1 = await bind.scalar("SELECT profile1 FROM props_test_291")
         assert isinstance(profile1, dict)
         profile2 = await bind.scalar("SELECT profile2 FROM props_test_291")
@@ -345,58 +236,18 @@ async def test_t291_t402(bind):
 
 
 async def test_json_path(bind):
-    from gino.dialects.asyncpg import JSONB
+    from gino.dialects.aiomysql import JSON
 
     class PathTest(db.Model):
         __tablename__ = "path_test_json_path"
-        data = db.Column(JSONB())
+        data = db.Column(JSON())
 
     await PathTest.gino.create()
     try:
         t1 = await PathTest.create(data=dict(a=dict(b="c")))
         t2 = await PathTest.query.where(
-            PathTest.data[("a", "b")].astext == "c"
+            PathTest.data[("a", "b")] == "c"
         ).gino.first()
         assert t1.data == t2.data
     finally:
         await PathTest.gino.drop()
-
-
-async def test_index(bind):
-    from gino.dialects.asyncpg import JSONB
-
-    class IndexTest(db.Model):
-        __tablename__ = "index_test"
-        profile = db.Column(JSONB())
-        age = db.IntegerProperty()
-
-        @db.declared_attr
-        def age_idx(cls):
-            return db.Index("age_idx", cls.age)
-
-    await IndexTest.gino.create()
-    await IndexTest.gino.drop()
-
-
-async def test_mixin(bind):
-    from gino.dialects.asyncpg import JSONB
-
-    class Base:
-        id = db.Column(db.Integer(), primary_key=True)
-        profile = db.Column(JSONB())
-
-    class Mixin(Base):
-        age = db.IntegerProperty()
-
-    class MixinTest(db.Model, Mixin):
-        __tablename__ = "mixin_test"
-
-    await MixinTest.gino.create()
-    try:
-        mt = await MixinTest.create(age=22)
-        await mt.update(age=24).apply()
-        assert (await MixinTest.query.gino.first()).age == 24
-        await mt.update(age=MixinTest.age - 5).apply()
-        assert (await MixinTest.query.gino.first()).age == 19
-    finally:
-        await MixinTest.gino.drop()
