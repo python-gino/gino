@@ -1,18 +1,18 @@
 import pytest
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 
-from gino import MultipleResultsFound, NoResultFound
 from .models import db, User
 
-pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
+pytestmark = pytest.mark.asyncio
 
 
 # noinspection PyUnusedLocal
 async def test_status(bind):
     statement, params = db.compile(User.insert(), [dict(name="1"), dict(name="2")])
-    assert statement == ("INSERT INTO gino_users (name, type) " "VALUES ($1, $2)")
+    assert statement == "INSERT INTO gino_users (name, type) VALUES (?, ?)"
     assert params == (("1", "USER"), ("2", "USER"))
     result = await User.insert().gino.status(dict(name="1"), dict(name="2"))
-    assert result is None
+    assert result.executemany
     assert len(await User.query.gino.all()) == 2
 
 
@@ -86,10 +86,14 @@ async def test_one(bind):
     row = await User.query.gino.one()
     assert row.nickname == "0"
 
-    with pytest.raises(NoResultFound):
-        await User.insert().returning(User.nickname).gino.one(
-            dict(name="1"), dict(name="2")
+    assert (
+        await (
+            User.insert()
+            .returning(User.nickname)
+            .gino.one(dict(name="1"), dict(name="2"))
         )
+        is None
+    )
     rows = await User.query.gino.all()
     assert len(await User.query.gino.all()) == 3
     assert set(u.nickname for u in rows) == {"0", "1", "2"}

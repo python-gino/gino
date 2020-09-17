@@ -249,7 +249,7 @@ class GinoConnection(StartableContext, _DequeNode):
             result = await greenlet_spawn(
                 conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
                 clause,
-                _distill_params(self, multiparams, params),
+                _distill_params(conn, multiparams, params),
             )
         finally:
             if tx is not None:
@@ -332,7 +332,8 @@ class GinoConnection(StartableContext, _DequeNode):
 
         """
         result = await self.execute(clause, *multiparams, **params)
-        return result.all()
+        if not result.context.executemany:
+            return result.all()
 
     async def first(self, clause, *multiparams, **params):
         """
@@ -345,7 +346,8 @@ class GinoConnection(StartableContext, _DequeNode):
         """
         result = await self.execute(clause, *multiparams, **params)
         try:
-            return result.first()
+            if not result.context.executemany:
+                return result.first()
         except ResourceClosedError as e:
             warnings.warn(
                 "GINO 2.0 will raise ResourceClosedError: " + str(e),
@@ -358,28 +360,30 @@ class GinoConnection(StartableContext, _DequeNode):
 
         If the query returns no result, this method will return ``None``.
         If the query returns multiple results, this method will raise
-        :class:`~gino.exceptions.MultipleResultsFound`.
+        :class:`sqlalchemy.exc.MultipleResultsFound`.
 
         See :meth:`all` for common query comments.
 
         """
         result = await self.execute(clause, *multiparams, **params)
-        return result.one_or_none()
+        if not result.context.executemany:
+            return result.one_or_none()
 
     async def one(self, clause, *multiparams, **params):
         """
         Runs the given query in database, returns exactly one result.
 
         If the query returns no result, this method will raise
-        :class:`~gino.exceptions.NoResultFound`.
+        :class:`sqlalchemy.exc.NoResultFound`.
         If the query returns multiple results, this method will raise
-        :class:`~gino.exceptions.MultipleResultsFound`.
+        :class:`sqlalchemy.exc.MultipleResultsFound`.
 
         See :meth:`all` for common query comments.
 
         """
         result = await self.execute(clause, *multiparams, **params)
-        return result.one()
+        if not result.context.executemany:
+            return result.one()
 
     async def scalar(self, clause, *multiparams, **params):
         """
@@ -391,7 +395,8 @@ class GinoConnection(StartableContext, _DequeNode):
 
         """
         result = await self.execute(clause, *multiparams, _do_load=False, **params)
-        return result.scalar()
+        if not result.context.executemany:
+            return result.scalar()
 
     async def status(self, clause, *multiparams, **params):
         """
@@ -434,7 +439,7 @@ class GinoConnection(StartableContext, _DequeNode):
             result = await greenlet_spawn(
                 conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
                 clause,
-                _distill_params(self, multiparams, params),
+                _distill_params(conn, multiparams, params),
                 {"stream_results": True},
             )
             if not result.context._is_server_side:

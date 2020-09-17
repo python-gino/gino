@@ -1,11 +1,12 @@
-import pytest
 from datetime import datetime, timedelta
 
-from gino.exceptions import UnknownJSONPropertyError
+import pytest
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 
+from gino.exceptions import UnknownJSONPropertyError
 from .models import db, User, UserType
 
-pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
+pytestmark = pytest.mark.asyncio
 
 
 async def test_in_memory():
@@ -118,8 +119,6 @@ async def test_crud(bind):
 
 # noinspection PyUnusedLocal
 async def test_non_jsonb(bind):
-    from gino.dialects.asyncpg import JSON
-
     class News(db.Model):
         __tablename__ = "news"
 
@@ -151,7 +150,7 @@ async def test_reload(bind):
     await u.update(realname=db.cast("888", db.Unicode), weight=75).apply()
     assert u.realname == "888"
     assert u.weight == 75
-    await u.update(profile=None, parameter=None).apply()
+    await u.update(profile={}, parameter={}).apply()
     assert u.realname == "888"
     assert u.weight == 75
     User.__dict__["realname"].reload(u)
@@ -162,8 +161,6 @@ async def test_reload(bind):
 
 # noinspection PyUnusedLocal
 async def test_properties(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class PropsTest(db.Model):
         __tablename__ = "props_test"
         profile = db.Column(JSONB(), nullable=False, server_default="{}")
@@ -244,8 +241,6 @@ async def test_properties(bind):
 
 # noinspection PyUnusedLocal
 async def test_unknown_properties(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class PropsTest1(db.Model):
         __tablename__ = "props_test1"
         profile = db.Column(JSONB(), nullable=False, server_default="{}")
@@ -262,8 +257,6 @@ async def test_unknown_properties(bind):
 
 
 async def test_property_in_profile_and_attribute_collide(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class PropsTest2(db.Model):
         __tablename__ = "props_test2"
         profile = db.Column(JSONB(), nullable=False, server_default="{}")
@@ -311,8 +304,6 @@ async def test_no_profile():
 
 
 async def test_t291_t402(bind):
-    from gino.dialects.asyncpg import JSON, JSONB
-
     class CustomJSONB(db.TypeDecorator):
         impl = JSONB
 
@@ -345,8 +336,6 @@ async def test_t291_t402(bind):
 
 
 async def test_json_path(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class PathTest(db.Model):
         __tablename__ = "path_test_json_path"
         data = db.Column(JSONB())
@@ -363,8 +352,6 @@ async def test_json_path(bind):
 
 
 async def test_index(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class IndexTest(db.Model):
         __tablename__ = "index_test"
         profile = db.Column(JSONB())
@@ -379,8 +366,6 @@ async def test_index(bind):
 
 
 async def test_mixin(bind):
-    from gino.dialects.asyncpg import JSONB
-
     class Base:
         id = db.Column(db.Integer(), primary_key=True)
         profile = db.Column(JSONB())

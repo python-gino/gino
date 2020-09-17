@@ -139,7 +139,7 @@ class UpdateRequest:
                 updates[sa.cast(prop.name, sa.Unicode)] = value
         for prop_name, updates in json_updates.items():
             prop = getattr(cls, prop_name)
-            from .dialects.asyncpg import JSONB
+            from sqlalchemy.dialects.postgresql import JSONB
 
             if isinstance(prop.type, JSONB):
                 if self._literal:

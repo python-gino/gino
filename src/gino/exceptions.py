@@ -16,11 +16,3 @@ class InitializedError(GinoException):
 
 class UnknownJSONPropertyError(GinoException):
     pass
-
-
-class MultipleResultsFound(GinoException):
-    pass
-
-
-class NoResultFound(GinoException):
-    pass
