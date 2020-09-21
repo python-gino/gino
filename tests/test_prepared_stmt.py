@@ -1,9 +1,10 @@
 from datetime import datetime
 
 import pytest
+
 from .models import db, User
 
-pytestmark = [pytest.mark.asyncio, pytest.mark.skip]
+pytestmark = pytest.mark.asyncio
 
 
 async def test_compiled_and_bindparam(bind):
@@ -32,8 +33,8 @@ async def test_compiled_and_bindparam(bind):
             User.delete.where(User.nickname == db.bindparam("name"))
         )
         for name in "12345":
-            msg = await delete.status(name=name)
-            assert msg == "DELETE 1"
+            ctx = await delete.status(name=name)
+            assert ctx.rowcount == 1
 
 
 async def test_statement(engine):

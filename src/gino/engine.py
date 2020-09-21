@@ -16,10 +16,9 @@ from sqlalchemy.engine.util import _distill_params
 from sqlalchemy.exc import ResourceClosedError
 from sqlalchemy.ext.asyncio import exc as async_exc
 from sqlalchemy.ext.asyncio.base import StartableContext
-from sqlalchemy.sql import ClauseElement, WARN_LINTING
-from sqlalchemy.util.concurrency import greenlet_spawn
+from sqlalchemy.sql import ClauseElement
 from sqlalchemy.util import EMPTY_DICT
-
+from sqlalchemy.util.concurrency import greenlet_spawn
 from .loader import Loader, LoaderResult, AsyncLoaderResult
 from .transaction import GinoTransaction
 
@@ -42,8 +41,8 @@ async def create_engine(
     kw["execution_options"] = opts
 
     u = make_url(url)
-    if u.drivername in {"postgresql", "postgres"}:
-        u = u.set(drivername="postgresql+asyncpg")
+    if u.drivername in {"postgresql", "postgres", "postgresql+asyncpg"}:
+        u = u.set(drivername="postgresql+gino")
 
     max_overflow = kw.get("max_overflow")
     pool_size = kw.get("pool_size")
@@ -66,7 +65,7 @@ async def create_engine(
         kw["max_overflow"] = max(0, max_size - pool_size)
 
     # TODO: Move to dialect
-    if u.drivername == "postgresql+asyncpg":
+    if u.drivername == "postgresql+gino":
         import asyncpg
 
         connect_args = kw.setdefault("connect_args", {})
@@ -76,7 +75,7 @@ async def create_engine(
 
     sync_engine = _create_engine(u, *arg, **kw)
 
-    if isolation_level and u.drivername == "postgresql+asyncpg":
+    if isolation_level and u.drivername == "postgresql+gino":
         # TODO: Move to dialect
 
         def on_connect(dbapi_conn, record):
@@ -189,7 +188,7 @@ class GinoConnection(StartableContext, _DequeNode):
 
         """
         if self._sync_connection:
-            return self._sync_connection.connection.connection
+            return self._sync_connection._dbapi_connection
         elif self._prev:
             return self._prev._dbapi_conn
 
@@ -239,7 +238,7 @@ class GinoConnection(StartableContext, _DequeNode):
             result = LoaderResult(result, loader)
         return result
 
-    async def _execute(self, clause, multiparams, params):
+    async def _execute(self, clause, multiparams, params, execution_options):
         conn = await self.acquire()
         if conn.in_transaction():
             tx = None
@@ -250,6 +249,7 @@ class GinoConnection(StartableContext, _DequeNode):
                 conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
                 clause,
                 _distill_params(conn, multiparams, params),
+                execution_options=execution_options,
             )
         finally:
             if tx is not None:
@@ -263,8 +263,12 @@ class GinoConnection(StartableContext, _DequeNode):
             )
         return result
 
-    async def execute(self, clause, *multiparams, _do_load=True, **params):
-        result = await self._with_timeout(self._execute(clause, multiparams, params))
+    async def execute(
+        self, clause, *multiparams, _do_load=True, execution_options=None, **params
+    ):
+        result = await self._with_timeout(
+            self._execute(clause, multiparams, params, execution_options)
+        )
         if _do_load:
             result = self._load_result(result)
         return result
@@ -313,7 +317,7 @@ class GinoConnection(StartableContext, _DequeNode):
                 if conn:
                     await greenlet_spawn(conn.close)
 
-    async def all(self, clause, *multiparams, **params):
+    async def all(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns all results as a list.
 
@@ -331,11 +335,13 @@ class GinoConnection(StartableContext, _DequeNode):
         database will be discarded and this method will return ``None``.
 
         """
-        result = await self.execute(clause, *multiparams, **params)
+        result = await self.execute(
+            clause, *multiparams, execution_options=execution_options, **params
+        )
         if not result.context.executemany:
             return result.all()
 
-    async def first(self, clause, *multiparams, **params):
+    async def first(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns the first result.
 
@@ -344,7 +350,9 @@ class GinoConnection(StartableContext, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self.execute(clause, *multiparams, **params)
+        result = await self.execute(
+            clause, *multiparams, execution_options=execution_options, **params
+        )
         try:
             if not result.context.executemany:
                 return result.first()
@@ -354,7 +362,7 @@ class GinoConnection(StartableContext, _DequeNode):
                 DeprecationWarning,
             )
 
-    async def one_or_none(self, clause, *multiparams, **params):
+    async def one_or_none(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns at most one result.
 
@@ -365,11 +373,13 @@ class GinoConnection(StartableContext, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self.execute(clause, *multiparams, **params)
+        result = await self.execute(
+            clause, *multiparams, execution_options=execution_options, **params
+        )
         if not result.context.executemany:
             return result.one_or_none()
 
-    async def one(self, clause, *multiparams, **params):
+    async def one(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns exactly one result.
 
@@ -381,11 +391,13 @@ class GinoConnection(StartableContext, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self.execute(clause, *multiparams, **params)
+        result = await self.execute(
+            clause, *multiparams, execution_options=execution_options, **params
+        )
         if not result.context.executemany:
             return result.one()
 
-    async def scalar(self, clause, *multiparams, **params):
+    async def scalar(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns the first result.
 
@@ -394,11 +406,17 @@ class GinoConnection(StartableContext, _DequeNode):
         See :meth:`all` for common query comments.
 
         """
-        result = await self.execute(clause, *multiparams, _do_load=False, **params)
+        result = await self.execute(
+            clause,
+            *multiparams,
+            _do_load=False,
+            execution_options=execution_options,
+            **params,
+        )
         if not result.context.executemany:
             return result.scalar()
 
-    async def status(self, clause, *multiparams, **params):
+    async def status(self, clause, *multiparams, execution_options=None, **params):
         """
         Runs the given query in database, returns the query status.
 
@@ -407,10 +425,16 @@ class GinoConnection(StartableContext, _DequeNode):
         https://git.io/v7oze
 
         """
-        result = await self.execute(clause, *multiparams, _do_load=False, **params)
+        result = await self.execute(
+            clause,
+            *multiparams,
+            _do_load=False,
+            execution_options=execution_options,
+            **params,
+        )
         return result.context
 
-    def iterate(self, clause, *multiparams, **params):
+    def iterate(self, clause, *multiparams, execution_options=None, **params):
         """
         Creates a server-side cursor in database for large query results.
 
@@ -440,7 +464,7 @@ class GinoConnection(StartableContext, _DequeNode):
                 conn.exec_driver_sql if isinstance(clause, str) else conn._execute_20,
                 clause,
                 _distill_params(conn, multiparams, params),
-                {"stream_results": True},
+                EMPTY_DICT.merge_with(execution_options, {"stream_results": True}),
             )
             if not result.context._is_server_side:
                 # TODO: real exception here
@@ -525,6 +549,11 @@ class GinoConnection(StartableContext, _DequeNode):
 
         conn = await self.acquire()
         return await greenlet_spawn(fn, conn, *arg, **kw)
+
+    def prepare(self, clause):
+        from .prepared_stmt import PreparedStatement
+
+        return PreparedStatement(self, clause)
 
 
 class GinoEngine:
@@ -675,13 +704,28 @@ class GinoEngine:
             return await conn.run_sync(fn, *arg, **kw)
 
     class _CompileConnection:
-        def __init__(self, dialect):
-            self.dialect = dialect
-            self._is_future = True
+        def __init__(self, engine):
+            self.engine = engine
+            self.dialect = engine.dialect
 
-    class _CompileDBAPIConnection:
-        def cursor(self):
+        _echo = _has_events = False
+        _transaction = _nested_transaction = None
+        _is_future = True
+        _autobegin = lambda x: None
+
+        def __getattr__(self, item):
             pass
+
+        class _dbapi_connection:
+            _connection = None
+            cursor = lambda: None
+
+            class connection:
+                set_isolation_level = lambda x: None
+
+        class dispatch:
+            before_execute = before_cursor_execute = []
+            engine_connect = after_execute = after_cursor_execute = lambda *x: None
 
     def compile(self, clause: ClauseElement, *multiparams, **params):
         """
@@ -690,38 +734,21 @@ class GinoEngine:
         rules of the dialect.
 
         """
-        distilled_params = _distill_params(self, multiparams, params)
-        if distilled_params:
-            # ensure we don't retain a link to the view object for keys()
-            # which links to the values, which we don't want to cache
-            keys = sorted(distilled_params[0])
-            for_executemany = len(distilled_params) > 1
-        else:
-            keys = []
-            for_executemany = False
-        compiled_sql, extracted_params, cache_hit = clause._compile_w_cache(
-            dialect=self.sync_engine.dialect,
-            compiled_cache=self.sync_engine._compiled_cache,
-            column_keys=keys,
-            for_executemany=for_executemany,
-            schema_translate_map=None,
-            linting=self.sync_engine.dialect.compiler_linting | WARN_LINTING,
+        conn = self.sync_engine._connection_cls(
+            self.sync_engine,
+            self._CompileConnection._dbapi_connection,
+            _branch_from=self._CompileConnection(self.sync_engine),
+            _dispatch=self._CompileConnection.dispatch,
         )
-        context = self.sync_engine.dialect.execution_ctx_cls._init_compiled(
-            self.sync_engine.dialect,
-            self._CompileConnection(self.sync_engine.dialect),
-            self._CompileDBAPIConnection(),
-            {},
-            compiled_sql,
-            distilled_params,
+        result = conn._execute_20(
             clause,
-            extracted_params,
-            cache_hit=cache_hit,
+            _distill_params(conn, multiparams, params),
+            execution_options=dict(compile_only=True),
         )
-        parameters = context.parameters
-        if not context.executemany:
+        parameters = result.context.parameters
+        if not result.context.executemany:
             parameters = parameters[0]
-        return context.statement, parameters
+        return result.operation, parameters
 
     def transaction(self, *, timeout=None, reuse=True, reusable=True, **kwargs):
         """

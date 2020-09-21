@@ -9,7 +9,7 @@ pytestmark = pytest.mark.asyncio
 # noinspection PyUnusedLocal
 async def test_status(bind):
     statement, params = db.compile(User.insert(), [dict(name="1"), dict(name="2")])
-    assert statement == "INSERT INTO gino_users (name, type) VALUES (?, ?)"
+    assert statement == "INSERT INTO gino_users (name, type) VALUES ($1::varchar, $2)"
     assert params == (("1", "USER"), ("2", "USER"))
     result = await User.insert().gino.status(dict(name="1"), dict(name="2"))
     assert result.executemany

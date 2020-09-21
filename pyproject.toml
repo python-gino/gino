@@ -61,6 +61,9 @@ sphinxcontrib-apidoc = "^0.3.0"
 sphinx-autobuild = "^0.7.1"
 sphinx-intl = {version = "^2.0.1", extras = ["transifex"]}
 
+[tool.poetry.plugins."sqlalchemy.dialects"]
+"postgresql.gino" = "gino.dialects.asyncpg:AsyncpgDialect"
+
 [build-system]
 requires = ["poetry>=1.0"]
 build-backend = "poetry.masonry.api"
