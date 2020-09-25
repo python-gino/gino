@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql.asyncpg import (
     PGDialect_asyncpg,
     PGExecutionContext_asyncpg,
 )
+from sqlalchemy.dialects.postgresql.base import PGDialect
 from .base import (
     GinoCompilerOverride,
     GinoExecutionContextOverride,
@@ -84,3 +85,14 @@ class AsyncpgCompiler(GinoCompilerOverride, PGCompiler_asyncpg):
 class AsyncpgDialect(PGDialect_asyncpg):
     execution_ctx_cls = AsyncpgExecutionContext
     statement_compiler = AsyncpgCompiler
+
+    def on_connect(self):
+        super_connect = super().on_connect()
+
+        def connect(conn):
+            if super_connect is not None:
+                super_connect(conn)
+            if self.isolation_level is not None:
+                PGDialect.set_isolation_level(self, conn, self.isolation_level)
+
+        return connect

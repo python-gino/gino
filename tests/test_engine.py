@@ -155,6 +155,16 @@ async def test_set_isolation_level():
             )
             == "SERIALIZABLE"
         )
+
+    # https://github.com/MagicStack/asyncpg/pull/622
+    async with e.transaction(isolation="read committed") as tx:
+        assert (
+            await greenlet_spawn(
+                e.dialect.get_isolation_level, tx.connection._dbapi_conn
+            )
+            == "READ COMMITTED"
+        )
+
     await e.close()
 
     e = await create_engine(

@@ -22,7 +22,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-asyncpg = "^0.21.0,<1.0"
+asyncpg = {git = "https://github.com/MagicStack/asyncpg.git"}
 sqlalchemy = {path = "./sqlalchemy"}
 
 # compatibility

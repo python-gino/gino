@@ -7,8 +7,6 @@ import weakref
 from contextvars import ContextVar
 from typing import Optional, Callable, Any
 
-from sqlalchemy import event
-from sqlalchemy.dialects.postgresql.base import PGDialect
 from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.engine import create_engine as _create_engine
 from sqlalchemy.engine.url import make_url
@@ -23,9 +21,7 @@ from .loader import Loader, LoaderResult, AsyncLoaderResult
 from .transaction import GinoTransaction
 
 
-async def create_engine(
-    url, *arg, isolation_level=None, min_size=1, max_size=None, **kw
-):
+async def create_engine(url, *arg, min_size=1, max_size=None, **kw):
     if kw.get("server_side_cursors", False):
         raise async_exc.AsyncMethodRequired(
             "Can't set server_side_cursors for async engine globally; "
@@ -34,10 +30,10 @@ async def create_engine(
         )
     kw["future"] = True
     opts = kw.get("execution_options", {})
-    isolation_level = opts.get("isolation_level", isolation_level)
+    isolation_level = opts.get("isolation_level", kw.get("isolation_level"))
     opts = EMPTY_DICT.merge_with(opts, dict(isolation_level="AUTOCOMMIT"))
     if isolation_level:
-        opts = opts.merge_with(dict(tx_isolation_level=isolation_level))
+        kw["isolation_level"] = isolation_level
     kw["execution_options"] = opts
 
     u = make_url(url)
@@ -64,7 +60,7 @@ async def create_engine(
         kw["pool_size"] = min(pool_size, max_size)
         kw["max_overflow"] = max(0, max_size - pool_size)
 
-    # TODO: Move to dialect
+    # TODO: Deprecate and remove
     if u.drivername == "postgresql+gino":
         import asyncpg
 
@@ -75,23 +71,9 @@ async def create_engine(
 
     sync_engine = _create_engine(u, *arg, **kw)
 
-    if isolation_level and u.drivername == "postgresql+gino":
-        # TODO: Move to dialect
-
-        def on_connect(dbapi_conn, record):
-            PGDialect.set_isolation_level(
-                sync_engine.dialect, dbapi_conn, isolation_level,
-            )
-
-        event.listen(sync_engine, "connect", on_connect)
-
     if min_size > 0:
         fs = [greenlet_spawn(sync_engine.connect) for i in range(min_size)]
         fs = (await asyncio.wait(fs))[0]
-        (await list(fs)[0]).execution_options(
-            isolation_level=isolation_level
-            or sync_engine.dialect.default_isolation_level
-        )
         fs = [greenlet_spawn((await fut).close) for fut in fs]
         await asyncio.wait(fs)
 
@@ -131,7 +113,10 @@ class GinoConnection(StartableContext, _DequeNode):
     _sync_connection: Optional[Connection]
 
     def __init__(
-        self, sync_engine: Engine, connect_timeout, lazy,
+        self,
+        sync_engine: Engine,
+        connect_timeout,
+        lazy,
     ):
         _DequeNode.__init__(self)
         self.sync_engine = sync_engine
@@ -534,7 +519,7 @@ class GinoConnection(StartableContext, _DequeNode):
         return rv
 
     async def run_sync(self, fn: Callable, *arg, **kw) -> Any:
-        """"Invoke the given sync callable passing self as the first argument.
+        """Invoke the given sync callable passing self as the first argument.
 
         This method maintains the asyncio event loop all the way through
         to the database connection by running the given callable in a

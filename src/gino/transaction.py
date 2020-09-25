@@ -1,19 +1,13 @@
 from __future__ import annotations
+
 import typing
 
 from sqlalchemy.engine import Transaction
-from sqlalchemy.ext.asyncio import AsyncTransaction
 from sqlalchemy.ext.asyncio.base import StartableContext
 from sqlalchemy.util import greenlet_spawn
 
 if typing.TYPE_CHECKING:
     from .engine import GinoConnection
-
-ASYNCPG_ISOLATION_MAPPING = dict(
-    read_committed="READ COMMITTED",
-    repeatable_read="REPEATABLE READ",
-    serializable="SERIALIZABLE",
-)
 
 
 class _Break(BaseException):
@@ -105,10 +99,10 @@ class GinoTransaction(StartableContext):
             options = {}
             isolation = self._kwargs.get("isolation")
             if isolation:
-                options["isolation_level"] = ASYNCPG_ISOLATION_MAPPING.get(isolation)
+                options["isolation_level"] = isolation.upper()
             else:
-                options["isolation_level"] = conn.get_execution_options().get(
-                    "tx_isolation_level", conn.dialect.default_isolation_level
+                options["isolation_level"] = (
+                    conn.dialect.isolation_level or conn.dialect.default_isolation_level
                 )
             if isolation == "SERIALIZABLE":
                 if self._kwargs.get("readonly"):
