@@ -368,23 +368,12 @@ async def test_tuple_loader_279(user):
 
 
 async def test_none_as_none_281(user):
-    import gino
+    query = Team.outerjoin(User).select()
+    loader = Team, User
+    assert any(row[1] is None for row in await query.gino.load(loader).all())
 
-    if gino.__version__ < "0.9":
-        query = Team.outerjoin(User).select()
-        loader = Team, User.none_as_none()
-        assert any(row[1] is None for row in await query.gino.load(loader).all())
-
-        loader = Team.distinct(Team.id).load(add_member=User.none_as_none())
-        assert any(not team.members for team in await query.gino.load(loader).all())
-
-    if gino.__version__ >= "0.8.0":
-        query = Team.outerjoin(User).select()
-        loader = Team, User
-        assert any(row[1] is None for row in await query.gino.load(loader).all())
-
-        loader = Team.distinct(Team.id).load(add_member=User)
-        assert any(not team.members for team in await query.gino.load(loader).all())
+    loader = Team.distinct(Team.id).load(add_member=User)
+    assert any(not team.members for team in await query.gino.load(loader).all())
 
 
 async def test_model_in_query(user):
@@ -400,3 +389,10 @@ async def test_model_in_query(user):
     assert users[0] != user
     assert users[0].id == user.id
     assert users[0].nickname == user.nickname
+
+
+async def test_empty_model(user):
+    u = await User.query.with_only_columns([User.realname]).gino.first()
+    assert u is not None
+    assert u.id is None
+    assert u.realname is None

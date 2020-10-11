@@ -212,9 +212,9 @@ class ModelLoader(Loader):
         self.extras = dict((key, self.get(value)) for key, value in extras.items())
         self.on_clause = None
 
-    def _do_load(self, row):
+    def _do_load(self, row, none_as_none):
         values = dict((c.name, row[c]) for c in self.columns if c in row)
-        if all((v is None) for v in values.values()):
+        if none_as_none and all((v is None) for v in values.values()):
             return None
         rv = self.model()
         for c in self.columns:
@@ -241,17 +241,18 @@ class ModelLoader(Loader):
             key = tuple(row[col] for col in self._distinct)
             rv = ctx.get(key, _none)
             if rv is _none:
-                rv = self._do_load(row)
+                rv = self._do_load(row, context.get('none_as_none', False))
                 ctx[key] = rv
             else:
                 distinct = False
         else:
-            rv = self._do_load(row)
+            rv = self._do_load(row, context.get('none_as_none', False))
 
         if rv is None:
             return None, None
         else:
             for key, value in self.extras.items():
+                context.setdefault('none_as_none', True)
                 value, distinct_ = value.do_load(row, context)
                 if distinct_ is None:
                     continue
