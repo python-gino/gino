@@ -370,7 +370,7 @@ async def test_tuple_loader_279(user):
 async def test_none_as_none_281(user):
     query = Team.outerjoin(User).select()
     loader = Team, User
-    assert any(row[1] is None for row in await query.gino.load(loader).all())
+    assert any(row[1].id is None for row in await query.gino.load(loader).all())
 
     loader = Team.distinct(Team.id).load(add_member=User)
     assert any(not team.members for team in await query.gino.load(loader).all())
