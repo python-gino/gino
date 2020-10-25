@@ -71,7 +71,7 @@ Pass in parameter values::
 Use the :class:`~gino.api.Gino` Integration
 --------------------------------------------
 
-In a more common scenario, there will be a :class:`~gino.api.Gino>` instance, which has
+In a more common scenario, there will be a :class:`~gino.api.Gino` instance, which has
 usually a ``bind`` set - either explicitly or by the Web framework extensions::
 
     from gino import Gino
