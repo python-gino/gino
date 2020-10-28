@@ -104,7 +104,7 @@ And the execution is also simplified with the same ``bind`` magic::
             user: User = await user_getter.first(uid=1)
             print(user.name)
 
-To make things more easier, you could even define the baked queries directly on the
+To make things easier, you could even define the baked queries directly on the
 model::
 
     class User(db.Model):
