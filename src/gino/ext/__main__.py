@@ -41,16 +41,17 @@ if __name__ == "__main__":
             print("No stub files found.")
 
     elif cmd == "list":
-        name_size = max(len(ep.name) for ep in eps)
-        value_size = max(len(ep.value) for ep in eps)
-        for ep in eps:
-            path = os.path.join(base_dir, ep.name + ".pyi")
-            if not os.path.exists(path):
-                path = "no stub file"
-            print(
-                "%s -> gino.ext.%s (%s)"
-                % (ep.value.ljust(value_size), ep.name.ljust(name_size), path)
-            )
+        if eps:
+            name_size = max(len(ep.name) for ep in eps)
+            value_size = max(len(ep.value) for ep in eps)
+            for ep in eps:
+                path = os.path.join(base_dir, ep.name + ".pyi")
+                if not os.path.exists(path):
+                    path = "no stub file"
+                print(
+                    "%s -> gino.ext.%s (%s)"
+                    % (ep.value.ljust(value_size), ep.name.ljust(name_size), path)
+                )
 
     else:
         print("Manages GINO extensions:")
