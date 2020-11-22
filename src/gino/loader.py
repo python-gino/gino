@@ -123,6 +123,7 @@ class Loader:
 
 
 _none = object()
+_none_as_none = object()
 
 
 def _get_column(model, column_or_name) -> Column:
@@ -212,9 +213,11 @@ class ModelLoader(Loader):
         self.extras = dict((key, self.get(value)) for key, value in extras.items())
         self.on_clause = None
 
-    def _do_load(self, row):
+    def _do_load(self, row, none_as_none):
+        # none_as_none indicates that in the case of every column of the object is
+        # None, whether a None or empty instance of the model should be returned.
         values = dict((c.name, row[c]) for c in self.columns if c in row)
-        if all((v is None) for v in values.values()):
+        if none_as_none and all((v is None) for v in values.values()):
             return None
         rv = self.model()
         for c in self.columns:
@@ -233,26 +236,29 @@ class ModelLoader(Loader):
                  result is distinct.
         """
 
+        if context is None:
+            context = {}
         distinct = True
         if self._distinct:
-            if context is None:
-                context = {}
             ctx = context.setdefault(self._distinct, {})
             key = tuple(row[col] for col in self._distinct)
             rv = ctx.get(key, _none)
             if rv is _none:
-                rv = self._do_load(row)
+                rv = self._do_load(row, context.get(_none_as_none, False))
                 ctx[key] = rv
             else:
                 distinct = False
         else:
-            rv = self._do_load(row)
+            rv = self._do_load(row, context.get(_none_as_none, False))
 
         if rv is None:
             return None, None
         else:
             for key, value in self.extras.items():
+                context.setdefault(_none_as_none, True)
                 value, distinct_ = value.do_load(row, context)
+                # _none_as_none should not be propagated to parents
+                context.pop(_none_as_none, 0)
                 if distinct_ is None:
                     continue
 
