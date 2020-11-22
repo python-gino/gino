@@ -11,6 +11,7 @@ GINO 1.1
 * Added baked query feature (#478 #659 #667)
 * Added ``Query.gino.execution_options`` shortcut (#659)
 * Added ``@db.declared_attr(with_table=True)`` (#659)
+* [Breaking] empty object instead of ``None`` being returned for objects with values of all selected columns are None (#729)
 
 
 GINO 1.0
