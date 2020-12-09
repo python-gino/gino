@@ -99,7 +99,7 @@ jobs:
           MYSQL_DB_HOST: 127.0.0.1
           MYSQL_DB_USER: root
         run: |
-          pytest --cov=src --cov-fail-under=95 --cov-report xml tests/ mysql_tests/
+          pytest --cov=src --cov-fail-under=95 --cov-report xml
 
       - name: Submit coverage report
         if: github.ref == 'refs/heads/master'
