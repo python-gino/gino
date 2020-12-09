@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "master"
+      - "ci"
+      - "v[0-9]+.[0-9x]+x"
+  pull_request:
+    branches:
+      - "master"
+      - "v[0-9]+.[0-9x]+x"
+
+jobs:
+  create-virtualenv:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: virtualenv cache
+        uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+
+      - name: pip cache
+        uses: syphar/restore-pip-download-cache@v1
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+      - name: Install Python dependencies
+        run: poetry install --no-interaction
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+#  linter:
+#    needs: create-virtualenv
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: actions/setup-python@v2
+#      - uses: syphar/restore-virtualenv@v1
+#        id: cache-virtualenv
+#
+#      - run: flake8
+#      - run: pydocstyle
+#      - run: isort . --diff --check-only
+#      - run: black --check --diff .
+#
+#  tests:
+#    needs: create-virtualenv
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: actions/setup-python@v2
+#      - uses: syphar/restore-virtualenv@v1
+#        id: cache-virtualenv
+#
+#      - run: py.test
