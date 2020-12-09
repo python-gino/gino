@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-#        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
-        python-version: [ '3.5' ]
+        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
+#        python-version: [ '3.5' ]
     steps:
       - name: source code
         uses: actions/checkout@v2
@@ -47,6 +47,22 @@ jobs:
 
       - name: Log currently installed packages and versions
         run: pip list
+
+  quick-test:
+    needs: create-virtualenv
+    runs-on: ubuntu-latest
+    steps:
+      - name: source code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: virtualenv cache
+        uses: syphar/restore-virtualenv@v1
+
+      - name: Check code style
+        run: black --check --diff src
 
 #  linter:
 #    needs: create-virtualenv
