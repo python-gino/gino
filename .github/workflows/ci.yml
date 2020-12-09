@@ -16,9 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
+#        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
+        python-version: [ '3.5' ]
     steps:
-      - name: Checkout source code
+      - name: source code
         uses: actions/checkout@v2
 
       - name: Set up Python
@@ -34,13 +35,19 @@ jobs:
         uses: syphar/restore-pip-download-cache@v1
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
 
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.0.0
-        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
-
       - name: Install Python dependencies
-        run: poetry install --no-interaction
         if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        env:
+          POETRY_VERSION: 1.1.4
+        run: |
+          pip install 'pip==20.3.1'
+          pip install 'setuptools==51.0.0'
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
+          poetry install --no-interaction
+
+      - name: Log currently installed packages and versions
+        run: pip list
 
 #  linter:
 #    needs: create-virtualenv
