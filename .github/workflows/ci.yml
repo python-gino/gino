@@ -71,6 +71,7 @@ jobs:
         image: fantix/postgres-ssl:13.1
         env:
           POSTGRES_USER: gino
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -120,6 +121,7 @@ jobs:
         image: fantix/postgres-ssl:13.1
         env:
           POSTGRES_USER: gino
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -156,12 +158,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        postgres-version: [ '9.6', '10.15', '11.10', '12.5' ]
+        postgres-version: [ '9.6.20', '10.15', '11.10', '12.5' ]
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
         env:
           POSTGRES_USER: gino
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -220,6 +223,7 @@ jobs:
         image: fantix/postgres-ssl:13.1
         env:
           POSTGRES_USER: gino
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -242,3 +246,28 @@ jobs:
           DB_HOST: localhost
           DB_USER: gino
         run: pytest tests/
+
+  update-translations:
+    needs: [check-style, test-coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - name: source code
+        if: github.ref == 'refs/heads/ci'
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        if: github.ref == 'refs/heads/ci'
+        uses: actions/setup-python@v2
+
+      - name: virtualenv cache
+        if: github.ref == 'refs/heads/ci'
+        uses: syphar/restore-virtualenv@v1
+
+      - name: Upload pot to Transifex
+        if: github.ref == 'refs/heads/ci'
+        run: |
+          sphinx-intl create-transifexrc
+          make -C docs gettext push
+        env:
+          SPHINXINTL_TRANSIFEX_USERNAME: api
+          SPHINXINTL_TRANSIFEX_PASSWORD: ${{ secrets.TRANSIFEX_TOKEN }}
