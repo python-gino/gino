@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: fantix/postgres-ssl:12.1
+        image: fantix/postgres-ssl:13.1
         env:
           POSTGRES_USER: gino
         ports:
@@ -117,7 +117,7 @@ jobs:
         python-version: [ '3.5', '3.6', '3.7', '3.8' ]
     services:
       postgres:
-        image: fantix/postgres-ssl:12.1
+        image: fantix/postgres-ssl:13.1
         env:
           POSTGRES_USER: gino
         ports:
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        postgres-version: [ '9.6' ]
+        postgres-version: [ '9.6', '10.15', '11.10', '12.5' ]
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
@@ -211,3 +211,34 @@ jobs:
           MYSQL_DB_HOST: 127.0.0.1
           MYSQL_DB_USER: root
         run: pytest mysql_tests/
+
+  test-low-deps:
+    needs: [check-style, test-coverage]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: fantix/postgres-ssl:13.1
+        env:
+          POSTGRES_USER: gino
+        ports:
+          - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: source code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: virtualenv cache
+        uses: syphar/restore-virtualenv@v1
+
+      - name: Use lowest dependencies versions
+        run: pip install asyncpg==0.18 SQLAlchemy==1.3
+
+      - name: pytest
+        env:
+          DB_HOST: localhost
+          DB_USER: gino
+        run: pytest tests/
