@@ -76,7 +76,7 @@ jobs:
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       mysql:
-        image: mysql:5
+        image: mysql:8
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: 1
         ports:
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9' ]
+        python-version: [ '3.5', '3.6', '3.7', '3.8' ]
     services:
       postgres:
         image: fantix/postgres-ssl:12.1
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        postgres-version: [ '9.6', '12.1' ]
+        postgres-version: [ '9.6' ]
     services:
       postgres:
         image: fantix/postgres-ssl:${{ matrix.postgres-version }}
@@ -187,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        mysql-version: [ '5', '8' ]
+        mysql-version: [ '5' ]
     services:
       mysql:
         image: mysql:${{ matrix.mysql-version }}
