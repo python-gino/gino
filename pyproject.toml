@@ -38,7 +38,7 @@ gino-aiohttp = {version = "^0.2.0", optional = true, python = "^3.6"}
 gino-tornado = { version = "^0.1.0", optional = true, python = "^3.5.2" }
 gino-sanic = { version = "^0.1.0", optional = true, python = "^3.6" }
 gino-quart = { version = "^0.1.0", optional = true, python = "^3.7" }
-aiomysql = "^0.0.20"
+aiomysql = "^0.0.21"
 
 [tool.poetry.extras]
 starlette = ["gino-starlette"]

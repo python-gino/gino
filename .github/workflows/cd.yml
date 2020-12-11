@@ -1,0 +1,126 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - "master"
+      - "ci"
+    tags:
+      - "v[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  create-virtualenv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: source code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: virtualenv cache
+        uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+
+      - name: pip cache
+        uses: syphar/restore-pip-download-cache@v1
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+      - name: Install Python dependencies
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+        env:
+          POETRY_VERSION: 1.1.4
+        run: |
+          pip install pip==20.3.1 setuptools==50.3.2
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
+          poetry install --no-interaction
+
+      - name: Log currently installed packages and versions
+        run: pip list
+
+  build-docs:
+    needs: create-virtualenv
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: [ 'en', 'zh' ]
+    steps:
+      - name: source code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: virtualenv cache
+        uses: syphar/restore-virtualenv@v1
+
+      - name: Download latest translations
+        if: matrix.language != 'en'
+        run: |
+          sphinx-intl create-transifexrc
+          make -C docs -e LOC="${{ matrix.language }}" pull
+        env:
+          SPHINXINTL_TRANSIFEX_USERNAME: api
+          SPHINXINTL_TRANSIFEX_PASSWORD: ${{ secrets.TRANSIFEX_TOKEN }}
+          LOC: ${{ matrix.language }}
+
+      - name: Build the documentation
+        run: |
+          make -C docs -e SPHINXOPTS="-D language='${{ matrix.language }}' -A GAID='${{ secrets.GAID }}' -A VERSION='${{ github.ref }}'" html
+
+      - name: Add current version to versions.json
+        shell: python
+        env:
+          LOC: ${{ matrix.language }}
+        run: |
+          import os, json
+          try:
+              with open('docs/versions.json') as f:
+                  versions = json.load(f)
+          except Exception:
+              versions = {}
+          by_loc = versions.setdefault(os.environ['LOC'], [])
+          by_loc.append(os.environ['GITHUB_REF'].split('/')[-1])
+          by_loc.sort()
+          with open('docs/versions.json', 'w') as f:
+              json.dump(versions, f)
+          print(versions)
+
+      - name: Publish to GitHub Pages
+        if: github.ref != 'refs/heads/ci'
+        uses: python-gino/ghaction-github-pages@master
+        with:
+          repo: python-gino/python-gino.org
+          target_branch: master
+          target_path: docs/${{ matrix.language }}/${{ github.ref }}
+          keep_history: true
+          allow_empty_commit: true
+          build_dir: docs/_build/html
+          commit_message: Update docs/${{ matrix.language }}/${{ github.ref }} @ ${{ github.sha }}
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: source code
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/setup-python@v2
+
+      - name: Release to PyPI
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          POETRY_VERSION: 1.1.4
+        run: |
+          pip install pip==20.3.1 setuptools==50.3.2
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+          source $HOME/.poetry/env
+          poetry build
+          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
