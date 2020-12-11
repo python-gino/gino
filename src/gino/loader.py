@@ -332,7 +332,8 @@ class ModelLoader(Loader):
         """Deprecated method for compatibility, does nothing."""
         if not enabled:
             warnings.warn(
-                "Disabling none_as_none is not supported.", DeprecationWarning,
+                "Disabling none_as_none is not supported.",
+                DeprecationWarning,
             )
         return self
 

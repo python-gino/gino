@@ -13,7 +13,9 @@ ECHO = False
 
 @pytest.fixture(scope="module")
 def sa_engine():
-    rv = sqlalchemy.create_engine(MYSQL_URL, echo=ECHO)
+    rv = sqlalchemy.create_engine(
+        MYSQL_URL.replace("mysql://", "mysql+pymysql://"), echo=ECHO
+    )
     db.create_all(rv)
     yield rv
     db.drop_all(rv)

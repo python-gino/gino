@@ -11,7 +11,9 @@ GINO 1.1
 * Added baked query feature (#478 #659 #667)
 * Added ``Query.gino.execution_options`` shortcut (#659)
 * Added ``@db.declared_attr(with_table=True)`` (#659)
-* [Breaking] empty object instead of ``None`` being returned for objects with values of all selected columns are None (#729)
+* [Breaking] Empty object instead of ``None`` being returned for objects with values of all selected columns are None (#729)
+* Added MySQL support (#381 #685)
+* [Breaking] asyncpg is no longer installed as a dependency by default, install ``gino[pg]`` for the old behavior
 
 
 GINO 1.0

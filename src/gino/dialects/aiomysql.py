@@ -5,7 +5,6 @@ import re
 import time
 import warnings
 
-import aiomysql
 from sqlalchemy import util, exc
 from sqlalchemy.dialects.mysql import JSON, ENUM
 from sqlalchemy.dialects.mysql.base import (
@@ -21,6 +20,12 @@ try:
     import click
 except ImportError:
     click = None
+
+try:
+    import aiomysql
+except ImportError:
+    raise ImportError("asyncpg is not installed; please install gino[mysql]")
+
 JSON_COLTYPE = 245
 
 #: Regular expression for :meth:`Cursor.executemany`.
@@ -360,7 +365,11 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
     }  # use SQLAlchemy's echo instead
     colspecs = util.update_copy(
         MySQLDialect.colspecs,
-        {ENUM: AsyncEnum, sqltypes.Enum: AsyncEnum, sqltypes.NullType: GinoNullType,},
+        {
+            ENUM: AsyncEnum,
+            sqltypes.Enum: AsyncEnum,
+            sqltypes.NullType: GinoNullType,
+        },
     )
     postfetch_lastrowid = False
     support_returning = False

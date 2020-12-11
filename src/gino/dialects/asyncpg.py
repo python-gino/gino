@@ -3,7 +3,6 @@ import itertools
 import time
 import warnings
 
-import asyncpg
 from sqlalchemy import util, exc, sql
 from sqlalchemy.dialects.postgresql import (  # noqa: F401
     ARRAY,
@@ -27,6 +26,12 @@ try:
     import click
 except ImportError:
     click = None
+
+try:
+    import asyncpg
+except ImportError:
+    raise ImportError("asyncpg is not installed; please install gino[pg]")
+
 JSON_COLTYPE = 114
 JSONB_COLTYPE = 3802
 
@@ -566,7 +571,9 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 "select nspname from pg_namespace " "where lower(nspname)=:schema"
             ).bindparams(
                 sql.bindparam(
-                    "schema", util.text_type(schema.lower()), type_=sqltypes.Unicode,
+                    "schema",
+                    util.text_type(schema.lower()),
+                    type_=sqltypes.Unicode,
                 )
             )
         )
@@ -596,10 +603,14 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        "name", util.text_type(table_name), type_=sqltypes.Unicode,
+                        "name",
+                        util.text_type(table_name),
+                        type_=sqltypes.Unicode,
                     ),
                     sql.bindparam(
-                        "schema", util.text_type(schema), type_=sqltypes.Unicode,
+                        "schema",
+                        util.text_type(schema),
+                        type_=sqltypes.Unicode,
                     ),
                 )
             )
@@ -615,7 +626,9 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "and relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
+                        "name",
+                        util.text_type(sequence_name),
+                        type_=sqltypes.Unicode,
                     )
                 )
             )
@@ -627,10 +640,14 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                     "n.nspname=:schema and relname=:name"
                 ).bindparams(
                     sql.bindparam(
-                        "name", util.text_type(sequence_name), type_=sqltypes.Unicode,
+                        "name",
+                        util.text_type(sequence_name),
+                        type_=sqltypes.Unicode,
                     ),
                     sql.bindparam(
-                        "schema", util.text_type(schema), type_=sqltypes.Unicode,
+                        "schema",
+                        util.text_type(schema),
+                        type_=sqltypes.Unicode,
                     ),
                 )
             )
@@ -659,13 +676,17 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
             query = sql.text(query)
         query = query.bindparams(
             sql.bindparam(
-                "typname", util.text_type(type_name), type_=sqltypes.Unicode,
+                "typname",
+                util.text_type(type_name),
+                type_=sqltypes.Unicode,
             ),
         )
         if schema is not None:
             query = query.bindparams(
                 sql.bindparam(
-                    "nspname", util.text_type(schema), type_=sqltypes.Unicode,
+                    "nspname",
+                    util.text_type(schema),
+                    type_=sqltypes.Unicode,
                 ),
             )
         return bool(await connection.scalar(query))

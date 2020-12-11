@@ -45,7 +45,7 @@ extension for Starlette <https://github.com/python-gino/gino-starlette>`_. Simpl
 
 .. code-block:: console
 
-    $ poetry add gino[starlette]
+    $ poetry add gino[pg,starlette]
 
 Then let's add FastAPI_, together with the lightning-fast ASGI_ server Uvicorn_, and
 Gunicorn_ as a production application server:
@@ -87,7 +87,7 @@ That's all, this is my ``pyproject.toml`` created by Poetry_, yours should look 
 
     [tool.poetry.dependencies]
     python = "^3.8"
-    gino = {version = "^1.0", extras = ["starlette"]}
+    gino = {version = "^1.0", extras = ["pg", "starlette"]}
     fastapi = "^0.54.1"
     uvicorn = "^0.11.3"
     gunicorn = "^20.0.4"

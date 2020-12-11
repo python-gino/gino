@@ -372,7 +372,9 @@ class Model:
                         raise AttributeError(
                             '{} "{}" requires a JSON[B] column "{}" '
                             "which is not found or has a wrong type.".format(
-                                type(v).__name__, v.name, v.prop_name,
+                                type(v).__name__,
+                                v.name,
+                                v.prop_name,
                             )
                         )
         sub_cls.__json_prop_names__ = json_prop_names
