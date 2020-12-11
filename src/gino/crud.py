@@ -166,8 +166,12 @@ class UpdateRequest:
             opts["timeout"] = timeout
         clause = (
             type(self._instance)
-            .update.where(self._locator,)
-            .values(**self._instance._get_sa_values(values),)
+            .update.where(
+                self._locator,
+            )
+            .values(
+                **self._instance._get_sa_values(values),
+            )
             .execution_options(**opts)
         )
         await _query_and_update(
