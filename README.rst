@@ -6,25 +6,21 @@
         :alt: PyPI Release Version
         :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/test?label=test&logo=github
-        :alt: GitHub Workflow Status for tests
-        :target: https://github.com/python-gino/gino/actions?query=workflow%3Atest
+.. image:: https://img.shields.io/pypi/dm/gino?logo=pypi&logoColor=white
+        :alt: PyPI Monthly Downloads
+        :target: https://pypi.python.org/pypi/gino
 
-.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/docs?label=docs&logo=github
-        :alt: GitHub Workflow Status for docs
-        :target: https://python-gino.org/docs/
+.. image:: https://img.shields.io/github/workflow/status/python-gino/gino/CI?label=CI&logo=github
+        :alt: GitHub Workflow Status for CI
+        :target: https://github.com/python-gino/gino/actions?query=workflow%3ACI
+
+.. image:: https://img.shields.io/codacy/grade/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
+        :alt: Codacy Code Quality
+        :target: https://app.codacy.com/gh/python-gino/gino/dashboard
 
 .. image:: https://img.shields.io/codacy/coverage/b6a59cdf5ca64eab9104928d4f9bbb97?logo=codacy
         :alt: Codacy coverage
         :target: https://app.codacy.com/gh/python-gino/gino/dashboard
-
-.. image:: https://img.shields.io/badge/Dependabot-active-brightgreen?logo=dependabot
-        :target: https://app.dependabot.com/accounts/python-gino/projects/129260
-        :alt: Dependabot
-
-.. image:: https://img.shields.io/gitter/room/python-gino/Lobby?logo=gitter
-        :target: https://gitter.im/python-gino/Lobby
-        :alt: Gitter chat
 
 
 GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of

@@ -10,6 +10,8 @@ on:
     branches:
       - "master"
       - "v[0-9]+.[0-9]+.x"
+  schedule:
+    - cron: '24 14 * * 6'
 
 jobs:
   create-virtualenv:
@@ -282,3 +284,17 @@ jobs:
         env:
           SPHINXINTL_TRANSIFEX_USERNAME: api
           SPHINXINTL_TRANSIFEX_PASSWORD: ${{ secrets.TRANSIFEX_TOKEN }}
+
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: source code
+        uses: actions/checkout@v2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: python
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
