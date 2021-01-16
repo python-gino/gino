@@ -492,6 +492,19 @@ class AiomysqlDialect(MySQLDialect, base.AsyncDialectMixin):
             exception = exception.args[0]
         return exception.args[0]
 
+    async def get_table_name(self, connection):
+        TABLE_SQL = text("""
+        SELECT table_schema AS database_name,
+            table_name
+        FROM information_schema.tables
+        WHERE table_type = 'BASE TABLE'
+            AND table_schema NOT IN ('information_schema','mysql',
+                                     'performance_schema','sys')
+        ORDER BY database_name, table_name;
+                """)
+
+        return await connection.all(TABLE_SQL)
+
 
 def _escape_args(args, conn):
     if isinstance(args, (tuple, list)):

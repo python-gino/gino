@@ -166,7 +166,7 @@ class _IterableCursor:
         return self._context.cursor.iterate(self._context)
 
     async def _get_cursor(self):
-        return await (await self._iterate())
+        return await(await self._iterate())
 
     def __aiter__(self):
         return _LazyIterator(self._iterate)

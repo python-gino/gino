@@ -690,3 +690,12 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 ),
             )
         return bool(await connection.scalar(query))
+
+    async def get_table_names(self, connection):
+        TABLE_SQL = sql.text("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+        """)
+
+        return await connection.all(TABLE_SQL)
