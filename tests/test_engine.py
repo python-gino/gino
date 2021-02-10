@@ -38,7 +38,8 @@ async def test_issue_79():
         async with e.acquire():
             pass  # pragma: no cover
     # noinspection PyProtectedMember
-    assert len(e._ctx.get([])) == 0
+    ctx = e._ctx.get()
+    assert ctx and len(ctx.stack) == 0
 
 
 async def test_reuse(engine):
@@ -92,6 +93,38 @@ async def test_reuse(engine):
             assert qsize(engine) == init_size - 1
         assert qsize(engine) == init_size - 1
     assert qsize(engine) == init_size
+
+
+async def test_reuse_conn_in_task(request, engine):
+    loop = asyncio.get_event_loop()
+
+    sub_task_result1 = loop.create_future()
+    sub_task_result2 = loop.create_future()
+
+    main_task_check = asyncio.Event()
+
+    async with engine.acquire(reuse=False) as conn:
+        async def _task():
+            async with engine.acquire(reuse=True) as _task_conn:
+                sub_task_result1.set_result(_task_conn.raw_connection is not conn.raw_connection)
+                await asyncio.sleep(0)
+
+            async with engine.acquire(reuse=False) as _task_conn:
+                sub_task_result2.set_result(_task_conn.raw_connection is not conn.raw_connection)
+                await asyncio.sleep(0)
+                await asyncio.wait_for(main_task_check.wait(), 5)
+
+        task = loop.create_task(_task())
+        request.addfinalizer(task.cancel)
+
+        assert await asyncio.wait_for(sub_task_result1, 5)
+        assert await asyncio.wait_for(sub_task_result2, 5)
+
+        async with engine.acquire(reuse=True) as sub_coon:
+            assert conn.raw_connection is sub_coon.raw_connection
+
+        main_task_check.set()
+        await task
 
 
 async def test_compile(engine):
@@ -236,15 +269,15 @@ async def test_lazy(mocker):
     init_size = qsize(engine)
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
     assert engine._ctx.get() is None
     assert qsize(engine) == init_size
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
         assert await engine.scalar("select 1")
         assert qsize(engine) == init_size - 1
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
     assert engine._ctx.get() is None
     assert qsize(engine) == init_size
 
