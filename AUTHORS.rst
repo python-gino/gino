@@ -10,7 +10,7 @@ Development Lead
 Maintainers
 -----------
 
-* Tony Wang <wwwjfy@gmail.com>
+* Tony Wang <tony@initialcommit.net>
 
 Contributors
 ------------
@@ -44,6 +44,7 @@ Contributors
 * Iuliia Volkova <xnuinside@gmail.com>
 * Roman Averchenkov <aragentum@gmail.com>
 * AustinPena <austincollinpena@gmail.com>
+* Yurii Karabas <1998uriyyo@gmail.com>
 
 
 Special thanks to my wife Daisy and her outsourcing company `DecentFoX Studio`_,

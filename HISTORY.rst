@@ -14,6 +14,7 @@ GINO 1.1
 * [Breaking] Empty object instead of ``None`` being returned for objects with values of all selected columns are None (#729)
 * Added MySQL support (#381 #685)
 * [Breaking] asyncpg is no longer installed as a dependency by default, install ``gino[pg]`` for the old behavior
+* Fixed multiple referenced connection stack in newly created coroutines (#747)
 
 
 GINO 1.0
