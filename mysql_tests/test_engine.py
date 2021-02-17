@@ -38,7 +38,8 @@ async def test_issue_79():
         async with e.acquire():
             pass  # pragma: no cover
     # noinspection PyProtectedMember
-    assert len(e._ctx.get([])) == 0
+    ctx = e._ctx.get()
+    assert ctx and len(ctx.stack) == 0
 
 
 async def test_reuse(engine):
@@ -198,15 +199,15 @@ async def test_lazy(mocker):
     init_size = qsize(engine)
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
     assert engine._ctx.get() is None
     assert qsize(engine) == init_size
     async with engine.acquire(lazy=True):
         assert qsize(engine) == init_size
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
         assert await engine.scalar("select 1")
         assert qsize(engine) == init_size - 1
-        assert len(engine._ctx.get()) == 1
+        assert len(engine._ctx.get().stack) == 1
     assert engine._ctx.get() is None
     assert qsize(engine) == init_size
 

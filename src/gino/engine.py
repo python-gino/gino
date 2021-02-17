@@ -558,22 +558,39 @@ class GinoConnection:
         return await self._execute(clause, (_bypass_no_param,), {}).prepare(clause)
 
 
+_StackCtx = collections.namedtuple("_StackCtx", "task,stack")
+
+
+def _current_task(loop=None):
+    if loop is None:
+        loop = asyncio.get_event_loop()
+
+    if sys.version_info >= (3, 7):
+        return asyncio.current_task(loop=loop)
+    else:
+        return asyncio.Task.current_task(loop=loop)
+
+
 class _ContextualStack:
     __slots__ = ("_ctx", "_stack")
 
     def __init__(self, ctx):
         self._ctx = ctx
-        self._stack = ctx.get()
-        if self._stack is None:
+        curr_ctx = self._ctx.get()
+
+        if curr_ctx is None or curr_ctx.task is not _current_task():
             self._stack = collections.deque()
-            ctx.set(self._stack)
+            self._ctx.set(_StackCtx(_current_task(), self._stack))
+        else:
+            self._stack = curr_ctx.stack
 
     def __bool__(self):
         return bool(self._stack)
 
     @property
     def top(self):
-        return self._stack[-1]
+        if self._stack:
+            return self._stack[-1]
 
     def push(self, value):
         self._stack.append(value)
@@ -738,9 +755,9 @@ class GinoEngine:
         :return: :class:`.GinoConnection`
 
         """
-        stack = self._ctx.get()
-        if stack:
-            return stack[-1].gino_conn
+        ctx = self._ctx.get()
+        if ctx and ctx.stack:
+            return ctx.stack[-1].gino_conn
 
     async def close(self):
         """
