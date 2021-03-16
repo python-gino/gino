@@ -16,6 +16,11 @@ from .transaction import GinoTransaction
 patch_asyncio()
 
 
+def val_or_default(val, default):
+    """Helper method to return default if val is None, else return val"""
+    return default if val is None else val
+
+
 class _BaseDBAPIConnection:
     _reset_agent = None
     gino_conn = None
@@ -629,7 +634,7 @@ class GinoEngine:
     :class:`.GinoConnection`."""
 
     def __init__(
-        self, dialect, pool, loop, logging_name=None, echo=None, execution_options=None
+        self, dialect, pool, loop, logging_name=None, echo=None, execution_options=None, reuse=None
     ):
         self._sa_engine = _SAEngine(
             dialect,
@@ -637,6 +642,7 @@ class GinoEngine:
             echo=echo,
             execution_options=execution_options,
         )
+        self._reuse = reuse
         self._dialect = dialect
         self._pool = pool
         self._loop = loop
@@ -724,7 +730,7 @@ class GinoEngine:
 
         """
         return _AcquireContext(
-            functools.partial(self._acquire, timeout, reuse, lazy, reusable)
+            functools.partial(self._acquire, timeout, val_or_default(self._reuse, True), lazy, reusable)
         )
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
@@ -778,7 +784,7 @@ class GinoEngine:
         The same applies for other query methods.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.all(clause, *multiparams, **params)
 
     async def first(self, clause, *multiparams, **params):
@@ -786,7 +792,7 @@ class GinoEngine:
         Runs :meth:`~.GinoConnection.first`, See :meth:`.all`.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.first(clause, *multiparams, **params)
 
     async def one_or_none(self, clause, *multiparams, **params):
@@ -794,7 +800,7 @@ class GinoEngine:
         Runs :meth:`~.GinoConnection.one_or_none`, See :meth:`.all`.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.one_or_none(clause, *multiparams, **params)
 
     async def one(self, clause, *multiparams, **params):
@@ -802,7 +808,7 @@ class GinoEngine:
         Runs :meth:`~.GinoConnection.one`, See :meth:`.all`.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.one(clause, *multiparams, **params)
 
     async def scalar(self, clause, *multiparams, **params):
@@ -810,7 +816,7 @@ class GinoEngine:
         Runs :meth:`~.GinoConnection.scalar`, See :meth:`.all`.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.scalar(clause, *multiparams, **params)
 
     async def status(self, clause, *multiparams, **params):
@@ -818,7 +824,7 @@ class GinoEngine:
         Runs :meth:`~.GinoConnection.status`. See also :meth:`.all`.
 
         """
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             return await conn.status(clause, *multiparams, **params)
 
     def compile(self, clause, *multiparams, **params):
@@ -865,7 +871,7 @@ class GinoEngine:
 
         """
         return _TransactionContext(
-            self.acquire(timeout=timeout, reuse=reuse, reusable=reusable),
+            self.acquire(timeout=timeout, reuse=self._reuse or reuse, reusable=reusable),
             (args, kwargs),
         )
 
@@ -897,7 +903,7 @@ class GinoEngine:
         self._sa_engine.update_execution_options(**opt)
 
     async def _run_visitor(self, *args, **kwargs):
-        async with self.acquire(reuse=True) as conn:
+        async with self.acquire(reuse=val_or_default(self._reuse, True)) as conn:
             await getattr(conn, "_run_visitor")(*args, **kwargs)
 
     def repr(self, color=False):

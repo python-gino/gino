@@ -328,6 +328,7 @@ class Gino(sa.MetaData):
         query_ext=True,
         schema_ext=True,
         ext=True,
+        reuse=None,
         **kwargs
     ):
         """
@@ -351,11 +352,15 @@ class Gino(sa.MetaData):
                     ``gino`` extensions. ``False`` for no extension at all,
                     while it depends on the two individual switches when this
                     is set to ``True`` (default).
+        :param reuse: Boolean value to control how connections are reused. ``False``
+                      to not reuse connections and ``True`` to reuse connections.
+                      ``None`` as default to preserve current working state.
         :param kwargs: Other arguments accepted by
                        :class:`~sqlalchemy.schema.MetaData`.
 
         """
         super().__init__(bind=bind, **kwargs)
+        self.set_reuse(reuse)
         if model_classes is None:
             model_classes = self.model_base_classes
         self._model = declarative_base(self, model_classes)
@@ -476,6 +481,14 @@ class Gino(sa.MetaData):
 
         """
         return self.bind.compile(elem, *multiparams, **params)
+    
+    def set_reuse(self, reuse=None):
+        """
+        A method to set the reuse flag globally.
+        Intended to be used with :meth:`GinoEngine.acquire() <.engine.GinoEngine.acquire>`
+        """
+        self._reuse = reuse
+        return reuse
 
     async def all(self, clause, *multiparams, **params):
         """
