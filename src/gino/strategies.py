@@ -58,7 +58,7 @@ class GinoStrategy(EngineStrategy):
         pool = await dialect.init_pool(u, loop, pool_class=pool_class)
 
         engine_args = dict(loop=loop)
-        engine_args["reuse"] = pop_kwarg("reuse")
+        engine_args["reuse"] = pop_kwarg("reuse", None)
         for k in util.get_cls_kwargs(engine_cls):
             if k in kwargs:
                 engine_args[k] = pop_kwarg(k)

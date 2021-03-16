@@ -730,7 +730,7 @@ class GinoEngine:
 
         """
         return _AcquireContext(
-            functools.partial(self._acquire, timeout, val_or_default(self._reuse, True), lazy, reusable)
+            functools.partial(self._acquire, timeout, val_or_default(self._reuse, reuse), lazy, reusable)
         )
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
