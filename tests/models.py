@@ -8,6 +8,7 @@ import pytest
 
 from gino import Gino
 from gino.dialects.asyncpg import JSONB
+from sqlalchemy import func
 
 DB_ARGS = dict(
     host=os.getenv("DB_HOST", "localhost"),
@@ -148,6 +149,19 @@ class UserSetting(db.Model):
     user_id_setting_unique = db.UniqueConstraint("user_id", "setting")
     col1_check = db.CheckConstraint("col1 >= 1 AND col1 <= 5")
     col2_idx = db.Index("col2_idx", "col2")
+
+
+class Record(db.Model):
+    __tablename__ = "gino_records"
+
+    id = db.Column(db.BigInteger(), primary_key=True)
+    value = db.Column(db.Text())
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        onupdate=func.now(),
+        server_default=func.now(),
+    )
 
 
 def qsize(engine):

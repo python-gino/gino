@@ -102,7 +102,7 @@ class UpdateRequest:
             self._literal = False
         self._props[prop] = value
 
-    async def apply(self, bind=None, timeout=DEFAULT):
+    async def apply(self, bind=None, timeout=DEFAULT, extra_returning_fields=tuple()):
         """
         Apply pending updates into database by executing an ``UPDATE`` SQL.
 
@@ -112,6 +112,9 @@ class UpdateRequest:
         :param timeout: Seconds to wait for the database to finish executing,
           ``None`` for wait forever. By default it will use the ``timeout``
           execution option value if unspecified.
+
+        :param extra_returning_fields: A `tuple` of returning fields besides
+          fields to create/update, e.g. (`updated_at`, `created_at`)
 
         :return: ``self`` for chaining calls.
 
@@ -174,9 +177,9 @@ class UpdateRequest:
             )
             .execution_options(**opts)
         )
-        await _query_and_update(
-            bind, self._instance, clause, [getattr(cls, key) for key in values], opts
-        )
+        cols = tuple(getattr(cls, key) for key in values)
+        extra_cols = tuple(getattr(cls, key) for key in extra_returning_fields)
+        await _query_and_update(bind, self._instance, clause, cols + extra_cols, opts)
         for prop in self._props:
             prop.reload(self._instance)
         return self
