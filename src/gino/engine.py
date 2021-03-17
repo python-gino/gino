@@ -884,7 +884,11 @@ class GinoEngine:
 
         """
         return _TransactionContext(
-            self.acquire(timeout=timeout, reuse=val_or_default(self._reuse, reuse), reusable=reusable),
+            self.acquire(
+                timeout=timeout,
+                reuse=val_or_default(self._reuse, reuse),
+                reusable=reusable,
+            ),
             (args, kwargs),
         )
 
