@@ -481,7 +481,7 @@ class Gino(sa.MetaData):
 
         """
         return self.bind.compile(elem, *multiparams, **params)
-    
+
     def set_reuse(self, reuse=None):
         """
         A method to set the reuse flag globally.

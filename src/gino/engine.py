@@ -634,7 +634,14 @@ class GinoEngine:
     :class:`.GinoConnection`."""
 
     def __init__(
-        self, dialect, pool, loop, logging_name=None, echo=None, execution_options=None, reuse=None
+        self,
+        dialect,
+        pool,
+        loop,
+        logging_name=None,
+        echo=None,
+        execution_options=None,
+        reuse=None,
     ):
         self._sa_engine = _SAEngine(
             dialect,
@@ -730,7 +737,13 @@ class GinoEngine:
 
         """
         return _AcquireContext(
-            functools.partial(self._acquire, timeout, val_or_default(self._reuse, reuse), lazy, reusable)
+            functools.partial(
+                self._acquire,
+                timeout,
+                val_or_default(self._reuse, reuse),
+                lazy,
+                reusable,
+            )
         )
 
     async def _acquire(self, timeout, reuse, lazy, reusable):
@@ -871,7 +884,9 @@ class GinoEngine:
 
         """
         return _TransactionContext(
-            self.acquire(timeout=timeout, reuse=self._reuse or reuse, reusable=reusable),
+            self.acquire(
+                timeout=timeout, reuse=self._reuse or reuse, reusable=reusable
+            ),
             (args, kwargs),
         )
 
