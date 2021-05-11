@@ -29,18 +29,18 @@ sqlalchemy = {path = "./sqlalchemy"}
 importlib_metadata = {version = "^1.7.0", python = "<3.8"}
 
 # extensions
-gino-starlette = { version = "^0.1.1", optional = true }
-gino-aiohttp = { version = "^0.1.0", optional = true }
-gino-tornado = { version = "^0.1.0", optional = true }
-gino-sanic = { version = "^0.1.0", optional = true }
-gino-quart = { version = "^0.1.0", optional = true }
-
-[tool.poetry.extras]
-starlette = ["gino-starlette"]
-aiohttp = ["gino-aiohttp"]
-tornado = ["gino-tornado"]
-sanic = ["gino-sanic"]
-quart = ["gino-quart"]
+#gino-starlette = { version = "^0.1.1", optional = true }
+#gino-aiohttp = { version = "^0.1.0", optional = true }
+#gino-tornado = { version = "^0.1.0", optional = true }
+#gino-sanic = { version = "^0.1.0", optional = true }
+#gino-quart = { version = "^0.1.0", optional = true }
+#
+#[tool.poetry.extras]
+#starlette = ["gino-starlette"]
+#aiohttp = ["gino-aiohttp"]
+#tornado = ["gino-tornado"]
+#sanic = ["gino-sanic"]
+#quart = ["gino-quart"]
 
 [tool.poetry.dev-dependencies]
 psycopg2-binary = "^2.8.5"

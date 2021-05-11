@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -10,7 +12,7 @@ from typing import Callable, Any, Optional, \
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 NONE = object()
 
-J = TypeVar('J', bound=JSONProperty)
+J = TypeVar('J', bound='JSONProperty')
 T = TypeVar('T', Callable[[J, Any], Any], Optional[Callable[[J, Any], Any]])
 
 class Hook:
@@ -201,4 +203,5 @@ __all__ = [
     "BooleanProperty",
     "ObjectProperty",
     "ArrayProperty",
+    "DATETIME_FORMAT",
 ]
