@@ -135,10 +135,7 @@ class PreparedStatement(base.PreparedStatement):
     async def _execute(self, params, one):
         if one:
             rv = await self._prepared.fetchrow(*params)
-            if rv is None:
-                rv = []
-            else:
-                rv = [rv]
+            rv = [] if rv is None else [rv]
         else:
             rv = await self._prepared.fetch(*params)
         return self._prepared.get_statusmsg(), rv
@@ -211,10 +208,7 @@ class DBAPICursor(base.DBAPICursor):
 
         if one:
             rv = await stmt.fetchrow(*args, timeout=timeout)
-            if rv is None:
-                rv = []
-            else:
-                rv = [rv]
+            rv = [] if rv is None else [rv]
         else:
             rv = await stmt.fetch(*args, timeout=timeout)
         self._attributes = stmt.get_attributes()
@@ -342,7 +336,7 @@ class NullPool(base.Pool):
     # TODO: generic NullPool, abstracting connection part
     def __init__(self, url, loop, **kwargs):
         self._loop = loop
-        self._kwargs = dict()
+        self._kwargs = {}
         for k in inspect.getfullargspec(asyncpg.connect).kwonlyargs:
             if k in kwargs:
                 self._kwargs[k] = kwargs[k]
@@ -664,7 +658,6 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 AND n.nspname = :nspname
                 )
                 """
-            query = sql.text(query)
         else:
             query = """
             SELECT EXISTS (
@@ -673,7 +666,7 @@ class AsyncpgDialect(PGDialect, base.AsyncDialectMixin):
                 AND pg_type_is_visible(t.oid)
                 )
                 """
-            query = sql.text(query)
+        query = sql.text(query)
         query = query.bindparams(
             sql.bindparam(
                 "typname",
