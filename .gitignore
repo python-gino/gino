@@ -73,3 +73,9 @@ target/
 
 # extension stub files
 src/gino/ext/*.pyi
+
+# ignore virtualenv
+.venv
+
+# ignore sqlalchemy local folder
+sqlalchemy

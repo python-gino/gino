@@ -52,7 +52,8 @@ pytest-asyncio = "^0.14.0"
 pytest-mock = "^3.3.0"
 pytest-cov = "^2.10.1"
 black = "^19.10b0"
-mypy = "^0.782"
+mypy = "^0.812"
+sqlalchemy2-stubs = "^0.0.1a11"
 
 # docs
 sphinx = "^3.2.1"
