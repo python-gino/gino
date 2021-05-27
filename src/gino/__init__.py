@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from .api import Gino  # NOQA
 from .bakery import Bakery
@@ -45,6 +46,19 @@ def get_version():
     return version("gino")
 
 
+# Check if current python version is deprecated
+try:
+    # Get version from sys.vrsion value (usually: '3.7.0 ...')
+    subversion = int(sys.version[2])
+
+    # Check if version is lower than 3.6
+    if subversion < 6:
+        print("DEPRECATION WARNING: Python version 3.5 and lower are not supported since they've reached EOL")
+except ValueError:
+    # Unable to determine version leads to warning
+    print("WARNING: Unable to determine current python version")
+
+    
 # noinspection PyBroadException
 try:
     __version__ = get_version()
