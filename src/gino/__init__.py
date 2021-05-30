@@ -44,19 +44,12 @@ def get_version():
 
 
 # Check if current python version is deprecated
-try:
-    # Get version from sys.version value (usually: '3.7.0 ...')
-    subversion = int(sys.version[2])
-
-    # Check if version is lower than 3.6
-    if subversion < 6:
-        warnings.warn(
-            "DEPRECATION WARNING: Python version 3.5 and lower are not supported",
-            DeprecationWarning,
-        )
-except ValueError:
-    # Unable to determine version leads to warning
-    print("WARNING: Unable to determine current python version")
+# Check if version is lower than 3.6
+if sys.version_info < (3, 6):
+    warnings.warn(
+        "DEPRECATION WARNING: Python version 3.5 and lower are not supported",
+        DeprecationWarning,
+    )
 
 
 # noinspection PyBroadException
