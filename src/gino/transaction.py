@@ -91,7 +91,7 @@ class GinoTransaction(StartableContext):
     def connection(self):
         return self._connection
 
-    async def start(self):
+    async def start(self, is_ctxmanager=False):
         assert self._sync_transaction is None, "cannot start the same transaction twice"
         conn = await self._connection.acquire()
         in_trans = conn.in_transaction()

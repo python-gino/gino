@@ -23,17 +23,17 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.7"
 asyncpg = {git = "https://github.com/MagicStack/asyncpg.git"}
-sqlalchemy = {path = "./sqlalchemy"}
+SQLAlchemy = "^1.4.17"
 
 # compatibility
 importlib_metadata = {version = "^1.7.0", python = "<3.8"}
 
 # extensions
-gino-starlette = { version = "^0.1.1", optional = true }
-gino-aiohttp = { version = "^0.1.0", optional = true }
-gino-tornado = { version = "^0.1.0", optional = true }
-gino-sanic = { version = "^0.1.0", optional = true }
-gino-quart = { version = "^0.1.0", optional = true }
+#gino-starlette = { version = "^0.1.1", optional = true }
+#gino-aiohttp = { version = "^0.1.0", optional = true }
+#gino-tornado = { version = "^0.1.0", optional = true }
+#gino-sanic = { version = "^0.1.0", optional = true }
+#gino-quart = { version = "^0.1.0", optional = true }
 
 [tool.poetry.extras]
 starlette = ["gino-starlette"]

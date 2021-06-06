@@ -15,7 +15,7 @@ class PreparedStatement(StartableContext, abc.ABC):
         self._clause = clause
         self._prepared = None
 
-    async def start(self) -> PreparedStatement:
+    async def start(self, is_ctxmanager=False) -> PreparedStatement:
         self._prepared = await self._conn.execute(
             self._clause,
             _do_load=False,

@@ -128,7 +128,7 @@ class GinoConnection(StartableContext, _DequeNode):
     def transaction(self, **kwargs):
         return GinoTransaction(self, **kwargs)
 
-    async def start(self):
+    async def start(self, is_ctxmanager=False):
         if not self._lazy:
             try:
                 await self.acquire(self._connect_timeout)
@@ -556,9 +556,9 @@ class GinoEngine:
             self.transaction = None
             self._kwargs = kwargs
 
-        async def start(self):
+        async def start(self, is_ctxmanager=False):
             try:
-                await self.conn.start()
+                await self.conn.start(is_ctxmanager=is_ctxmanager)
                 self.transaction = self.conn.transaction(**self._kwargs)
                 await self.transaction.__aenter__()
                 return self.transaction
