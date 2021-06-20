@@ -244,13 +244,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.5
+          python-version: 3.6
 
       - name: virtualenv cache
         uses: syphar/restore-virtualenv@v1.1
 
       - name: Use lowest dependencies versions
-        run: pip install asyncpg==0.18 SQLAlchemy==1.3
+        run: pip install asyncpg==0.18 SQLAlchemy==1.3 pytest
 
       - name: pytest
         env:
