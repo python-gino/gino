@@ -89,7 +89,7 @@ What is aiocontextvars and what does it do?
 
 It is a partial backport of the new built-in module `contextvars
 <https://docs.python.org/3.7/library/contextvars.html>`_ introduced in Python
-3.7. In Python 3.5 and 3.6, ``aiocontextvars`` patches ``loop.create_task()``
+3.7. In Python 3.6, ``aiocontextvars`` patches ``loop.create_task()``
 to copy context from caller as a workaround to simulate the same behavior. This
 is also under discussion in upstream backport project, please read more here:
 https://github.com/MagicStack/contextvars/issues/2

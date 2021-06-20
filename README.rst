@@ -27,7 +27,7 @@ GINO - GINO Is Not ORM - is a lightweight asynchronous ORM built on top of
 SQLAlchemy_ core for Python asyncio_. GINO 1.0 supports only PostgreSQL_ with asyncpg_.
 
 * Free software: BSD license
-* Requires: Python 3.5
+* Requires: Python 3.6
 * GINO is developed proudly with |PyCharm|.
 
 
