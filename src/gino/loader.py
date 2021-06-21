@@ -206,25 +206,49 @@ class ModelLoader(Loader):
     def __init__(self, model, *columns, **extras):
         self.model = model
         self._distinct = None
+
+        self._columns = None
+        self._prop_column_map = None
+
         if columns:
-            self.columns = [_get_column(model, name) for name in columns]
+            self.columns = tuple(_get_column(model, name) for name in columns)
         else:
             self.columns = model
         self.extras = dict((key, self.get(value)) for key, value in extras.items())
         self.on_clause = None
 
+    @property
+    def columns(self):
+        return self._columns
+
+    @columns.setter
+    def columns(self, value):
+        self._columns = value
+        self._prop_column_map = {
+            self.model._column_name_map.invert_get(c.name): c for c in self.columns
+        }
+
     def _do_load(self, row, none_as_none):
         # none_as_none indicates that in the case of every column of the object is
         # None, whether a None or empty instance of the model should be returned.
-        values = dict((c.name, row[c]) for c in self.columns if c in row)
-        if none_as_none and all((v is None) for v in values.values()):
+        all_is_none = none_as_none
+
+        values = {}
+
+        for prop_name, column in self._prop_column_map.items():
+            if column in row:
+                row_value = row[column]
+
+                values[prop_name] = row_value
+                all_is_none &= row_value is None
+
+        if all_is_none:
             return None
+
         rv = self.model()
-        for c in self.columns:
-            if c in row:
-                # noinspection PyProtectedMember
-                instance_key = self.model._column_name_map.invert_get(c.name)
-                rv.__values__[instance_key] = row[c]
+        # no need to update, model just created
+        rv.__values__ = values
+
         return rv
 
     def do_load(self, row, context):
@@ -300,7 +324,7 @@ class ModelLoader(Loader):
         """
 
         if columns:
-            self.columns = [_get_column(self.model, name) for name in columns]
+            self.columns = tuple(_get_column(self.model, name) for name in columns)
 
         self.extras.update((key, self.get(value)) for key, value in extras.items())
         return self
