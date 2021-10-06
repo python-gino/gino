@@ -24,7 +24,7 @@ except ImportError:
 try:
     import aiomysql
 except ImportError:
-    raise ImportError("asyncpg is not installed; please install gino[mysql]")
+    raise ImportError("aiomysql is not installed; please install gino[mysql]")
 
 JSON_COLTYPE = 245
 
