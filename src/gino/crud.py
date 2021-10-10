@@ -435,7 +435,8 @@ class CRUDModel(Model):
     def __init__(self, **values):
         super().__init__()
         self.__profile__ = None
-        self._update_request_cls(self).update(**values)
+        if values:
+            self._update_request_cls(self).update(**values)
 
     @classmethod
     def _init_table(cls, sub_cls):
