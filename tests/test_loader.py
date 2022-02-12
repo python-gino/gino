@@ -2,7 +2,6 @@ import random
 from datetime import datetime
 
 import pytest
-from async_generator import yield_, async_generator
 
 from gino.loader import AliasLoader
 from sqlalchemy import select
@@ -21,7 +20,6 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-@async_generator
 async def user(bind):
     c = await Company.create()
     t1 = await Team.create(company_id=c.id)
@@ -32,7 +30,7 @@ async def user(bind):
     t2.parent = t1
     t2.company = c
     t1.company = c
-    await yield_(u)
+    yield u
     await User.delete.gino.status()
     await Team.delete.gino.status()
     await Company.delete.gino.status()

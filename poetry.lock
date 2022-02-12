@@ -63,14 +63,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "async-generator"
-version = "1.10"
-description = "Async generators and context managers for Python 3.5+"
-category = "dev"
-optional = false
-python-versions = ">=3.5"
-
-[[package]]
 name = "async-timeout"
 version = "4.0.2"
 description = "Timeout context manager for asyncio programs"
@@ -1189,7 +1181,7 @@ tornado = ["gino-tornado"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "b4f5f6f85d72aa65c3487818c321dcf685650449e6d2d202c969e168ce96c3e0"
+content-hash = "330bae3e826b2d9112c965f2a1916a7bb2ae9858dc554f746570a4982478cbfa"
 
 [metadata.files]
 aiofiles = [
@@ -1281,10 +1273,6 @@ aiosignal = [
 alabaster = [
     {file = "alabaster-0.7.12-py2.py3-none-any.whl", hash = "sha256:446438bdcca0e05bd45ea2de1668c1d9b032e1a9154c2c259092d77031ddd359"},
     {file = "alabaster-0.7.12.tar.gz", hash = "sha256:a661d72d58e6ea8a57f7a86e37d86716863ee5e92788398526d58b26a4e4dc02"},
-]
-async-generator = [
-    {file = "async_generator-1.10-py3-none-any.whl", hash = "sha256:01c7bf666359b4967d2cda0000cc2e4af16a0ae098cbffcb8472fb9e8ad6585b"},
-    {file = "async_generator-1.10.tar.gz", hash = "sha256:6ebb3d106c12920aaae42ccb6f787ef5eefdcdd166ea3d628fa8476abe712144"},
 ]
 async-timeout = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},

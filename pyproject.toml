@@ -56,7 +56,6 @@ quart = ["gino-quart"]
 
 [tool.poetry.dev-dependencies]
 psycopg2-binary = "^2.9.3"
-async_generator = "^1.10"
 click = "^8.0.3"
 
 # tests
