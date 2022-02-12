@@ -41,7 +41,7 @@ jobs:
         env:
           POETRY_VERSION: 1.1.13
         run: |
-          pip install pip==22.0.3 setuptools==60.8.2
+          pip install pip==21.3.1 setuptools==59.6.0
           curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
           source $HOME/.poetry/env
           poetry install --no-interaction -E pg -E mysql
