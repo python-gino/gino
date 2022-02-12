@@ -55,23 +55,23 @@ sanic = ["gino-sanic"]
 quart = ["gino-quart"]
 
 [tool.poetry.dev-dependencies]
-psycopg2-binary = "^2.8.5"
+psycopg2-binary = "^2.9.3"
 async_generator = "^1.10"
-click = "^7.1"
+click = "^8.0.3"
 
 # tests
-pytest = "^5.4.1"
-pytest-asyncio = "^0.10.0"
-pytest-mock = "^3.0.0"
-pytest-cov = "^2.8.1"
-black = { version = "^20.8b1", python = ">=3.6" }
-mypy = "^0.790"
+pytest = "^7.0.1"
+pytest-asyncio = "^0.16.0"
+pytest-mock = "^3.6.0"
+pytest-cov = "^3.0.0"
+black = { version = "^22.1.0", python = ">=3.6.2" }
+mypy = "^0.931"
 
 # docs
-sphinx = "^3.0.3"
-sphinx-rtd-theme = "^0.4.3"
+sphinx = "^4.3.0"
+sphinx-rtd-theme = "^1.0.0"
 sphinxcontrib-apidoc = "^0.3.0"
-sphinx-autobuild = "^0.7.1"
+sphinx-autobuild = "^2021.3.14"
 sphinx-intl = {extras = ["transifex"], version = "^2.0.1"}
 
 [tool.poetry.plugins."sqlalchemy.dialects"]
