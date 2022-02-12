@@ -31,10 +31,10 @@ speedups = ["aiodns", "brotli", "cchardet"]
 
 [[package]]
 name = "aiomysql"
-version = "0.0.21"
+version = "0.0.22"
 description = "MySQL driver for asyncio."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [package.dependencies]
@@ -238,7 +238,7 @@ toml = ["tomli"]
 name = "dataclasses"
 version = "0.8"
 description = "A backport of the dataclasses module for Python 3.6"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6, <3.7"
 
@@ -644,7 +644,7 @@ name = "pymysql"
 version = "0.9.3"
 description = "Pure Python MySQL Driver"
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [package.extras]
@@ -1126,6 +1126,9 @@ category = "main"
 optional = true
 python-versions = ">=3.6"
 
+[package.dependencies]
+dataclasses = {version = "*", markers = "python_version < \"3.7\""}
+
 [package.extras]
 watchdog = ["watchdog"]
 
@@ -1138,6 +1141,7 @@ optional = true
 python-versions = ">=3.6.1"
 
 [package.dependencies]
+dataclasses = {version = "*", markers = "python_version < \"3.7\""}
 h11 = ">=0.8.1"
 
 [[package]]
@@ -1181,7 +1185,7 @@ tornado = ["gino-tornado"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "330bae3e826b2d9112c965f2a1916a7bb2ae9858dc554f746570a4982478cbfa"
+content-hash = "59d749646decd26df63bc5de941d438bd71381cec3015c59a519eaf0f2316fe1"
 
 [metadata.files]
 aiofiles = [
@@ -1263,8 +1267,8 @@ aiohttp = [
     {file = "aiohttp-3.8.1.tar.gz", hash = "sha256:fc5471e1a54de15ef71c1bc6ebe80d4dc681ea600e68bfd1cbce40427f0b7578"},
 ]
 aiomysql = [
-    {file = "aiomysql-0.0.21-py3-none-any.whl", hash = "sha256:a81a97da3dd732635926a8ea6adbbf2d1345799680bf61b5f89e730bcec88cc5"},
-    {file = "aiomysql-0.0.21.tar.gz", hash = "sha256:811569c0db118dd2685f0878f5cebf17a11e89a995fa14261d5fa0254113842c"},
+    {file = "aiomysql-0.0.22-py3-none-any.whl", hash = "sha256:4e4a65914daacc40e70f992ddbeef32457561efbad8de41393e8ac5a84126a5a"},
+    {file = "aiomysql-0.0.22.tar.gz", hash = "sha256:9bcf8f26d22e550f75cabd635fa19a55c45f835eea008275960cb37acadd622a"},
 ]
 aiosignal = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
