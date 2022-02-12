@@ -238,7 +238,7 @@ toml = ["tomli"]
 name = "dataclasses"
 version = "0.8"
 description = "A backport of the dataclasses module for Python 3.6"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6, <3.7"
 
@@ -1126,9 +1126,6 @@ category = "main"
 optional = true
 python-versions = ">=3.6"
 
-[package.dependencies]
-dataclasses = {version = "*", markers = "python_version < \"3.7\""}
-
 [package.extras]
 watchdog = ["watchdog"]
 
@@ -1141,7 +1138,6 @@ optional = true
 python-versions = ">=3.6.1"
 
 [package.dependencies]
-dataclasses = {version = "*", markers = "python_version < \"3.7\""}
 h11 = ">=0.8.1"
 
 [[package]]
