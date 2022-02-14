@@ -451,21 +451,21 @@ async def test_repr():
     from gino.dialects.asyncpg import NullPool
 
     e = await create_engine(PG_URL, pool_class=NullPool)
-    assert 'cur=0' in repr(e)
+    assert "cur=0" in repr(e)
     async with e.acquire():
-        assert 'cur=1' in repr(e)
+        assert "cur=1" in repr(e)
         async with e.acquire():
-            assert 'cur=2' in repr(e)
-        assert 'cur=1' in repr(e)
-    assert 'cur=0' in repr(e)
-    assert 'NullPool' in e.repr(color=True)
+            assert "cur=2" in repr(e)
+        assert "cur=1" in repr(e)
+    assert "cur=0" in repr(e)
+    assert "NullPool" in e.repr(color=True)
 
     e = await create_engine(PG_URL)
-    assert 'cur=10 use=0' in repr(e)
+    assert "cur=10 use=0" in repr(e)
     async with e.acquire():
-        assert 'cur=10 use=1' in repr(e)
+        assert "cur=10 use=1" in repr(e)
         async with e.acquire():
-            assert 'cur=10 use=2' in repr(e)
-        assert 'cur=10 use=1' in repr(e)
-    assert 'cur=10 use=0' in repr(e)
-    assert 'asyncpg.pool.Pool' in e.repr(color=True)
+            assert "cur=10 use=2" in repr(e)
+        assert "cur=10 use=1" in repr(e)
+    assert "cur=10 use=0" in repr(e)
+    assert "asyncpg.pool.Pool" in e.repr(color=True)
