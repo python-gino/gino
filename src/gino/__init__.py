@@ -1,4 +1,6 @@
 import logging
+import sys
+import warnings
 
 from .api import Gino  # NOQA
 from .bakery import Bakery
@@ -14,10 +16,8 @@ if rootlogger.level == logging.NOTSET:
 def create_engine(*args, **kwargs):
     """
     Shortcut for :func:`sqlalchemy.create_engine` with ``strategy="gino"``.
-
     .. versionchanged:: 1.1
        Added the ``bakery`` keyword argument, please see :class:`~.bakery.Bakery`.
-
     .. versionchanged:: 1.1
        Added the ``prebake`` keyword argument to choose when to create the prepared
        statements for the queries in the bakery:
@@ -43,6 +43,15 @@ def get_version():
     except ImportError:
         from importlib_metadata import version
     return version("gino")
+
+
+# Check if current python version is deprecated
+# Check if version is lower than 3.6
+if sys.version_info < (3, 6):
+    warnings.warn(
+        "DEPRECATION WARNING: Python version 3.5 and lower are not supported",
+        DeprecationWarning,
+    )
 
 
 # noinspection PyBroadException
