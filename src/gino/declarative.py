@@ -1,5 +1,6 @@
 import collections
 
+from pydantic import create_model
 import sqlalchemy as sa
 from sqlalchemy.exc import InvalidRequestError
 
@@ -379,6 +380,65 @@ class Model:
                         )
         sub_cls.__json_prop_names__ = json_prop_names
         return rv
+
+    @classmethod
+    def get_pydantic_model(cls):
+        """Return a pydantic model from the GINO model definition.
+
+        Will check for an __exclude__ property on the class to identify
+        class attributes that should be excluded from the pydantic model
+        generation.
+
+
+        Example:
+
+            class User(db.Model):
+                __tablename__ = 'users'
+
+                name = db.Column(db.String())
+            ​
+            User =
+            PUser = User.get_pydantic_model()
+            indent=2
+            print(PUser.schema_json(indent=2))
+            {
+            "title": "User",
+            "type": "object",
+            "properties": {
+                "name": {
+                "title": "Name",
+                "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ]
+            }
+        """
+
+        keys = [str(key) for key in cls.__dict__.keys()]
+        # Assumption that may not be valid, but don't look at ones with _ in them.
+        valid_keys = [key for key in keys if not key.startswith('_')]
+
+        # Allow exclusions of model attributes from the pydantic model.
+        if hasattr(cls, '__excluded__'):
+            valid_keys = [key for key in valid_keys if key not in cls.__excluded__]
+
+        # This may be unique to GINO where the python type is on a column, but
+        # It would be easy enough to make a reference table for this rather than
+        # pulling it directly from the model column.
+        field_definitions = {}
+        for key in valid_keys:
+            col = getattr(cls, key)
+            col_type = col.type.python_type
+            # Don't forget ellipses after this, or pydantic won't create
+            # the schema and validators properly.
+            field_definitions[key] = (col.type.python_type,...)
+
+        # Create our pydantic model
+        pmodel = create_model(cls.__name__, **field_definitions)
+
+        return pmodel
 
 
 def declarative_base(metadata, model_classes=(Model,), name="Model"):
