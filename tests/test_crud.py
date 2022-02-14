@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from .models import db, User, UserType, Friendship, Relation, PG_URL
+from .models import db, User, UserType, Friendship, Relation, Record, PG_URL
 
 pytestmark = pytest.mark.asyncio
 
@@ -207,6 +207,20 @@ async def test_update_multiple_primary_key(engine):
     await f.update(my_id=u2.id, friend_id=u3.id).apply(bind=engine)
     f2 = await Friendship.get((u2.id, u3.id), bind=engine)
     assert f2
+
+
+async def test_update_extra_returing_fields(engine):
+    r1 = await Record.create(bind=engine, id=1, value='v0')
+    updated1 = r1.updated_at
+    await r1.update(value="v1").apply(bind=engine)
+    assert updated1 == r1.updated_at
+
+    r2 = await Record.create(bind=engine, id=2, value='v0')
+    updated2 = r2.updated_at
+    await r2.update(value="v2").apply(
+        bind=engine, extra_returning_fields=("updated_at",)
+    )
+    assert updated2 < r2.updated_at
 
 
 async def test_delete(engine):
